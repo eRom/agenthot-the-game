@@ -167,7 +167,7 @@ Le pas de simulation vaut `simDt = dtReal × timeScale`, plafonné à 1/60 s. Le
 - **Portée de tir :** 8 m maximum, avec ligne de vue dégagée (lancer de rayon contre le décor).
 - **Mêlée :** un ennemi sans arme fonce vers le joueur et frappe à 1,2 m.
 - **Mort :** une balle, ou un coup de poing sur un ennemi vacillant ou désarmé.
-- **Chargeurs :** les ennemis ont des balles illimitées. Le chargeur de 4 ne concerne que le joueur, et une arme ramassée repart pleine.
+- **Chargeurs :** les ennemis ont des balles illimitées. Le chargeur de 4 ne concerne que le joueur. Une arme d'ennemi ramassée est pleine ; une arme vidée par le joueur reste vide (voir 5.4).
 
 ### 5.7 Déroulé de la salle 1
 
