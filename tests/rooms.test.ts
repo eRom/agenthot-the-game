@@ -1,0 +1,128 @@
+import { describe, expect, test } from "bun:test";
+import { ROOMS } from "../src/rooms/registry";
+import { room01 } from "../src/rooms/room-01-datacenter";
+import { PLAYER_ID, isAlive } from "../src/sim/entities";
+import { Game } from "../src/sim/game";
+import { Rng } from "../src/sim/rng";
+import { FRAME, enemyAt, input, testRoom } from "./helpers";
+
+describe("jamais de tir surprise (AC-5)", () => {
+  test("sur 50 parties aléatoires, chaque tir ennemi suit au moins 0,4 s de visée continue", () => {
+    const rng = new Rng(7);
+    let shotsChecked = 0;
+    for (let game_i = 0; game_i < 50; game_i++) {
+      const game = new Game(room01);
+      const aimStart = new Map<number, number>();
+      let moveX = 0;
+      let moveZ = 0;
+      for (let frame = 0; frame < 60 * 20 && game.status === "playing"; frame++) {
+        if (frame % 30 === 0) {
+          moveX = Math.floor(rng.range(-1, 2));
+          moveZ = Math.floor(rng.range(-1, 2));
+        }
+        game.step(
+          1 / 60,
+          input({ moveX, moveZ, lookDX: rng.range(-0.05, 0.05), lookPixels: rng.range(0, 20), fire: rng.next() < 0.02 }),
+        );
+        for (let i = 0; i < game.events.count; i++) {
+          const e = game.events.items[i]!;
+          if (e.type !== "shot" || e.ownerId === PLAYER_ID) continue;
+          const start = aimStart.get(e.ownerId);
+          expect(start).toBeDefined();
+          expect(game.simTime - start! + 1e-9).toBeGreaterThanOrEqual(0.4);
+          shotsChecked++;
+        }
+        for (const enemy of game.enemies) {
+          if (enemy.state === "aim") {
+            if (!aimStart.has(enemy.id)) aimStart.set(enemy.id, game.simTime - enemy.stateTime);
+          } else {
+            aimStart.delete(enemy.id);
+          }
+        }
+      }
+    }
+    expect(shotsChecked).toBeGreaterThan(20);
+  });
+});
+
+describe("déroulé de la salle 1", () => {
+  test("au départ : 3 ennemis, pistolet de 4 balles en main", () => {
+    const game = new Game(room01);
+    expect(game.aliveEnemyCount()).toBe(3);
+    expect(game.weapons[game.player.weaponId]!.ammo).toBe(4);
+  });
+
+  test("quand il reste 2 ennemis, 2 autres sortent de 2 baies qui explosent", () => {
+    const game = new Game(room01);
+    const first = game.enemies.find(isAlive)!;
+    game.killEnemy(first, first.pos);
+    game.step(1 / 60, input());
+    expect(game.aliveEnemyCount()).toBe(4);
+    const bursts = room01.spawns.filter((s) => s.burstBoxIndex !== undefined).map((s) => s.burstBoxIndex!);
+    expect(bursts.length).toBe(2);
+    for (const index of bursts) expect(game.boxEnabled[index]).toBe(false);
+  });
+
+  test("les 5 ennemis éclatés = victoire", () => {
+    const game = new Game(room01);
+    for (let round = 0; round < 3; round++) {
+      for (const e of game.enemies) if (isAlive(e)) game.killEnemy(e, e.pos);
+      game.step(1 / 60, input());
+    }
+    expect(game.status).toBe("won");
+  });
+
+  test("après une mort, reset remet la salle d'origine", () => {
+    const game = new Game(room01);
+    game.killEnemy(game.enemies.find(isAlive)!, game.player.pos);
+    game.step(1 / 60, input());
+    game.killPlayer(game.player.pos);
+    expect(game.status).toBe("dead");
+    game.reset();
+    expect(game.status).toBe("playing");
+    expect(game.aliveEnemyCount()).toBe(3);
+    expect(game.boxEnabled.every(Boolean)).toBe(true);
+    expect(game.weapons[game.player.weaponId]!.ammo).toBe(4);
+    expect(game.shatter.shards.every((s) => !s.active)).toBe(true);
+  });
+
+  test("le joueur qui force contre un coin de baies ne rentre jamais dedans", () => {
+    const game = new Game(room01);
+    // Vers l'avant-gauche en diagonale : droit dans l'angle d'un tronçon de baies.
+    for (let frame = 0; frame < 60 * 4 && game.status === "playing"; frame++) {
+      game.step(FRAME, input({ moveZ: 1, moveX: -1 }));
+      const p = game.player.pos;
+      for (let i = 0; i < room01.boxes.length; i++) {
+        const box = room01.boxes[i]!;
+        if (!game.boxEnabled[i] || box.min.y > 1) continue;
+        const inside = p.x > box.min.x + 1e-6 && p.x < box.max.x - 1e-6 && p.z > box.min.z + 1e-6 && p.z < box.max.z - 1e-6;
+        expect(inside).toBe(false);
+      }
+    }
+  });
+
+  test("un ennemi sans ligne de vue contourne les baies par le graphe", () => {
+    const game = new Game(room01);
+    const path = new Int32Array(room01.nav.nodes.length);
+    // Du fond de l'allée gauche à l'entrée de l'allée droite.
+    const length = game.nav.findPath(room01.nav.nodes[1]!, room01.nav.nodes[13]!, path);
+    expect(length).toBeGreaterThan(1);
+    expect(path[length - 1]).toBe(13);
+  });
+});
+
+describe("salles (AC-16)", () => {
+  test("le registre expose la salle 1 jouable et la salle 2 verrouillée", () => {
+    const playable = ROOMS.filter((r) => r.status === "playable");
+    expect(playable.every((r) => r.definition !== undefined)).toBe(true);
+    expect(ROOMS.some((r) => r.status === "locked")).toBe(true);
+  });
+
+  test("une salle de test minimale se joue jusqu'à la victoire sans toucher au moteur", () => {
+    const game = new Game(testRoom([enemyAt(0, -6)]));
+    for (let frame = 0; frame < 600 && game.status === "playing"; frame++) {
+      game.step(FRAME, input({ fire: frame === 0 }));
+    }
+    expect(game.status).toBe("won");
+  });
+});
