@@ -1,0 +1,111 @@
+// Vue du monde lue par le rendu. Le jeu et le replay écrivent la même forme,
+// le rendu ne sait pas lequel des deux il dessine.
+import { ENEMY, type EnemyState, NO_ID, PLAYER_ID, POOLS, isAlive } from "./entities";
+import type { Game } from "./game";
+import { playerEye } from "./player-system";
+import type { Shard } from "./shatter";
+import { type Vec3, copy, vec3 } from "./vec3";
+
+export const ENEMY_STATE_CODES: readonly EnemyState[] = [
+  "inactive",
+  "approach",
+  "aim",
+  "cooldown",
+  "stagger",
+  "windup",
+  "dead",
+];
+
+export interface EnemyView {
+  visible: boolean;
+  state: EnemyState;
+  pos: Vec3;
+  yaw: number;
+  aimPoint: Vec3;
+  // Progression de la visée, de 0 à 1 (pour le trait de visée).
+  aimProgress: number;
+}
+
+export interface BulletView {
+  active: boolean;
+  pos: Vec3;
+  vel: Vec3;
+}
+
+export interface WeaponView {
+  visible: boolean;
+  heldByPlayer: boolean;
+  pos: Vec3;
+  angle: number;
+}
+
+export interface WorldView {
+  camera: { pos: Vec3; yaw: number; pitch: number };
+  enemies: EnemyView[];
+  bullets: BulletView[];
+  weapons: WeaponView[];
+  // Munitions de l'arme du joueur (-1 si mains vides), et temps de recharge restant.
+  playerAmmo: number;
+  playerCooldown: number;
+  shards: Shard[];
+  boxEnabled: boolean[];
+  timeScale: number;
+}
+
+export function createWorldView(boxCount: number, shards: Shard[]): WorldView {
+  const view: WorldView = {
+    camera: { pos: vec3(), yaw: 0, pitch: 0 },
+    enemies: [],
+    bullets: [],
+    weapons: [],
+    playerAmmo: -1,
+    playerCooldown: 0,
+    shards,
+    boxEnabled: new Array<boolean>(boxCount).fill(true),
+    timeScale: 1,
+  };
+  for (let i = 0; i < POOLS.enemies; i++) {
+    view.enemies.push({ visible: false, state: "inactive", pos: vec3(), yaw: 0, aimPoint: vec3(), aimProgress: 0 });
+  }
+  for (let i = 0; i < POOLS.bullets; i++) view.bullets.push({ active: false, pos: vec3(), vel: vec3() });
+  for (let i = 0; i < POOLS.weapons; i++) view.weapons.push({ visible: false, heldByPlayer: false, pos: vec3(), angle: 0 });
+  return view;
+}
+
+// Recopie l'état du jeu dans la vue, sans allocation.
+export function writeGameView(game: Game, view: WorldView): void {
+  const p = game.player;
+  playerEye(game, view.camera.pos);
+  view.camera.yaw = p.yaw;
+  view.camera.pitch = p.pitch;
+  view.timeScale = game.time.scale;
+  for (let i = 0; i < game.enemies.length; i++) {
+    const e = game.enemies[i]!;
+    const v = view.enemies[i]!;
+    v.visible = isAlive(e);
+    v.state = e.state;
+    copy(v.pos, e.pos);
+    v.yaw = e.yaw;
+    copy(v.aimPoint, e.aimPoint);
+    v.aimProgress = e.state === "aim" ? Math.min(1, e.stateTime / ENEMY.aimTime) : 0;
+  }
+  for (let i = 0; i < game.bullets.length; i++) {
+    const b = game.bullets[i]!;
+    const v = view.bullets[i]!;
+    v.active = b.active;
+    copy(v.pos, b.pos);
+    copy(v.vel, b.vel);
+  }
+  for (let i = 0; i < game.weapons.length; i++) {
+    const w = game.weapons[i]!;
+    const v = view.weapons[i]!;
+    v.visible = w.state !== "free";
+    v.heldByPlayer = w.state === "held" && w.holderId === PLAYER_ID;
+    copy(v.pos, w.pos);
+    v.angle = w.angle;
+  }
+  const held = p.weaponId !== NO_ID ? game.weapons[p.weaponId] : undefined;
+  view.playerAmmo = held ? held.ammo : -1;
+  view.playerCooldown = p.fireCooldown;
+  for (let i = 0; i < game.boxEnabled.length; i++) view.boxEnabled[i] = game.boxEnabled[i]!;
+}
