@@ -32,7 +32,10 @@ export const POST = {
   outlineDepth: 0.1,
   // Contour de normales : cosinus en dessous duquel deux pixels voisins forment une arête.
   outlineNormal: 0.8,
-  bloomStrength: 1.2,
+  // Réglé le 2026-09-29 (revue finale) : à 1,2 le halo, ajouté par-dessus le corps de l'ennemi, saturait le rouge de
+  // 68 % de ses pixels et écrasait ses facettes (spec 6.2 : facettes latérales plus sombres). À 0,5 : 2 % de
+  // pixels saturés, facettes lisibles, halo conservé autour de la silhouette.
+  bloomStrength: 0.5,
   bloomRadius: 0.4,
   bloomThreshold: 0,
   // Décalage des canaux rouge et bleu à la mort, en fraction de l'écran au bord.
