@@ -38,6 +38,10 @@ export const POST = {
   bloomStrength: 0.5,
   bloomRadius: 0.4,
   bloomThreshold: 0,
+  // Part du halo ajoutée sur les pixels de menace eux-mêmes (1 = tout, comme avant la tâche 9). Réglé le
+  // 2026-09-29 : à 1, une facette à 10 % de l'orange ressortait en ton moyen (mesuré, sonde teinte ±90 %) ;
+  // à 0,3, le cristal se lit et le halo autour de la silhouette reste entier.
+  bloomOnThreat: 0.3,
   // Décalage des canaux rouge et bleu à la mort, en fraction de l'écran au bord.
   aberration: 0.012,
 } as const;
@@ -102,8 +106,11 @@ export class PostPipeline {
     );
     const inked = mix(color, tslColor(PALETTE.ink), edge);
     const glow = bloom(colorTex.mul(glowTex.x), POST.bloomStrength, POST.bloomRadius, POST.bloomThreshold);
+    // Le halo garde toute sa force autour de la menace, mais n'est ajouté qu'en partie sur la menace elle-même :
+    // ajouté en entier, ce flou uniforme remontait les facettes sombres et aplatissait le cristal (spec 6.2).
+    const halo = glow.rgb.mul(mix(float(1), float(POST.bloomOnThreat), glowTex.sample(screenUV).x));
 
-    this.pipeline = new THREE.RenderPipeline(renderer, vec4(inked.add(glow.rgb), 1));
+    this.pipeline = new THREE.RenderPipeline(renderer, vec4(inked.add(halo), 1));
   }
 
   setDeath(amount: number): void {

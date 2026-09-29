@@ -10,12 +10,29 @@ export function worldMaterial(tone: number): THREE.MeshStandardNodeMaterial {
   return new THREE.MeshStandardNodeMaterial({ color: tone, roughness: 0.9 });
 }
 
-// Ennemis et éclats de menace : orange émissif léger ; les facettes de côté, moins éclairées, sont plus sombres.
+// Éclats de menace (les corps des ennemis ont enemyBodyMaterial) : orange émissif léger ; les facettes de côté, moins éclairées, sont plus sombres.
 export function threatMaterial(): THREE.MeshStandardNodeMaterial {
   const mat = new THREE.MeshStandardNodeMaterial({
     color: PALETTE.threat,
     emissive: PALETTE.threat,
     emissiveIntensity: 0.3,
+    roughness: 0.45,
+    flatShading: true,
+  });
+  mat.mrtNode = GLOW_MRT;
+  return mat;
+}
+
+// Corps des ennemis : même orange, mais chaque facette porte sa teinte (couleur de sommet, enemy-geometry.ts),
+// et l'émissif est bas (0,3 avant la tâche 9) pour que la lumière dessine le cristal : faces tournées vers
+// l'ombre nettement plus sombres (spec 6.2). Réglé le 2026-09-29 après l'essai de Romain (« encore trop mannequin »).
+// Les éclats de menace gardent threatMaterial : leur géométrie n'a pas de couleurs de sommet.
+export function enemyBodyMaterial(): THREE.MeshStandardNodeMaterial {
+  const mat = new THREE.MeshStandardNodeMaterial({
+    color: PALETTE.threat,
+    vertexColors: true,
+    emissive: PALETTE.threat,
+    emissiveIntensity: 0.08,
     roughness: 0.45,
     flatShading: true,
   });

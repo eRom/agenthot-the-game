@@ -1,23 +1,39 @@
-// Corps des ennemis : 8 segments facettés low-poly, un InstancedMesh par segment pour tous les ennemis.
+// Corps des ennemis : 8 segments facettés façon cristal, un InstancedMesh par segment pour tous les ennemis.
 // 8 appels de dessin quel que soit le nombre d'ennemis (spec 9.2).
 import * as THREE from "three/webgpu";
 import { POOLS } from "../sim/entities";
 import type { EnemyView } from "../sim/view";
-import { BODY, type EnemyPose, SEGMENT_COUNT, createEnemyPose, poseEnemy } from "./enemy-pose";
+import { segmentMesh } from "./enemy-geometry";
+import { type EnemyPose, SEGMENT_COUNT, createEnemyPose, poseEnemy } from "./enemy-pose";
+import { PALETTE } from "./palette";
 
-// Géométrie de chaque segment, centrée sur l'origine et alignée sur Y (ordre de SEGMENT).
-// Peu de côtés et flatShading : chaque facette prend sa propre lumière.
-function segmentGeometries(): THREE.BufferGeometry[] {
-  return [
-    new THREE.IcosahedronGeometry(BODY.headSize * 0.5, 0),
-    new THREE.CylinderGeometry(0.2, 0.14, BODY.torsoLength, 6).scale(1, 1, 0.65),
-    new THREE.CylinderGeometry(0.065, 0.05, BODY.upperArm, 5),
-    new THREE.CylinderGeometry(0.065, 0.05, BODY.upperArm, 5),
-    new THREE.CylinderGeometry(0.05, 0.04, BODY.forearm, 5),
-    new THREE.CylinderGeometry(0.05, 0.04, BODY.forearm, 5),
-    new THREE.CylinderGeometry(0.085, 0.055, BODY.legLength, 5),
-    new THREE.CylinderGeometry(0.085, 0.055, BODY.legLength, 5),
-  ];
+// Géométrie d'un segment (enemy-geometry.ts), centrée sur l'origine et alignée sur Y (ordre de SEGMENT).
+// Non indexée : chaque triangle a sa normale et sa couleur de sommet. Le matériau porte la teinte `threat` ;
+// la couleur de sommet la multiplie : luminosité de la facette, et part de `threat-hot` pour ses éclats.
+function segmentGeometry(segment: number): THREE.BufferGeometry {
+  const { positions, brightness, glint } = segmentMesh(segment);
+  // Rapport threat-hot / threat, canal par canal (espace linéaire) : threat × (1 + (k − 1) × t) = mélange des deux.
+  const threat = new THREE.Color(PALETTE.threat);
+  const hot = new THREE.Color(PALETTE.threatHot);
+  const kr = hot.r / threat.r - 1;
+  const kg = hot.g / threat.g - 1;
+  const kb = hot.b / threat.b - 1;
+  const colors = new Float32Array(positions.length);
+  for (let f = 0; f < brightness.length; f++) {
+    const b = brightness[f]!;
+    const t = glint[f]!;
+    for (let v = 0; v < 3; v++) {
+      const o = f * 9 + v * 3;
+      colors[o] = b * (1 + kr * t);
+      colors[o + 1] = b * (1 + kg * t);
+      colors[o + 2] = b * (1 + kb * t);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 export class EnemyBodies {
@@ -32,9 +48,8 @@ export class EnemyBodies {
   private readonly hidden = new THREE.Matrix4().makeScale(0, 0, 0);
 
   constructor(material: THREE.Material) {
-    const geometries = segmentGeometries();
     for (let s = 0; s < SEGMENT_COUNT; s++) {
-      const mesh = new THREE.InstancedMesh(geometries[s]!, material, POOLS.enemies);
+      const mesh = new THREE.InstancedMesh(segmentGeometry(s), material, POOLS.enemies);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.frustumCulled = false;
       mesh.castShadow = true;

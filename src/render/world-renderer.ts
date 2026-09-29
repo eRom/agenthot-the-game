@@ -7,7 +7,7 @@ import { SHATTER } from "../sim/shatter";
 import type { WorldView } from "../sim/view";
 import { BULLET_LOOK, headScale, trailLength } from "./bullet-look";
 import { EnemyBodies } from "./enemy-bodies";
-import { aimLineMaterial, inkMaterial, threatBasicMaterial, threatMaterial, worldMaterial } from "./materials";
+import { aimLineMaterial, enemyBodyMaterial, inkMaterial, threatBasicMaterial, threatMaterial, worldMaterial } from "./materials";
 import { PALETTE } from "./palette";
 
 export class WorldRenderer {
@@ -107,7 +107,7 @@ export class WorldRenderer {
     this.scene.add(this.racks);
 
     const threatMat = threatMaterial();
-    this.bodies = new EnemyBodies(threatMat);
+    this.bodies = new EnemyBodies(enemyBodyMaterial());
     for (const mesh of this.bodies.meshes) this.scene.add(mesh);
     const lineGeo = new THREE.BufferGeometry();
     lineGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(POOLS.enemies * 6), 3));
