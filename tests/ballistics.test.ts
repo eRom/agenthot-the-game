@@ -48,6 +48,17 @@ describe("balles (AC-3)", () => {
     expect(game.status).toBe("won");
   });
 
+  test("tirer collé à un mur fin : la balle s'écrase sur le mur", () => {
+    // Mur de 5 cm dont la face proche est à 0,30 m de l'œil du joueur (en z = 0, regard vers -Z).
+    const room = testRoom([enemyAt(0, -4, false)]);
+    room.boxes.push(aabb(-10, 0, -0.35, 10, 5, -0.3));
+    const game = new Game(room);
+    const log = run(game, (frame) => input({ fire: frame === 0 }), () => false, 2);
+    expect(log.some((e) => e.type === "bulletImpact")).toBe(true);
+    expect(log.some((e) => e.type === "enemyKilled")).toBe(false);
+    expect(game.enemies[0]!.state).not.toBe("dead");
+  });
+
   test("un chargeur vide fait un clic sec, sans balle", () => {
     const game = new Game(testRoom([enemyAt(10, -14)]));
     const weapon = game.weapons[game.player.weaponId]!;

@@ -63,6 +63,24 @@ describe("désarmement et capture (AC-4)", () => {
     expect(log.some((e) => e.type === "shot" && e.ownerId === PLAYER_ID)).toBe(true);
   });
 
+  test("une arme vidée puis lancée et reprise reste vide", () => {
+    // Un ennemi désarmé et immobile, loin : sans lui la partie serait gagnée dès la 1re image.
+    const game = new Game(testRoom([enemyAt(10, -14, false)]));
+    const weaponId = game.player.weaponId;
+    game.weapons[weaponId]!.ammo = 0;
+    // Lancer vers le bas : l'arme retombe au sol bien avant le mur du fond.
+    game.player.pitch = -0.6;
+    game.step(1 / 60, input({ throw: true }));
+    for (let i = 0; i < 6000 && game.weapons[weaponId]!.state !== "ground"; i++) game.step(1 / 60, input());
+    expect(game.weapons[weaponId]!.state).toBe("ground");
+    // On se place à côté de l'arme posée, puis on la ramasse.
+    game.player.pos.x = game.weapons[weaponId]!.pos.x;
+    game.player.pos.z = game.weapons[weaponId]!.pos.z + 0.5;
+    game.step(1 / 60, input({ use: true }));
+    expect(game.player.weaponId).toBe(weaponId);
+    expect(game.weapons[weaponId]!.ammo).toBe(0);
+  });
+
   test("coup de poing : le 1er fait vaciller et désarme, le 2e fait éclater", () => {
     const game = new Game(testRoom([enemyAt(0, -1.2)], false));
     game.step(1 / 60, input({ fire: true }));

@@ -2,13 +2,16 @@
 import { ENEMY, NO_ID, PLAYER, PLAYER_ID, WEAPON, type Weapon, forwardFromAngles, isAlive } from "./entities";
 import type { Game, PlayerInput } from "./game";
 import { pushCircleOutOfAabbs, sweepSphereCapsule } from "./geometry";
-import { addScaled, distance, set, vec3 } from "./vec3";
+import type { TimeInput } from "./time";
+import { addScaled, copy, distance, set, vec3 } from "./vec3";
 
 const forward = vec3();
 const eye = vec3();
 const chest = vec3();
 const reach = vec3();
 const punchVel = vec3();
+// Réutilisé à chaque image : aucune allocation dans la boucle.
+const timeInput: TimeInput = { moveAlpha: 0, lookPixels: 0, action: false, jumpRising: false };
 
 export function eyeHeight(game: Game): number {
   return game.player.crouching ? PLAYER.eyeCrouch : PLAYER.eyeStand;
@@ -34,12 +37,11 @@ export function updatePlayer(game: Game, dtReal: number, input: PlayerInput): nu
 
   const moveLen = Math.min(1, Math.hypot(input.moveX, input.moveZ));
   const acting = input.fire || (input.throw && p.weaponId !== NO_ID);
-  const simDt = game.time.update(dtReal, {
-    moveAlpha: moveLen,
-    lookPixels: input.lookPixels,
-    action: acting,
-    jumpRising: !p.onGround && p.vel.y > 0,
-  });
+  timeInput.moveAlpha = moveLen;
+  timeInput.lookPixels = input.lookPixels;
+  timeInput.action = acting;
+  timeInput.jumpRising = !p.onGround && p.vel.y > 0;
+  const simDt = game.time.update(dtReal, timeInput);
 
   // Déplacement horizontal dans le repère du regard (lacet seul).
   const sin = Math.sin(p.yaw);
@@ -137,7 +139,7 @@ function throwWeapon(game: Game): void {
   w.thrownBy = PLAYER_ID;
   w.bounced = false;
   w.flightTime = 0;
-  addScaled(w.pos, eye, forward, 0.5);
+  copy(w.pos, eye);
   set(
     w.vel,
     forward.x * PLAYER.throwSpeed,

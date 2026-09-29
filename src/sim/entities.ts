@@ -59,8 +59,6 @@ export const BULLET = {
   speed: 45,
   radius: 0.04,
   maxLife: 4,
-  // Recul du point de départ devant l'œil ou le canon, pour ne pas toucher le tireur.
-  muzzleOffset: 0.4,
 } as const;
 
 export const POOLS = {

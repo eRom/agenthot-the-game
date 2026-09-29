@@ -173,9 +173,8 @@ export class Game {
       b.active = true;
       b.ownerId = ownerId;
       b.life = 0;
-      b.pos.x = origin.x + dir.x * BULLET.muzzleOffset;
-      b.pos.y = origin.y + dir.y * BULLET.muzzleOffset;
-      b.pos.z = origin.z + dir.z * BULLET.muzzleOffset;
+      // Départ exact à l'origine : le tireur est exclu de ses balles par ownerId, et rien n'échappe au balayage.
+      copy(b.pos, origin);
       scale(b.vel, dir, BULLET.speed);
       this.events.push("shot", this.simTime, ownerId, NO_ID, b.pos, b.vel);
       return;
