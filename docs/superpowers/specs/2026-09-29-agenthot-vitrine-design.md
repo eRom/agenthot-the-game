@@ -184,7 +184,7 @@ Le pas de simulation vaut `simDt = dtReal × timeScale`, plafonné à 1/60 s. Le
   - l'ennemi touché est masqué ;
   - 24 à 48 éclats par ennemi, issus de ses segments ;
   - vitesse de chaque éclat = `vImpact × 0,6` (plafonné à 5 m/s) `+ direction aléatoire × force`. Plafond décidé par Romain le 2026-09-29 : sans lui, une balle à 45 m/s projetait les éclats à 27 m/s, hors de la salle et à travers les murs ;
-  - gravité, un rebond au sol, puis ils se figent ;
+  - gravité, un rebond au sol (ou sur le dessus d'une boîte : passerelle, baie), puis ils se figent ; ils rebondissent aussi sur les murs et les baies au lieu de les traverser ;
   - dessinés avec un `InstancedMesh` pré-alloué ;
   - le temps les ralentit comme le reste.
 - **Mort du joueur :** même effet, vu de l'intérieur (éclats vers la caméra).
