@@ -183,7 +183,7 @@ Le pas de simulation vaut `simDt = dtReal × timeScale`, plafonné à 1/60 s. Le
 - **Éclatement :**
   - l'ennemi touché est masqué ;
   - 24 à 48 éclats par ennemi, issus de ses segments ;
-  - vitesse de chaque éclat = `vImpact × 0,6 + direction aléatoire × force` ;
+  - vitesse de chaque éclat = `vImpact × 0,6` (plafonné à 5 m/s) `+ direction aléatoire × force`. Plafond décidé par Romain le 2026-09-29 : sans lui, une balle à 45 m/s projetait les éclats à 27 m/s, hors de la salle et à travers les murs ;
   - gravité, un rebond au sol, puis ils se figent ;
   - dessinés avec un `InstancedMesh` pré-alloué ;
   - le temps les ralentit comme le reste.
