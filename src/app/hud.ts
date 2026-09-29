@@ -17,6 +17,8 @@ export class Hud {
   private readonly deathTint: HTMLElement;
   private crosshairTurns = 0;
   private wasCoolingDown = false;
+  // Mot du chant actuellement affiché : on n'écrit dans le DOM que s'il change.
+  private chantWord = "";
   private current: HudMessage = "none";
 
   constructor(root: HTMLElement, debugEnabled: boolean) {
@@ -30,6 +32,8 @@ export class Hud {
   show(message: HudMessage): void {
     if (message === this.current && message !== "replay") return;
     this.current = message;
+    // Le texte est réécrit ci-dessous : le prochain chant doit repartir de zéro.
+    this.chantWord = "";
     this.deathTint.classList.toggle("on", message === "dead");
     this.crosshair.hidden = message !== "none";
     if (message === "none" || message === "replay") {
@@ -44,14 +48,17 @@ export class Hud {
   // « AGENT » puis « HOT », en alternance toutes les 0,5 s de replay.
   chant(playhead: number): void {
     const word = Math.floor(playhead / 0.5) % 2 === 0 ? "AGENT" : "HOT";
-    if (this.message.textContent !== word) this.message.textContent = word;
+    if (word === this.chantWord) return;
+    this.chantWord = word;
+    this.message.textContent = word;
     this.message.classList.add("chant");
   }
 
   // Le réticule fait un demi-tour quand une balle est chambrée (fin du temps de recharge).
-  updateCrosshair(cooldown: number): void {
+  // Chargeur vide ou mains vides : rien n'est chambré, le réticule ne tourne pas.
+  updateCrosshair(cooldown: number, ammo: number): void {
     const cooling = cooldown > 0;
-    if (this.wasCoolingDown && !cooling) {
+    if (this.wasCoolingDown && !cooling && ammo > 0) {
       this.crosshairTurns++;
       this.crosshair.style.transform = `translate(-50%, -50%) rotate(${this.crosshairTurns * 180}deg)`;
     }

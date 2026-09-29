@@ -6,6 +6,8 @@ import { type PlayerInput, emptyInput } from "../sim/game";
 const BASE_SENSITIVITY = 0.0022;
 
 export class InputController {
+  // Horodatage (ms, même horloge que performance.now) du dernier appui de relance : R ou clic gauche.
+  lastRestartInputTime = -1;
   sensitivity = 1;
   invertY = false;
   private readonly held = new Set<string>();
@@ -20,7 +22,10 @@ export class InputController {
   constructor(canvas: HTMLElement) {
     this.canvas = canvas;
     window.addEventListener("keydown", (e) => {
-      if (!this.held.has(e.code)) this.pressed.add(e.code);
+      if (!this.held.has(e.code)) {
+        this.pressed.add(e.code);
+        if (e.code === "KeyR") this.lastRestartInputTime = e.timeStamp;
+      }
       this.held.add(e.code);
     });
     window.addEventListener("keyup", (e) => this.held.delete(e.code));
@@ -32,7 +37,10 @@ export class InputController {
     });
     document.addEventListener("mousedown", (e) => {
       if (!this.locked) return;
-      if (e.button === 0) this.firePressed = true;
+      if (e.button === 0) {
+        this.firePressed = true;
+        this.lastRestartInputTime = e.timeStamp;
+      }
       if (e.button === 2) this.throwPressed = true;
     });
     document.addEventListener("contextmenu", (e) => e.preventDefault());

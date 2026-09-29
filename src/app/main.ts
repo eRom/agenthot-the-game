@@ -12,6 +12,9 @@ import { InputController } from "./input";
 
 type Mode = "start" | "playing" | "paused" | "dead" | "replay" | "won";
 
+// Après la mort, on ignore R et le clic pendant 0,3 s réelle : un clic de tir en rafale ne doit pas sauter l'écran.
+const DEAD_INPUT_GUARD_MS = 300;
+
 const params = new URLSearchParams(window.location.search);
 const debug = params.has("debug");
 
@@ -27,7 +30,8 @@ const hud = new Hud(document.querySelector<HTMLElement>("#hud")!, debug);
 
 let mode: Mode = "start";
 let last = performance.now();
-let restartStartedAt = -1;
+let restartPending = false;
+let deadSince = 0;
 let fpsFrames = 0;
 let fpsTime = 0;
 let fps = 0;
@@ -43,6 +47,7 @@ function startRun(): void {
 
 function setMode(next: Mode): void {
   mode = next;
+  if (next === "dead") deadSince = performance.now();
   // Écrans de fin : on oublie les appuis du jeu (saut, R, clic de tir) pour ne pas sauter l'écran.
   if (next === "dead" || next === "replay" || next === "won") input.clear();
   hud.show(next === "playing" ? "none" : next);
@@ -77,10 +82,10 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
 
-  // Sonde AC-6 : la relance est mesurée à l'image suivante, quand la précédente est rendue.
-  if (restartStartedAt >= 0) {
-    if (debug) console.info(`[agenthot] restart ${(now - restartStartedAt).toFixed(1)} ms`);
-    restartStartedAt = -1;
+  // Sonde AC-6 : mesurée de l'appui (R ou clic) à l'image qui suit la relance, quand la précédente est rendue.
+  if (restartPending) {
+    if (debug) console.info(`[agenthot] restart ${(performance.now() - input.lastRestartInputTime).toFixed(1)} ms`);
+    restartPending = false;
   }
 
   if (mode === "playing") {
@@ -88,18 +93,23 @@ renderer.setAnimationLoop(() => {
     writeGameView(game, view);
     recorder.recordEvents(game.events);
     recorder.capture(game.simTime, view, game.status !== "playing");
-    hud.updateCrosshair(view.playerCooldown);
+    hud.updateCrosshair(view.playerCooldown, view.playerAmmo);
     world.update(view);
     if (game.status === "dead") setMode("dead");
     if (game.status === "won") {
+      // Preuve AC-7 : la durée rejouée doit coller au temps de simulation écoulé.
+      if (debug) console.info(`[agenthot] replay sim ${game.simTime.toFixed(2)} s vs duration ${replay.duration.toFixed(2)} s`);
       replay.restart();
       setMode("replay");
     }
   } else if (mode === "dead" || mode === "won") {
     // Mort : R ou un clic relance (spec 4.4). Victoire : R seulement, le clic est trop facile à faire par erreur.
     const clicked = input.consumeFire() && mode === "dead";
-    if (input.consumePress("KeyR") || clicked) {
-      restartStartedAt = now;
+    const pressedR = input.consumePress("KeyR");
+    // Pendant la garde, R et le clic sont écartés (consommés ci-dessus), pas mis en attente.
+    const guarded = mode === "dead" && now - deadSince < DEAD_INPUT_GUARD_MS;
+    if (!guarded && (pressedR || clicked)) {
+      restartPending = true;
       startRun();
       // Sans verrou (Échap sur l'écran de fin), on le redemande et on attend qu'il revienne.
       if (input.locked) setMode("playing");
