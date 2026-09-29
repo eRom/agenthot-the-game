@@ -19,6 +19,9 @@ export class GameAudio {
   private readonly gameMusic: MusicTrack;
   private readonly replayMusic: MusicTrack;
   private timeScale = 1;
+  // Vrai si c'est nous qui avons suspendu le contexte (onglet caché) : on ne reprend que dans ce cas,
+  // jamais un contexte que le premier geste n'a pas encore débloqué.
+  private suspendedByHidden = false;
 
   constructor() {
     this.drone = startDrone(this.engine, this.engine.sfxIn);
@@ -42,6 +45,20 @@ export class GameAudio {
 
   unlock(): void {
     this.engine.unlock();
+  }
+
+  // Onglet caché : la boucle d'animation s'arrête, donc rien ne gèle plus la musique du replay (ni aucune
+  // source en boucle). On suspend tout le contexte, et on le reprend au retour, seulement s'il tournait.
+  setHidden(hidden: boolean): void {
+    const ctx = this.engine.ctx;
+    if (hidden) {
+      if (ctx.state !== "running") return;
+      this.suspendedByHidden = true;
+      void ctx.suspend();
+    } else if (this.suspendedByHidden) {
+      this.suspendedByHidden = false;
+      void ctx.resume();
+    }
   }
 
   // Une image : l'auditeur suit la caméra, les filtres suivent le temps, les événements sonnent.

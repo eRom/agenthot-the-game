@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { LYRIA, audioExtension, canAfford, findAudio, spentUsd, withoutAudioData } from "../scripts/lyria";
+import { LYRIA, audioExtension, canAfford, findAudio, parseArgs, spentUsd, withoutAudioData } from "../scripts/lyria";
 
 const LONG = "A".repeat(1000);
 
@@ -49,9 +49,42 @@ describe("génération musicale : lecture de la réponse", () => {
     expect(sample).toEqual({ steps: [{ content: [{ data: "<1000 base64 chars>", mime_type: "audio/mpeg", sample_rate: 44100 }] }] });
   });
 
+  test("un long texte est élidé quel que soit le nom du champ, un texte court reste", () => {
+    const sample = withoutAudioData({ result: { audio_bytes: "B".repeat(2000), note: "ok" } });
+    expect(sample).toEqual({ result: { audio_bytes: "<2000 base64 chars>", note: "ok" } });
+  });
+
   test("extension de fichier selon le type MIME", () => {
     expect(audioExtension("audio/mpeg")).toBe("mp3");
     expect(audioExtension("audio/wav")).toBe("wav");
     expect(audioExtension("audio/ogg")).toBe("ogg");
+  });
+});
+
+describe("génération musicale : arguments (échec fermé, aucun appel payant par accident)", () => {
+  const tracks = { game: "g", replay: "r" };
+
+  test("une piste seule ou avec --dry-run est acceptée", () => {
+    expect(parseArgs(["replay"], tracks)).toEqual({ ok: true, track: "replay", dryRun: false });
+    expect(parseArgs(["game", "--dry-run"], tracks)).toEqual({ ok: true, track: "game", dryRun: true });
+  });
+
+  test("un drapeau inconnu ou mal orthographié est refusé", () => {
+    for (const flag of ["--dryrun", "-n", "--dry-run=true", "--DRY-RUN", ""]) {
+      expect(parseArgs(["replay", flag], tracks).ok).toBe(false);
+    }
+  });
+
+  test("un argument en trop est refusé", () => {
+    expect(parseArgs(["replay", "--dry-run", "x"], tracks).ok).toBe(false);
+    expect(parseArgs(["replay", "--dry-run", "--dry-run"], tracks).ok).toBe(false);
+  });
+
+  test("une piste absente, inconnue ou héritée du prototype est refusée", () => {
+    expect(parseArgs([], tracks).ok).toBe(false);
+    expect(parseArgs(["menu"], tracks).ok).toBe(false);
+    for (const name of ["toString", "constructor", "__proto__", "hasOwnProperty"]) {
+      expect(parseArgs([name], tracks).ok).toBe(false);
+    }
   });
 });

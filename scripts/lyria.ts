@@ -66,15 +66,30 @@ export function findAudio(node: unknown): FoundAudio | null {
 }
 
 // Copie de la réponse où chaque long champ base64 est remplacé par sa longueur : c'est l'échantillon
-// réel gardé dans assets/ pour la suite (la réponse brute pèse plusieurs Mo).
-export function withoutAudioData(node: unknown): unknown {
-  if (Array.isArray(node)) return node.map(withoutAudioData);
+// réel gardé dans assets/ pour la suite (la réponse brute pèse plusieurs Mo). Le champ `data` est
+// élidé dès 257 caractères ; tout autre champ texte l'est à partir de 1000, quel que soit son nom,
+// pour qu'un champ audio inattendu ne finisse jamais versionné.
+export function withoutAudioData(node: unknown, key = ""): unknown {
+  if (Array.isArray(node)) return node.map((item) => withoutAudioData(item));
+  if (typeof node === "string") {
+    return node.length >= 1000 || (key === "data" && node.length > 256) ? `<${node.length} base64 chars>` : node;
+  }
   if (typeof node !== "object" || node === null) return node;
   const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(node)) {
-    out[key] = key === "data" && typeof value === "string" && value.length > 256 ? `<${value.length} base64 chars>` : withoutAudioData(value);
-  }
+  for (const [k, value] of Object.entries(node)) out[k] = withoutAudioData(value, k);
   return out;
+}
+
+export type ParsedArgs = { ok: true; track: string; dryRun: boolean } | { ok: false; error: string };
+
+// Arguments du script, en échec fermé : un drapeau inconnu ou un argument en trop ne doit jamais tomber
+// sur le chemin payant. Seuls `<piste>` et `<piste> --dry-run` sont acceptés.
+export function parseArgs(args: readonly string[], tracks: Record<string, string>): ParsedArgs {
+  const [track, flag, ...extra] = args;
+  if (track === undefined || !Object.hasOwn(tracks, track)) return { ok: false, error: `unknown or missing track: ${track ?? "(none)"}` };
+  if (extra.length > 0) return { ok: false, error: `unexpected extra arguments: ${extra.join(" ")}` };
+  if (flag !== undefined && flag !== "--dry-run") return { ok: false, error: `unknown flag: ${flag}` };
+  return { ok: true, track, dryRun: flag === "--dry-run" };
 }
 
 // Extension de fichier pour un type MIME audio.

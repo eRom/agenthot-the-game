@@ -80,9 +80,11 @@ document.addEventListener("pointerlockchange", () => {
   }
 });
 // Onglet en arrière-plan : la boucle d'animation s'arrête et avec elle le gel du son, qui vit dans cette
-// boucle. Sans ceci la musique et le bourdon continueraient à pleine vitesse pendant que l'image est figée.
+// boucle. On fige les filtres (freeze) puis on suspend tout le contexte, sinon la musique du replay et le
+// bourdon continueraient pendant que l'image est figée. Au retour, le contexte reprend s'il tournait.
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) audio.freeze(TIME.min);
+  audio.setHidden(document.hidden);
 });
 window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
