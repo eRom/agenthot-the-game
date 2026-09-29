@@ -2,16 +2,42 @@
 import type { EventQueue } from "../sim/events";
 import type { WorldView } from "../sim/view";
 import { AudioEngine } from "./audio-engine";
+import { MusicTrack } from "./music";
 import { playDryFire, playImpact, playNearMiss, playShatter, playShot, startDrone } from "./sfx";
-import { AUDIO_TIME, droneGain, sfxRate } from "./time-coupling";
+import { AUDIO_TIME, droneGain, musicRate, sfxRate } from "./time-coupling";
+
+// Morceaux Lyria (tâche 8 du plan 2), servis depuis public/audio/.
+const MUSIC = {
+  game: "/audio/game.mp3",
+  replay: "/audio/replay.mp3",
+} as const;
 
 export class GameAudio {
   readonly engine = new AudioEngine();
   private readonly drone: GainNode;
+  // Musique en jeu : filtrée et ralentie avec le temps. Musique du replay : à vitesse réelle, non filtrée.
+  private readonly gameMusic: MusicTrack;
+  private readonly replayMusic: MusicTrack;
   private timeScale = 1;
 
   constructor() {
     this.drone = startDrone(this.engine, this.engine.sfxIn);
+    this.gameMusic = new MusicTrack(this.engine.ctx, this.engine.musicIn, MUSIC.game);
+    this.replayMusic = new MusicTrack(this.engine.ctx, this.engine.cleanMusicIn, MUSIC.replay);
+  }
+
+  loadMusic(): Promise<void> {
+    return Promise.all([this.gameMusic.load(), this.replayMusic.load()]).then(() => undefined);
+  }
+
+  playGameMusic(): void {
+    this.replayMusic.stop();
+    this.gameMusic.play();
+  }
+
+  playReplayMusic(): void {
+    this.gameMusic.stop();
+    this.replayMusic.play();
   }
 
   unlock(): void {
@@ -25,6 +51,7 @@ export class GameAudio {
     this.timeScale = view.timeScale;
     engine.setListener(cam.pos.x, cam.pos.y, cam.pos.z, cam.yaw, cam.pitch);
     engine.setTimeScale(view.timeScale);
+    this.gameMusic.setRate(musicRate(view.timeScale));
     this.drone.gain.setTargetAtTime(droneGain(view.timeScale), engine.ctx.currentTime, AUDIO_TIME.rampTime);
     this.play(events, view);
   }
@@ -33,6 +60,7 @@ export class GameAudio {
   freeze(timeScale: number): void {
     this.timeScale = timeScale;
     this.engine.setTimeScale(timeScale);
+    this.gameMusic.setRate(musicRate(timeScale));
     this.drone.gain.setTargetAtTime(droneGain(timeScale), this.engine.ctx.currentTime, AUDIO_TIME.rampTime);
   }
 

@@ -33,6 +33,7 @@ const input = new InputController(renderer.domElement);
 const hud = new Hud(document.querySelector<HTMLElement>("#hud")!, debug);
 // Contexte audio créé tout de suite, suspendu jusqu'au premier geste (clic ou touche).
 const audio = new GameAudio();
+void audio.loadMusic();
 
 let mode: Mode = "start";
 let last = performance.now();
@@ -49,6 +50,7 @@ function startRun(): void {
   recorder.capture(game.simTime, view, true);
   input.clear();
   hud.resetCrosshair();
+  audio.playGameMusic();
 }
 
 function setMode(next: Mode): void {
@@ -131,6 +133,7 @@ renderer.setAnimationLoop(() => {
       // Preuve AC-7 : la durée rejouée doit coller au temps de simulation écoulé.
       if (debug) console.info(`[agenthot] replay sim ${game.simTime.toFixed(2)} s vs duration ${replay.duration.toFixed(2)} s`);
       replay.restart();
+      audio.playReplayMusic();
       setMode("replay");
     }
   } else if (mode === "dead" || mode === "won") {
@@ -153,6 +156,7 @@ renderer.setAnimationLoop(() => {
       world.update(view);
     } else if (mode === "won" && input.consumePress("Space")) {
       replay.restart();
+      audio.playReplayMusic();
       setMode("replay");
     }
   } else if (mode === "replay") {
