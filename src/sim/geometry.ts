@@ -15,18 +15,31 @@ export function aabb(minX: number, minY: number, minZ: number, maxX: number, max
 // Renvoie t dans [0, 1], ou -1 sans contact.
 let slabMin = 0;
 let slabMax = 1;
+let slabAxis = -1;
+let slabSign = 0;
+
+// Face touchée par le dernier balayage réussi : axe (0 = x, 1 = y, 2 = z) et signe de la normale sortante
+// (+1 : face haute de l'axe, -1 : face basse). Axe -1 : le départ était déjà dans la boîte gonflée ou sur sa
+// surface, sans face d'entrée. Valeur d'un module, relue juste après l'appel : aucune allocation.
+export const sweepFace = { axis: -1, sign: 0 };
 
 // Restreint [slabMin, slabMax] sur un axe. Renvoie faux si l'intervalle devient vide.
-function clipSlab(origin: number, dir: number, lo: number, hi: number): boolean {
+function clipSlab(axis: number, origin: number, dir: number, lo: number, hi: number): boolean {
   if (Math.abs(dir) < 1e-12) return origin >= lo && origin <= hi;
   let t1 = (lo - origin) / dir;
   let t2 = (hi - origin) / dir;
+  // Avançant vers +axe, on entre par la face basse (normale -axe) ; vers -axe, par la face haute.
+  const entrySign = dir > 0 ? -1 : 1;
   if (t1 > t2) {
     const tmp = t1;
     t1 = t2;
     t2 = tmp;
   }
-  if (t1 > slabMin) slabMin = t1;
+  if (t1 > slabMin) {
+    slabMin = t1;
+    slabAxis = axis;
+    slabSign = entrySign;
+  }
   if (t2 < slabMax) slabMax = t2;
   return slabMin <= slabMax;
 }
@@ -34,9 +47,13 @@ function clipSlab(origin: number, dir: number, lo: number, hi: number): boolean 
 export function sweepSphereAabb(p0: Vec3, p1: Vec3, radius: number, box: Aabb): number {
   slabMin = 0;
   slabMax = 1;
-  if (!clipSlab(p0.x, p1.x - p0.x, box.min.x - radius, box.max.x + radius)) return -1;
-  if (!clipSlab(p0.y, p1.y - p0.y, box.min.y - radius, box.max.y + radius)) return -1;
-  if (!clipSlab(p0.z, p1.z - p0.z, box.min.z - radius, box.max.z + radius)) return -1;
+  slabAxis = -1;
+  slabSign = 0;
+  if (!clipSlab(0, p0.x, p1.x - p0.x, box.min.x - radius, box.max.x + radius)) return -1;
+  if (!clipSlab(1, p0.y, p1.y - p0.y, box.min.y - radius, box.max.y + radius)) return -1;
+  if (!clipSlab(2, p0.z, p1.z - p0.z, box.min.z - radius, box.max.z + radius)) return -1;
+  sweepFace.axis = slabAxis;
+  sweepFace.sign = slabSign;
   return slabMin;
 }
 
