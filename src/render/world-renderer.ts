@@ -1,22 +1,23 @@
 // Rendu « gris » : dessine une WorldView (jeu ou replay) sans jamais modifier la simulation.
 import * as THREE from "three/webgpu";
 import type { RoomDefinition } from "../rooms/types";
-import { ENEMY, POOLS } from "../sim/entities";
+import { PLAYER_ID, POOLS } from "../sim/entities";
 import { SHATTER } from "../sim/shatter";
 import type { WorldView } from "../sim/view";
 import { BULLET_LOOK, headScale, trailLength } from "./bullet-look";
+import { EnemyBodies } from "./enemy-bodies";
 import { PALETTE } from "./palette";
 
-const MUZZLE_HEIGHT = ENEMY.muzzleHeight;
 
 export class WorldRenderer {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   private readonly racks: THREE.InstancedMesh;
   private readonly rackMatrices: THREE.Matrix4[] = [];
-  private readonly enemies: THREE.Mesh[] = [];
+  private readonly bodies: EnemyBodies;
   private readonly aimLines: THREE.Line[] = [];
-  private readonly weapons: THREE.Mesh[] = [];
+  // Armes du monde (au sol, en vol, tenues par un ennemi) : un seul InstancedMesh.
+  private readonly weapons: THREE.InstancedMesh;
   private readonly viewModel: THREE.Mesh;
   private readonly bulletHeads: THREE.InstancedMesh;
   private readonly bulletTrails: THREE.InstancedMesh;
@@ -30,6 +31,8 @@ export class WorldRenderer {
   private readonly axis = new THREE.Vector3();
   private readonly up = new THREE.Vector3(0, 1, 0);
   private readonly dir = new THREE.Vector3();
+  private readonly euler = new THREE.Euler(0, 0, 0, "YXZ");
+  private readonly one = new THREE.Vector3(1, 1, 1);
   private readonly hidden = new THREE.Matrix4().makeScale(0, 0, 0);
   private readonly colors = {
     threat: new THREE.Color(PALETTE.threat),
@@ -85,13 +88,10 @@ export class WorldRenderer {
       emissiveIntensity: 0.25,
       roughness: 0.5,
     });
-    const enemyGeo = new THREE.CapsuleGeometry(ENEMY.radius, ENEMY.height - ENEMY.radius * 2, 4, 8);
+    this.bodies = new EnemyBodies(threatMat);
+    for (const mesh of this.bodies.meshes) this.scene.add(mesh);
     const aimMat = new THREE.LineBasicMaterial({ color: PALETTE.threatHot, transparent: true });
     for (let i = 0; i < POOLS.enemies; i++) {
-      const mesh = new THREE.Mesh(enemyGeo, threatMat);
-      mesh.visible = false;
-      this.enemies.push(mesh);
-      this.scene.add(mesh);
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(6), 3));
       const line = new THREE.Line(lineGeo, aimMat.clone());
@@ -102,13 +102,10 @@ export class WorldRenderer {
     }
 
     const inkMat = new THREE.MeshStandardMaterial({ color: PALETTE.ink, roughness: 0.6 });
-    const weaponGeo = new THREE.BoxGeometry(0.08, 0.15, 0.3);
-    for (let i = 0; i < POOLS.weapons; i++) {
-      const mesh = new THREE.Mesh(weaponGeo, inkMat);
-      mesh.visible = false;
-      this.weapons.push(mesh);
-      this.scene.add(mesh);
-    }
+    this.weapons = new THREE.InstancedMesh(new THREE.BoxGeometry(0.08, 0.15, 0.3), inkMat, POOLS.weapons);
+    this.weapons.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.weapons.frustumCulled = false;
+    this.scene.add(this.weapons);
     // Arme en main : plus petite et plus loin que les armes du monde, pour ne pas boucher la vue.
     this.viewModel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.24), inkMat);
     this.viewModel.position.set(0.2, -0.2, -0.55);
@@ -158,34 +155,42 @@ export class WorldRenderer {
     }
     this.racks.instanceMatrix.needsUpdate = true;
 
+    this.bodies.update(view.enemies);
     for (let i = 0; i < POOLS.enemies; i++) {
       const e = view.enemies[i]!;
-      const mesh = this.enemies[i]!;
       const line = this.aimLines[i]!;
-      mesh.visible = e.visible;
       line.visible = e.visible && e.state === "aim";
-      if (!e.visible) continue;
-      mesh.position.set(e.pos.x, e.pos.y + ENEMY.height / 2, e.pos.z);
-      mesh.rotation.y = e.yaw;
-      // Vacillement : l'ennemi penche en arrière.
-      mesh.rotation.x = e.state === "stagger" ? 0.35 : 0;
-      if (line.visible) {
-        const attr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
-        attr.setXYZ(0, e.pos.x, e.pos.y + MUZZLE_HEIGHT, e.pos.z);
-        attr.setXYZ(1, e.aimPoint.x, e.aimPoint.y, e.aimPoint.z);
-        attr.needsUpdate = true;
-        (line.material as THREE.LineBasicMaterial).opacity = 0.25 + 0.75 * e.stateProgress;
-      }
+      if (!line.visible) continue;
+      // Le trait de visée part de la main qui tient l'arme.
+      const hand = this.bodies.pose(i).hand;
+      const attr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
+      attr.setXYZ(0, hand.x, hand.y, hand.z);
+      attr.setXYZ(1, e.aimPoint.x, e.aimPoint.y, e.aimPoint.z);
+      attr.needsUpdate = true;
+      (line.material as THREE.LineBasicMaterial).opacity = 0.25 + 0.75 * e.stateProgress;
     }
 
     for (let i = 0; i < POOLS.weapons; i++) {
       const w = view.weapons[i]!;
-      const mesh = this.weapons[i]!;
-      mesh.visible = w.visible && !w.heldByPlayer;
-      if (!mesh.visible) continue;
-      mesh.position.set(w.pos.x, w.pos.y, w.pos.z);
-      mesh.rotation.set(w.angle, 0, w.angle * 0.5);
+      if (!w.visible || w.heldByPlayer) {
+        this.weapons.setMatrixAt(i, this.hidden);
+        continue;
+      }
+      const holder = w.holderId > PLAYER_ID ? w.holderId - 1 : -1;
+      if (holder >= 0 && view.enemies[holder]!.visible) {
+        // Tenue par un ennemi : dans sa main, dans l'axe de l'avant-bras.
+        const pose = this.bodies.pose(holder);
+        this.p.set(pose.hand.x, pose.hand.y, pose.hand.z);
+        this.euler.set(pose.handPitch - Math.PI / 2, pose.yaw, 0, "YXZ");
+      } else {
+        this.p.set(w.pos.x, w.pos.y, w.pos.z);
+        this.euler.set(w.angle, 0, w.angle * 0.5, "YXZ");
+      }
+      this.q.setFromEuler(this.euler);
+      this.m.compose(this.p, this.q, this.one);
+      this.weapons.setMatrixAt(i, this.m);
     }
+    this.weapons.instanceMatrix.needsUpdate = true;
 
     for (let i = 0; i < POOLS.bullets; i++) {
       const b = view.bullets[i]!;

@@ -5,7 +5,7 @@ import { ReplayRecorder } from "../replay/recorder";
 import { createRenderer } from "../render/create-renderer";
 import { WorldRenderer } from "../render/world-renderer";
 import { room01 } from "../rooms/room-01-datacenter";
-import { Game } from "../sim/game";
+import { Game, type PlayerInput, emptyInput } from "../sim/game";
 import { createWorldView, writeGameView } from "../sim/view";
 import { Hud } from "./hud";
 import { InputController } from "./input";
@@ -75,6 +75,24 @@ window.addEventListener("resize", () => {
 writeGameView(game, view);
 world.update(view);
 setMode("start");
+
+// Sonde de vérification, en debug seulement : fait avancer la partie sans pointer lock (captures, AC-8).
+if (debug) {
+  (window as unknown as { agenthot: unknown }).agenthot = {
+    renderer,
+    game,
+    advance(seconds: number, overrides: Partial<PlayerInput> = {}): void {
+      const frameInput = { ...emptyInput(), ...overrides };
+      for (let t = 0; t < seconds; t += 1 / 60) {
+        game.step(1 / 60, frameInput);
+        frameInput.fire = false;
+        frameInput.throw = false;
+      }
+      writeGameView(game, view);
+      world.update(view);
+    },
+  };
+}
 
 renderer.setAnimationLoop(() => {
   const now = performance.now();
