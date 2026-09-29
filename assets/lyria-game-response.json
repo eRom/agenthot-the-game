@@ -1,0 +1,51 @@
+{
+  "id": "v1_ChdfTGk3YXQtLUxKTFl2ZElQbXZxQzRBSRIXX0xpN2F0LS1MSkxZdmRJUG12cUM0QUk",
+  "status": "completed",
+  "usage": {
+    "total_tokens": 928,
+    "total_input_tokens": 171,
+    "input_tokens_by_modality": [
+      {
+        "modality": "text",
+        "tokens": 171
+      }
+    ],
+    "total_cached_tokens": 0,
+    "total_output_tokens": 757,
+    "total_tool_use_tokens": 0,
+    "total_thought_tokens": 0,
+    "raw_prompt_token": 8191,
+    "model_invocation_token_counts": [
+      {}
+    ],
+    "non_grounding_model_invocation_token_counts": [
+      {}
+    ]
+  },
+  "created": "2026-09-29T13:11:24Z",
+  "updated": "2026-09-29T13:11:24Z",
+  "service_tier": "standard",
+  "steps": [
+    {
+      "content": [
+        {
+          "text": "[[A0]]\n[[B1]]\n[[C2]]",
+          "type": "text"
+        }
+      ],
+      "type": "model_output"
+    },
+    {
+      "content": [
+        {
+          "data": "<2943012 base64 chars>",
+          "mime_type": "audio/mpeg",
+          "type": "audio"
+        }
+      ],
+      "type": "model_output"
+    }
+  ],
+  "object": "interaction",
+  "model": "lyria-3.5"
+}
