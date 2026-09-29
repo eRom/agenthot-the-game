@@ -1,7 +1,7 @@
 // Lecteur du replay : relit les échantillons à vitesse réelle (1 s de simulation = 1 s à l'écran).
 import type { RoomDefinition } from "../rooms/types";
-import { ENEMY, PLAYER, POOLS } from "../sim/entities";
-import { shatterSeed } from "../sim/events";
+import { ENEMY, NO_ID, PLAYER, POOLS } from "../sim/entities";
+import { EventQueue, shatterSeed } from "../sim/events";
 import { ShatterSystem } from "../sim/shatter";
 import { set, vec3 } from "../sim/vec3";
 import { ENEMY_STATE_CODES, type WorldView, createWorldView } from "../sim/view";
@@ -13,6 +13,8 @@ const eventVel = vec3();
 export class ReplayPlayer {
   readonly shatter = new ShatterSystem();
   readonly view: WorldView;
+  // Événements franchis par la dernière mise à jour, lus par l'audio comme ceux du jeu.
+  readonly events = new EventQueue(64);
   playhead = 0;
   private cursor = 0;
   private nextEvent = 0;
@@ -41,16 +43,20 @@ export class ReplayPlayer {
     this.cursor = 0;
     this.nextEvent = 0;
     this.startTime = this.recorder.count > 0 ? this.recorder.timeOf(0) : 0;
+    this.events.clear();
     this.shatter.reset();
     this.view.boxEnabled.fill(true);
     // Les événements d'avant le premier échantillon conservé ne restaurent que l'état du décor (tampon plein).
     this.applyEventsUntil(this.startTime, false);
+    // Ce qui précède la fenêtre ne se rejoue pas au son.
+    this.events.clear();
     this.writeView();
   }
 
   // Avance le replay de dtReal secondes réelles.
   update(dtReal: number): void {
     this.playhead = Math.min(this.duration, this.playhead + dtReal);
+    this.events.clear();
     this.applyEventsUntil(this.startTime + this.playhead, true);
     this.shatter.step(dtReal);
     this.writeView();
@@ -70,10 +76,11 @@ export class ReplayPlayer {
       set(eventVel, r.events[o + 6]!, r.events[o + 7]!, r.events[o + 8]!);
       // Une mort antérieure à la fenêtre gardée ne laisse rien à restaurer dans le décor.
       const spawn = live || t >= this.startTime;
+      this.events.push(type, t, NO_ID, targetId, eventPos, eventVel);
       if (type === "rackBurst") {
         this.view.boxEnabled[targetId] = false;
         if (spawn) this.shatter.spawnBox(this.room.boxes[targetId]!, shatterSeed(1000 + targetId, t));
-      } else if (spawn) {
+      } else if (spawn && (type === "enemyKilled" || type === "playerKilled")) {
         const player = type === "playerKilled";
         const height = player ? PLAYER.height : ENEMY.height;
         const radius = player ? PLAYER.radius : ENEMY.radius;

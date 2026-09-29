@@ -183,6 +183,7 @@ export class Game {
       b.active = true;
       b.ownerId = ownerId;
       b.life = 0;
+      b.nearMissed = false;
       // Départ exact à l'origine : le tireur est exclu de ses balles par ownerId, et rien n'échappe au balayage.
       copy(b.pos, origin);
       copy(b.origin, origin);

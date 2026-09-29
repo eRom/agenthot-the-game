@@ -1,11 +1,14 @@
 // Balles (détection de collision continue) et armes en vol (spec sections 5.3 et 5.4).
-import { BULLET, ENEMY, NO_ID, PLAYER, PLAYER_ID, WEAPON, isAlive } from "./entities";
+import { BULLET, type Bullet, ENEMY, NO_ID, PLAYER, PLAYER_ID, WEAPON, isAlive } from "./entities";
 import type { Game } from "./game";
-import { sweepSphereAabb, sweepSphereCapsule } from "./geometry";
-import { addScaled, copy, lerp, set, vec3 } from "./vec3";
+import { closestSegmentSegment, sweepSphereAabb, sweepSphereCapsule } from "./geometry";
+import { playerEye } from "./player-system";
+import { type Vec3, addScaled, copy, lerp, set, vec3 } from "./vec3";
 
 const next = vec3();
 const hit = vec3();
+const head = vec3();
+const passPoint = vec3();
 
 const HIT_NONE = 0;
 const HIT_BOX = 1;
@@ -54,12 +57,12 @@ export function updateBullets(game: Game, dt: number): void {
         kind = HIT_PLAYER;
       }
     }
-    if (kind === HIT_NONE) {
-      copy(b.pos, next);
-      continue;
-    }
-    lerp(hit, b.pos, next, bestT);
-    copy(b.pos, hit);
+    // `next` devient la fin réelle du trajet de l'image : le point d'impact s'il y en a un.
+    if (kind !== HIT_NONE) lerp(next, b.pos, next, bestT);
+    if (kind !== HIT_PLAYER) checkNearMiss(game, b, next);
+    copy(hit, next);
+    copy(b.pos, next);
+    if (kind === HIT_NONE) continue;
     b.active = false;
     if (kind === HIT_BOX) {
       game.events.push("bulletImpact", game.simTime, b.ownerId, targetIndex, hit, b.vel);
@@ -69,6 +72,18 @@ export function updateBullets(game: Game, dt: number): void {
       game.killPlayer(b.vel);
     }
   }
+}
+
+// Frôlement : émis quand la balle dépasse le point où elle passe au plus près de la tête,
+// à moins de nearMissRadius. Une balle qui touche le joueur s'arrête avant ce point : pas de frôlement.
+function checkNearMiss(game: Game, b: Bullet, end: Vec3): void {
+  if (b.nearMissed || b.ownerId === PLAYER_ID || !game.player.alive) return;
+  playerEye(game, head);
+  const c = closestSegmentSegment(b.pos, end, head, head);
+  if (c.s >= 1 || c.distSq > BULLET.nearMissRadius * BULLET.nearMissRadius) return;
+  b.nearMissed = true;
+  lerp(passPoint, b.pos, end, c.s);
+  game.events.push("nearMiss", game.simTime, b.ownerId, PLAYER_ID, passPoint, b.vel);
 }
 
 export function updateWeapons(game: Game, dt: number): void {

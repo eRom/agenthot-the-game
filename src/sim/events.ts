@@ -6,6 +6,7 @@ export type GameEventType =
   | "dryFire"
   | "punch"
   | "bulletImpact"
+  | "nearMiss"
   | "enemyKilled"
   | "enemyStaggered"
   | "enemySpawned"

@@ -65,6 +65,8 @@ export const BULLET = {
   speed: 45,
   radius: 0.04,
   maxLife: 4,
+  // Frôlement : une balle ennemie passe à moins de cette distance de la tête sans toucher (spec 7.3).
+  nearMissRadius: 0.6,
 } as const;
 
 export const POOLS = {
@@ -130,6 +132,8 @@ export interface Bullet {
   // Point de départ : le rendu y arrête la traînée, pour qu'elle ne traverse pas le tireur.
   origin: Vec3;
   life: number;
+  // Vrai une fois le frôlement émis : un seul par balle.
+  nearMissed: boolean;
 }
 
 export function createPlayer(): Player {
@@ -181,7 +185,7 @@ export function createWeapon(id: number): Weapon {
 }
 
 export function createBullet(): Bullet {
-  return { active: false, ownerId: NO_ID, pos: vec3(), vel: vec3(), origin: vec3(), life: 0 };
+  return { active: false, ownerId: NO_ID, pos: vec3(), vel: vec3(), origin: vec3(), life: 0, nearMissed: false };
 }
 
 // Direction du regard : lacet 0 = -Z, tangage positif = vers le haut.

@@ -7,7 +7,8 @@ export const REPLAY = {
   rateHz: 60,
   // 90 s de temps de simulation ; au-delà, on garde les 90 dernières secondes.
   capacity: 5400,
-  eventCapacity: 64,
+  // Environ 350 tirs ennemis en 90 s, plus leurs impacts et frôlements : 1024 laisse de la marge.
+  eventCapacity: 1024,
 } as const;
 
 // Disposition d'un échantillon dans le tableau plat. Chaque bloc se calcule à partir du précédent :
@@ -34,8 +35,15 @@ export const LAYOUT = {
   stride: MISC + 3,
 } as const;
 
-// Événements rejoués : ceux qui déclenchent des éclats ou changent le décor.
-export const RECORDED_EVENTS: readonly GameEventType[] = ["enemyKilled", "playerKilled", "rackBurst"];
+// Événements rejoués : éclats et décor (enemyKilled, playerKilled, rackBurst), plus les sons du replay.
+export const RECORDED_EVENTS: readonly GameEventType[] = [
+  "enemyKilled",
+  "playerKilled",
+  "rackBurst",
+  "shot",
+  "bulletImpact",
+  "nearMiss",
+];
 export const EVENT_STRIDE = 9; // time, typeIndex, targetId, x, y, z, vx, vy, vz
 
 export class ReplayRecorder {

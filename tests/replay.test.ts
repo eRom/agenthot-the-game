@@ -85,17 +85,18 @@ describe("replay (AC-7)", () => {
     expect(replay.view.boxEnabled[0]).toBe(false);
   });
 
-  test("au-delà de 64 événements, le replay garde les plus récents", () => {
+  test("au-delà de la capacité d'événements, le replay garde les plus récents", () => {
     const recorder = new ReplayRecorder();
     const queue = new EventQueue(4);
-    for (let t = 0; t < 70; t++) {
+    const total = REPLAY.eventCapacity + 6;
+    for (let t = 0; t < total; t++) {
       queue.clear();
       queue.push("enemyKilled", t, -1, 1, vec3(), vec3());
       recorder.recordEvents(queue);
     }
     expect(recorder.eventCount).toBe(REPLAY.eventCapacity);
     expect(recorder.events[0]).toBe(6);
-    expect(recorder.events[63 * EVENT_STRIDE]).toBe(69);
+    expect(recorder.events[(REPLAY.eventCapacity - 1) * EVENT_STRIDE]).toBe(total - 1);
   });
 
   test("l'enregistrement tient 60 échantillons par seconde de simulation", () => {
