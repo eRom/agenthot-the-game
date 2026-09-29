@@ -83,6 +83,22 @@ describe("éclats contre les boîtes du décor : cas de base (plan 2, correctif 
     expect(inside).toBe(false);
   });
 
+  // Tâche 9, M2 : au replay, un à-coup d'image donne un grand pas ; la fin du pas passait sous le sol, donc
+  // sous le bas d'une baie posée au sol, et l'éclat se figeait dans la baie.
+  test("pas de 0,1 s : un éclat qui plonge vers le pied d'une baie rebondit sur sa face et ne se fige pas dedans", () => {
+    const rack = aabb(0, 0, 0, 1, 2.2, 1);
+    const shatter = new ShatterSystem();
+    // Déjà rebondi une fois : le prochain contact avec le sol le fige.
+    const s = place(shatter, 0, vec3(-0.3, 0.3, 0.5), vec3(6, -8, 0));
+    s.bounced = true;
+    for (let i = 0; i < 30 && !s.resting; i++) {
+      shatter.step(0.1, [rack], [true]);
+      expect(insideBox(s, rack)).toBe(false);
+    }
+    expect(s.resting).toBe(true);
+    expect(s.pos.x).toBeLessThan(0);
+  });
+
   test("une boîte désactivée (baie explosée) n'arrête plus rien", () => {
     const shatter = new ShatterSystem();
     place(shatter, 0, vec3(0, 2, 0), vec3(8, 0, 0));
@@ -127,7 +143,8 @@ interface Outcome {
 }
 
 // Tue l'ennemi par un vrai tir (touche de tir, balle à 45 m/s), enregistre la partie, puis joue le replay.
-function shootRecordReplay(sc: Scenario): Outcome {
+// `still` : le joueur reste immobile après le tir (temps au ralenti), au lieu de marcher sur place.
+function shootRecordReplay(sc: Scenario, still = false): Outcome {
   const game = new Game(sceneRoom(sc));
   const enemy = game.enemies[0]!;
   const p = game.player;
@@ -143,9 +160,12 @@ function shootRecordReplay(sc: Scenario): Outcome {
   writeGameView(game, view);
   recorder.capture(game.simTime, view, true);
   let killedAt = -1;
-  for (let frame = 0; frame < 60 * 120; frame++) {
-    // Le joueur marche sur place pour que le temps s'écoule à vitesse normale.
-    game.step(FRAME, input({ fire: frame === 0, moveX: (frame >> 4) & 1 ? 1 : -1 }));
+  // Immobile, le temps coule à 3 % : il faut plus d'images réelles pour que les éclats retombent.
+  const maxFrames = still ? 60 * 1200 : 60 * 120;
+  for (let frame = 0; frame < maxFrames; frame++) {
+    // Le joueur marche sur place pour que le temps s'écoule à vitesse normale (sauf `still`).
+    const moveX = still ? 0 : (frame >> 4) & 1 ? 1 : -1;
+    game.step(FRAME, input({ fire: frame === 0, moveX }));
     writeGameView(game, view);
     recorder.recordEvents(game.events);
     recorder.capture(game.simTime, view, false);
@@ -172,28 +192,37 @@ function insideBox(s: Shard, box: Aabb): boolean {
   );
 }
 
+// Chaque éclat, en partie comme au replay, repose dans la salle, au-dessus du sol et hors des boîtes actives.
+function expectShardsInRoom({ game, replay }: Outcome): void {
+  for (const [shatter, enabled] of [
+    [game.shatter, game.boxEnabled],
+    [replay.shatter, replay.view.boxEnabled],
+  ] as const) {
+    const shards = activeShards(shatter);
+    expect(shards.length).toBe(SHATTER.shardsPerBody);
+    expect(shards.every((s) => s.resting)).toBe(true);
+    for (const s of shards) {
+      // Salle : x dans [-12, 12], z dans [-8, 8], au-dessus du sol.
+      expect(Math.abs(s.pos.x)).toBeLessThanOrEqual(12);
+      expect(Math.abs(s.pos.z)).toBeLessThanOrEqual(8);
+      expect(s.pos.y).toBeGreaterThanOrEqual(0);
+      game.room.boxes.forEach((box, i) => {
+        if (enabled[i]) expect(insideBox(s, box)).toBe(false);
+      });
+    }
+  }
+}
+
 describe("éclats dans la salle 1 réelle (plan 2, correctif 3)", () => {
+  // Tâche 9, M1 : sans plafond, 5 éclats sur 36 passaient par-dessus le mur de 6 m, derrière la passerelle.
+  test("l'ennemi de la passerelle tué depuis (−8 ; 0 ; −0,4), joueur immobile après le tir : aucun éclat hors de la salle", () => {
+    const sc: Scenario = { name: "passerelle, joueur immobile", enemy: vec3(-11, 3.5, -2), armed: true, player: vec3(-8, 0, -0.4) };
+    expectShardsInRoom(shootRecordReplay(sc, true));
+  });
+
   for (const sc of SCENARIOS) {
     test(`aucun éclat ne sort de la salle ni ne reste dans une boîte : ennemi tué ${sc.name}`, () => {
-      const { game, replay } = shootRecordReplay(sc);
-      // Dans la partie comme dans le replay.
-      for (const [shatter, enabled] of [
-        [game.shatter, game.boxEnabled],
-        [replay.shatter, replay.view.boxEnabled],
-      ] as const) {
-        const shards = activeShards(shatter);
-        expect(shards.length).toBe(SHATTER.shardsPerBody);
-        expect(shards.every((s) => s.resting)).toBe(true);
-        for (const s of shards) {
-          // Salle : x dans [-12, 12], z dans [-8, 8], au-dessus du sol.
-          expect(Math.abs(s.pos.x)).toBeLessThanOrEqual(12);
-          expect(Math.abs(s.pos.z)).toBeLessThanOrEqual(8);
-          expect(s.pos.y).toBeGreaterThanOrEqual(0);
-          game.room.boxes.forEach((box, i) => {
-            if (enabled[i]) expect(insideBox(s, box)).toBe(false);
-          });
-        }
-      }
+      expectShardsInRoom(shootRecordReplay(sc));
     });
   }
 

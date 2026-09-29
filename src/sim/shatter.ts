@@ -104,6 +104,9 @@ export class ShatterSystem {
       s.vel.y -= SHATTER.gravity * dt;
       s.angle += s.angVel * dt;
       set(next, s.pos.x + s.vel.x * dt, s.pos.y + s.vel.y * dt, s.pos.z + s.vel.z * dt);
+      // Le sol borne le trajet avant le balayage : sur un grand pas (à-coup d'image au replay), la fin du pas
+      // passait sous le sol, donc sous le bas des boîtes posées au sol, et l'éclat se figeait dans une baie.
+      if (next.y < r) next.y = r;
 
       // Premier contact du trajet avec une boîte active (balayage : rien ne traverse un mur mince).
       let bestT = 2;

@@ -40,6 +40,13 @@ for (const x of RACK_ROWS_X) {
   }
 }
 
+// Plafond invisible à la hauteur des murs, sur toute la salle : les éclats ne passent plus par-dessus les murs
+// (tâche 9, M1). Collision seulement, jamais dessiné : la salle reste ouverte sur le vide. Personne n'y monte
+// (tête du joueur au plus vers 3,4 m, ennemi de la passerelle vers 5,3 m) ; une balle ou une arme lancée vers
+// le haut s'y arrête à 6 m.
+const ceilingIndex = boxes.length;
+boxes.push(aabb(-HALF_X - WALL, WALL_HEIGHT, -HALF_Z - WALL, HALF_X + WALL, WALL_HEIGHT + WALL, HALF_Z + WALL));
+
 // Index d'une baie par rangée (0 à 3) et position dans la rangée (0 à 8).
 function rackIndex(row: number, slot: number): number {
   return rackBoxIndices[row * RACK_Z_CENTERS.length + slot]!;
@@ -64,6 +71,7 @@ export const room01: RoomDefinition = {
   title: "Salle serveurs",
   boxes,
   rackBoxIndices,
+  hiddenBoxIndices: [ceilingIndex],
   playerStart: vec3(0, 0, 6.5),
   playerYaw: 0,
   startWithWeapon: true,

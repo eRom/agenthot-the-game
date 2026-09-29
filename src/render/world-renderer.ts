@@ -77,10 +77,11 @@ export class WorldRenderer {
     this.scene.add(floor);
 
     // Boîtes fixes (murs, ascenseur, passerelle) : fusionnées en un seul mesh, un seul appel de dessin.
-    const rackSet = new Set(room.rackBoxIndices);
+    // Ni les baies (instanciées plus bas) ni les boîtes cachées (plafond de collision) n'y entrent.
+    const skipped = new Set([...room.rackBoxIndices, ...(room.hiddenBoxIndices ?? [])]);
     const fixed: THREE.BufferGeometry[] = [];
     room.boxes.forEach((box, i) => {
-      if (rackSet.has(i)) return;
+      if (skipped.has(i)) return;
       const size = new THREE.Vector3().subVectors(toV3(box.max), toV3(box.min));
       const center = new THREE.Vector3().addVectors(toV3(box.min), toV3(box.max)).multiplyScalar(0.5);
       fixed.push(new THREE.BoxGeometry(size.x, size.y, size.z).translate(center.x, center.y, center.z));

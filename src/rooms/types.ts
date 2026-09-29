@@ -27,6 +27,8 @@ export interface RoomDefinition {
   boxes: Aabb[];
   // Indices des boîtes dessinées comme baies de serveurs (instanciées au rendu).
   rackBoxIndices: number[];
+  // Indices des boîtes de collision jamais dessinées (plafond invisible) : le rendu les ignore.
+  hiddenBoxIndices?: number[];
   playerStart: Vec3;
   playerYaw: number;
   startWithWeapon: boolean;

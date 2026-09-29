@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { ROOMS, findRoom } from "../src/rooms/registry";
 import { room01 } from "../src/rooms/room-01-datacenter";
-import { PLAYER, PLAYER_ID, isAlive } from "../src/sim/entities";
+import { ENEMY, PLAYER, PLAYER_ID, isAlive } from "../src/sim/entities";
 import { Game } from "../src/sim/game";
 import { Rng } from "../src/sim/rng";
 import { FRAME, enemyAt, input, testRoom } from "./helpers";
@@ -129,5 +129,33 @@ describe("salles (AC-16)", () => {
       game.step(FRAME, input({ fire: frame === 0 }));
     }
     expect(game.status).toBe("won");
+  });
+});
+
+describe("plafond invisible de la salle 1 (tâche 9, M1)", () => {
+  test("une balle tirée à la verticale n'est arrêtée qu'à la hauteur des murs (6 m), jamais plus bas", () => {
+    const game = new Game(room01);
+    game.player.pitch = PLAYER.maxPitch;
+    let impactY = -1;
+    for (let frame = 0; frame < 60 * 5 && impactY < 0; frame++) {
+      // Le joueur marche sur place pour que le temps s'écoule.
+      game.step(FRAME, input({ fire: frame === 0, moveX: (frame >> 4) & 1 ? 1 : -1 }));
+      for (let i = 0; i < game.events.count; i++) {
+        const e = game.events.items[i]!;
+        if (e.type === "bulletImpact" && e.ownerId === PLAYER_ID) impactY = e.pos.y;
+      }
+    }
+    expect(impactY).toBeGreaterThan(5.9);
+    expect(impactY).toBeLessThanOrEqual(6);
+  });
+
+  test("le plafond est déclaré caché (hors des baies) et passe au-dessus de toute tête", () => {
+    const hidden = room01.hiddenBoxIndices ?? [];
+    expect(hidden.length).toBeGreaterThan(0);
+    for (const index of hidden) {
+      expect(room01.rackBoxIndices).not.toContain(index);
+      // Au-dessus de toute tête : ennemi de la passerelle (dalle à 3,5 m) compris.
+      expect(room01.boxes[index]!.min.y).toBeGreaterThanOrEqual(3.5 + ENEMY.height);
+    }
   });
 });
