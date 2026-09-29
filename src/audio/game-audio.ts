@@ -25,8 +25,8 @@ export class GameAudio {
 
   constructor() {
     this.drone = startDrone(this.engine, this.engine.sfxIn);
-    this.gameMusic = new MusicTrack(this.engine.ctx, this.engine.musicIn, MUSIC.game);
-    this.replayMusic = new MusicTrack(this.engine.ctx, this.engine.cleanMusicIn, MUSIC.replay);
+    this.gameMusic = new MusicTrack(this.engine.ctx, this.engine.musicIn, MUSIC.game, "game");
+    this.replayMusic = new MusicTrack(this.engine.ctx, this.engine.cleanMusicIn, MUSIC.replay, "replay");
   }
 
   loadMusic(): Promise<void> {

@@ -2,17 +2,49 @@
 // correction de hauteur : un AudioBufferSourceNode ralenti descend dans le grave (spec 7.1).
 import { AUDIO_TIME } from "./time-coupling";
 
+export type TrackName = "game" | "replay";
+
+export interface MusicPlayback {
+  // Où la lecture démarre dans le fichier (s).
+  offset: number;
+  // Fenêtre de la boucle (s) : le son revient de loopEnd à loopStart.
+  loopStart: number;
+  loopEnd: number;
+}
+
+// Les morceaux Lyria portent du silence : `game` 2,57 s à la fin, `replay` 2,69 s au début et 2,34 s à la fin.
+// Mesures du 2026-09-29 (seuil -50 dB, durée minimale 0,5 s) :
+//   ffmpeg -i public/audio/<piste>.mp3 -af silencedetect=noise=-50dB:d=0.5 -f null -
+//   game   : silence_start 89.1435 -> fin (91.7159)
+//   replay : silence 0 -> 2.6918, puis silence_start 103.0595 -> fin (105.4040)
+// Valeurs arrondies vers l'intérieur du son (au plus 10 ms de musique sacrifiés).
+const PLAYBACK: Record<TrackName, MusicPlayback> = {
+  game: { offset: 0, loopStart: 0, loopEnd: 89.14 },
+  replay: { offset: 2.69, loopStart: 2.69, loopEnd: 103.05 },
+};
+
+// Paramètres de lecture d'une piste, bornés à la durée du tampon décodé : une piste régénérée plus courte
+// ne fait jamais sortir la boucle de son fichier (sans quoi Web Audio ignorerait la fenêtre en silence).
+export function musicPlayback(name: TrackName, bufferDuration: number): MusicPlayback {
+  const table = PLAYBACK[name];
+  const loopEnd = Math.min(table.loopEnd, bufferDuration);
+  if (table.loopStart >= loopEnd) return { offset: 0, loopStart: 0, loopEnd: bufferDuration };
+  return { offset: table.offset, loopStart: table.loopStart, loopEnd };
+}
+
 export class MusicTrack {
   private buffer: AudioBuffer | null = null;
   private source: AudioBufferSourceNode | null = null;
   private readonly ctx: BaseAudioContext;
   private readonly out: AudioNode;
   private readonly url: string;
+  private readonly name: TrackName;
 
-  constructor(ctx: BaseAudioContext, out: AudioNode, url: string) {
+  constructor(ctx: BaseAudioContext, out: AudioNode, url: string, name: TrackName) {
     this.ctx = ctx;
     this.out = out;
     this.url = url;
+    this.name = name;
   }
 
   // Charge le fichier. Absent ou illisible (musique pas encore générée) : le jeu reste muet, sans erreur.
@@ -30,13 +62,14 @@ export class MusicTrack {
     return this.buffer !== null;
   }
 
-  // Repart du début, en boucle.
+  // Repart du début du son (après le silence de tête), en boucle sur la fenêtre sans silence.
   play(): void {
     this.stop();
     if (!this.buffer) return;
-    this.source = new AudioBufferSourceNode(this.ctx, { buffer: this.buffer, loop: true });
+    const { offset, loopStart, loopEnd } = musicPlayback(this.name, this.buffer.duration);
+    this.source = new AudioBufferSourceNode(this.ctx, { buffer: this.buffer, loop: true, loopStart, loopEnd });
     this.source.connect(this.out);
-    this.source.start();
+    this.source.start(0, offset);
   }
 
   stop(): void {
