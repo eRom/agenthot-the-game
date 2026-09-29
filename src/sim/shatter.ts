@@ -86,17 +86,21 @@ export class ShatterSystem {
     }
   }
 
-  step(dt: number): void {
+  // `boxes` et `enabled` : le décor sur lequel les éclats peuvent se poser (passerelle, haut des baies).
+  // Sans décor, le sol est en y = 0.
+  step(dt: number, boxes: readonly Aabb[] = NO_BOXES, enabled: readonly boolean[] = NO_FLAGS): void {
     if (dt <= 0) return;
     for (const s of this.shards) {
       if (!s.active || s.resting) continue;
+      const prevY = s.pos.y;
       s.vel.y -= SHATTER.gravity * dt;
       s.pos.x += s.vel.x * dt;
       s.pos.y += s.vel.y * dt;
       s.pos.z += s.vel.z * dt;
       s.angle += s.angVel * dt;
-      if (s.pos.y <= s.size * 0.5 && s.vel.y < 0) {
-        s.pos.y = s.size * 0.5;
+      const floor = groundBelow(s.pos.x, s.pos.z, prevY, boxes, enabled) + s.size * 0.5;
+      if (s.pos.y <= floor && s.vel.y < 0) {
+        s.pos.y = floor;
         if (!s.bounced) {
           s.bounced = true;
           s.vel.y = -s.vel.y * SHATTER.restitution;
@@ -147,3 +151,17 @@ export class ShatterSystem {
 }
 
 const tmpVel = vec3();
+const NO_BOXES: readonly Aabb[] = [];
+const NO_FLAGS: readonly boolean[] = [];
+
+// Hauteur du sol sous (x, z) : le dessus le plus haut d'une boîte active située sous `fromY`, ou 0.
+function groundBelow(x: number, z: number, fromY: number, boxes: readonly Aabb[], enabled: readonly boolean[]): number {
+  let ground = 0;
+  for (let i = 0; i < boxes.length; i++) {
+    const b = boxes[i]!;
+    if (!enabled[i] || b.max.y > fromY || b.max.y <= ground) continue;
+    if (x < b.min.x || x > b.max.x || z < b.min.z || z > b.max.z) continue;
+    ground = b.max.y;
+  }
+  return ground;
+}

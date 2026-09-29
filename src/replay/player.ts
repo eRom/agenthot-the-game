@@ -58,7 +58,7 @@ export class ReplayPlayer {
     this.playhead = Math.min(this.duration, this.playhead + dtReal);
     this.events.clear();
     this.applyEventsUntil(this.startTime + this.playhead, true);
-    this.shatter.step(dtReal);
+    this.shatter.step(dtReal, this.room.boxes, this.view.boxEnabled);
     this.writeView();
   }
 

@@ -49,6 +49,8 @@ export const ENEMY = {
   // Arme éjectée : vitesse vers le haut, puis vers celui qui a frappé.
   ejectUp: 4.5,
   ejectToward: 2.5,
+  // Arme d'un ennemi tué : vitesse horizontale dans le sens de l'impact.
+  ejectOnDeath: 1.5,
 } as const;
 
 export const WEAPON = {

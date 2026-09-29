@@ -63,6 +63,7 @@ export type GameStatus = "playing" | "dead" | "won";
 
 const tmpDir = vec3();
 const tmpBase = vec3();
+const tmpToward = vec3();
 
 export class Game {
   readonly time = new TimeController();
@@ -134,7 +135,7 @@ export class Game {
     updateEnemies(this, simDt);
     updateWeapons(this, simDt);
     updateBullets(this, simDt);
-    this.shatter.step(simDt);
+    this.shatter.step(simDt, this.room.boxes, this.boxEnabled);
     if (this.status === "playing" && this.allEnemiesDown()) this.status = "won";
     return simDt;
   }
@@ -196,7 +197,9 @@ export class Game {
   killEnemy(e: Enemy, impactVel: Vec3): void {
     if (!isAlive(e)) return;
     e.state = "dead";
-    this.dropEnemyWeapon(e, e.pos, 0.3);
+    // L'arme part dans le sens de l'impact, en arc lisible.
+    set(tmpToward, e.pos.x + impactVel.x, e.pos.y, e.pos.z + impactVel.z);
+    this.dropEnemyWeapon(e, tmpToward, ENEMY.ejectOnDeath);
     this.events.push("enemyKilled", this.simTime, NO_ID, e.id, e.pos, impactVel);
     this.shatter.spawnBody(e.pos, ENEMY.height, ENEMY.radius, impactVel, shatterSeed(e.id, this.simTime), 0);
   }

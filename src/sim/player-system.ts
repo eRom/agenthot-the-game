@@ -164,6 +164,8 @@ function pickUpNearest(game: Game): void {
   let bestDist = 0;
   for (const w of game.weapons) {
     if (w.state !== "ground" && w.state !== "flying") continue;
+    // L'arme qu'on vient de lancer ne revient pas dans la main par E (même délai que la capture).
+    if (w.thrownBy === PLAYER_ID && w.flightTime < WEAPON.catchGrace) continue;
     const d = distance(w.pos, chest);
     if (d > PLAYER.pickupRange) continue;
     if (!best || w.ammo > best.ammo || (w.ammo === best.ammo && d < bestDist)) {
