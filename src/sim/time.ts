@@ -2,12 +2,14 @@
 
 export const TIME = {
   min: 0.03,
-  lookWeight: 0.15,
+  lookWeight: 0.1,
   // Vitesse souris (pixels par seconde réelle) qui compte comme « regard plein ».
   lookThreshold: 800,
   // Décroissance du coup d'accélération : e^(-15 × 0,2 s) ≈ 5 % au bout de 0,2 s.
   actionDecayRate: 15,
-  smoothing: 12,
+  // Montée douce pour laisser le temps de planifier, arrêt net pour figer vite.
+  smoothingUp: 5,
+  smoothingDown: 12,
   maxSimDt: 1 / 60,
 } as const;
 
@@ -43,7 +45,8 @@ export class TimeController {
     raw = Math.min(1, Math.max(TIME.min, raw));
     if (input.jumpRising) raw = 1;
 
-    this.scale += (raw - this.scale) * (1 - Math.exp(-TIME.smoothing * dtReal));
+    const smoothing = raw > this.scale ? TIME.smoothingUp : TIME.smoothingDown;
+    this.scale += (raw - this.scale) * (1 - Math.exp(-smoothing * dtReal));
     return Math.min(dtReal * this.scale, TIME.maxSimDt);
   }
 }

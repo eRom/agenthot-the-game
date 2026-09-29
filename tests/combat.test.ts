@@ -81,14 +81,22 @@ describe("désarmement et capture (AC-4)", () => {
     expect(game.weapons[weaponId]!.ammo).toBe(0);
   });
 
-  test("coup de poing : le 1er fait vaciller et désarme, le 2e fait éclater", () => {
+  test("coup de poing sur un ennemi armé : il vacille et son arme saute dans la main du joueur", () => {
     const game = new Game(testRoom([enemyAt(0, -1.2)], false));
-    game.step(1 / 60, input({ fire: true }));
     const enemy = game.enemies[0]!;
+    const enemyWeaponId = enemy.weaponId;
+    game.step(1 / 60, input({ fire: true }));
     expect(enemy.state).toBe("stagger");
     expect(enemy.weaponId).toBe(NO_ID);
+    for (let i = 0; i < 120 && game.player.weaponId === NO_ID; i++) game.step(1 / 60, input());
+    expect(game.player.weaponId).toBe(enemyWeaponId);
+    expect(game.weapons[enemyWeaponId]!.ammo).toBe(WEAPON.capacity);
+  });
+
+  test("coup de poing sur un ennemi désarmé : il éclate", () => {
+    const game = new Game(testRoom([enemyAt(0, -1.2, false)], false));
     game.step(1 / 60, input({ fire: true }));
-    expect(enemy.state).toBe("dead");
+    expect(game.enemies[0]!.state).toBe("dead");
   });
 });
 

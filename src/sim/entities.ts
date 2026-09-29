@@ -17,7 +17,7 @@ export const PLAYER = {
   chest: 1.2,
   punchRange: 1.6,
   pickupRange: 2,
-  catchRadius: 0.9,
+  catchRadius: 1.3,
   throwSpeed: 22,
   throwLift: 1,
   fireCooldown: 0.45,
@@ -42,7 +42,7 @@ export const ENEMY = {
   waypointReach: 0.4,
   // Arme éjectée : vitesse vers le haut, puis vers celui qui a frappé.
   ejectUp: 4.5,
-  ejectToward: 1.5,
+  ejectToward: 2.5,
 } as const;
 
 export const WEAPON = {

@@ -6,7 +6,7 @@ import { SHATTER } from "../sim/shatter";
 import type { WorldView } from "../sim/view";
 import { PALETTE } from "./palette";
 
-const TRAIL_LENGTH = 3;
+const TRAIL_LENGTH = 4;
 const MUZZLE_HEIGHT = ENEMY.muzzleHeight;
 
 export class WorldRenderer {
@@ -115,13 +115,13 @@ export class WorldRenderer {
     this.camera.add(this.viewModel);
 
     const bulletMat = new THREE.MeshBasicMaterial({ color: PALETTE.threatHot });
-    this.bulletHeads = new THREE.InstancedMesh(new THREE.SphereGeometry(0.04, 8, 6), bulletMat, POOLS.bullets);
+    this.bulletHeads = new THREE.InstancedMesh(new THREE.SphereGeometry(0.07, 8, 6), bulletMat, POOLS.bullets);
     this.bulletHeads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.bulletHeads.frustumCulled = false;
     this.scene.add(this.bulletHeads);
     // Traînée : cylindre unitaire le long de +Y, étiré et orienté selon -vitesse.
-    const trailGeo = new THREE.CylinderGeometry(0.012, 0.012, 1, 6).translate(0, 0.5, 0);
-    const trailMat = new THREE.MeshBasicMaterial({ color: PALETTE.threat, transparent: true, opacity: 0.6 });
+    const trailGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 6).translate(0, 0.5, 0);
+    const trailMat = new THREE.MeshBasicMaterial({ color: PALETTE.threat, transparent: true, opacity: 0.85 });
     this.bulletTrails = new THREE.InstancedMesh(trailGeo, trailMat, POOLS.bullets);
     this.bulletTrails.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.bulletTrails.frustumCulled = false;

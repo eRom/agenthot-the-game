@@ -17,10 +17,21 @@ describe("TimeController (AC-2)", () => {
     expect(tc.scale).toBeCloseTo(TIME.min, 5);
   });
 
-  test("en marchant, le temps dépasse 95 % en 0,3 s réelle", () => {
+  test("en marchant, le temps dépasse 95 % en 0,6 s réelle", () => {
     const tc = new TimeController();
-    runFor(tc, 0.3, walking);
+    runFor(tc, 0.6, walking);
     expect(tc.scale).toBeGreaterThanOrEqual(0.95);
+  });
+
+  test("la montée est plus douce que l'arrêt", () => {
+    const rising = new TimeController();
+    runFor(rising, 0.1, walking);
+    expect(rising.scale).toBeLessThan(0.5);
+
+    const falling = new TimeController();
+    runFor(falling, 2, walking);
+    runFor(falling, 0.1, still);
+    expect(falling.scale).toBeLessThan(0.35);
   });
 
   test("à l'arrêt après la marche, le temps redescend sous 5 % en 0,5 s", () => {
@@ -35,7 +46,7 @@ describe("TimeController (AC-2)", () => {
     // 2 000 px/s de souris, bien au-delà du seuil.
     runFor(tc, 1, { ...still, lookPixels: 2000 / 60 });
     expect(tc.scale).toBeLessThanOrEqual(TIME.min + TIME.lookWeight + 1e-6);
-    expect(tc.scale).toBeGreaterThan(TIME.min + 0.1);
+    expect(tc.scale).toBeGreaterThan(TIME.lookWeight * 0.8);
   });
 
   test("une action donne un coup d'accélération bref", () => {
@@ -44,7 +55,8 @@ describe("TimeController (AC-2)", () => {
     runFor(tc, 0.1, still);
     const during = tc.scale;
     runFor(tc, 1, still);
-    expect(during).toBeGreaterThan(0.3);
+    // montée douce : un tir pousse le temps vers ~25 %, pas à fond
+    expect(during).toBeGreaterThan(0.15);
     expect(tc.scale).toBeLessThan(0.05);
   });
 
