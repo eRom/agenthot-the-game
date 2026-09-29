@@ -81,7 +81,10 @@ const angles = {
 export function poseEnemy(e: EnemyView, out: EnemyPose): EnemyPose {
   const p = e.stateProgress;
   const phase = (e.walkDistance / BODY.strideLength) * Math.PI * 2;
-  const swing = Math.sin(phase);
+  // Seul « approach » fait avancer walkDistance (le sim ne le touche plus à l'arrêt) : dans les autres états,
+  // la foulée se résorbe au début de l'état au lieu de rester figée à mi-pas.
+  const settle = e.state === "approach" ? 1 : 1 - smoothstep(0, 0.3, p);
+  const swing = Math.sin(phase) * settle;
 
   // Base : marche. Un ennemi désarmé court, bras pliés ; un armé marche, arme basse.
   angles.lean = e.armed ? 0.05 : 0.18;

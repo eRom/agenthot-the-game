@@ -44,6 +44,16 @@ describe("pose procédurale des ennemis (spec 5.6)", () => {
     expect(bottomY(pose, SEGMENT.legR)).toBeCloseTo(0, 5);
   });
 
+  test("à l'arrêt en visée, la foulée s'est résorbée : les pieds sont joints et touchent le sol", () => {
+    // walkDistance figé au pic de la foulée (le sim ne l'incrémente plus quand l'ennemi s'arrête).
+    const pose = poseEnemy(enemy("aim", 1, BODY.strideLength / 4), createEnemyPose());
+    const left = pose.segments[SEGMENT.legL]!.pitch;
+    const right = pose.segments[SEGMENT.legR]!.pitch;
+    expect(Math.abs(left - right)).toBeLessThan(0.01);
+    expect(bottomY(pose, SEGMENT.legL)).toBeCloseTo(0, 5);
+    expect(bottomY(pose, SEGMENT.legR)).toBeCloseTo(0, 5);
+  });
+
   test("au début de la visée le bras est bas ; à la fin, il pointe l'arme vers le point visé", () => {
     const e = enemy("aim", 0);
     // Lacet quelconque, face au point visé.
