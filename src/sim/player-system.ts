@@ -15,7 +15,7 @@ const punchTarget = vec3();
 const timeInput: TimeInput = { moveAlpha: 0, lookPixels: 0, action: false, jumpRising: false };
 
 export function eyeHeight(game: Game): number {
-  return game.player.crouching ? PLAYER.eyeCrouch : PLAYER.eyeStand;
+  return game.player.eyeHeight;
 }
 
 export function playerEye(game: Game, out = eye): typeof eye {
@@ -31,6 +31,9 @@ export function updatePlayer(game: Game, dtReal: number, input: PlayerInput): nu
   p.pitch = Math.max(-PLAYER.maxPitch, Math.min(PLAYER.maxPitch, p.pitch - input.lookDY));
 
   p.crouching = input.crouch;
+  // Les yeux glissent vers leur hauteur cible, en temps réel comme tout le joueur.
+  const eyeTarget = p.crouching ? PLAYER.eyeCrouch : PLAYER.eyeStand;
+  p.eyeHeight += (eyeTarget - p.eyeHeight) * (1 - Math.exp(-PLAYER.eyeRate * dtReal));
   if (input.jump && p.onGround) {
     p.vel.y = PLAYER.jumpSpeed;
     p.onGround = false;

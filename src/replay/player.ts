@@ -112,7 +112,11 @@ export class ReplayPlayer {
       set(e.pos, mix(s[ka + 2]!, s[kb + 2]!, t), mix(s[ka + 3]!, s[kb + 3]!, t), mix(s[ka + 4]!, s[kb + 4]!, t));
       e.yaw = mixAngle(s[ka + 5]!, s[kb + 5]!, t);
       set(e.aimPoint, s[ka + 6]!, s[ka + 7]!, s[ka + 8]!);
-      e.aimProgress = s[ka + 9]!;
+      // Même état aux deux échantillons : on interpole la progression, sinon on garde la première.
+      const sameState = s[ka + 1] === s[kb + 1];
+      e.stateProgress = sameState ? mix(s[ka + 9]!, s[kb + 9]!, t) : s[ka + 9]!;
+      e.armed = s[ka + 10] === 1;
+      e.walkDistance = sameState ? mix(s[ka + 11]!, s[kb + 11]!, t) : s[ka + 11]!;
     }
     for (let i = 0; i < POOLS.bullets; i++) {
       const ka = a + LAYOUT.bullets + i * LAYOUT.bulletStride;
@@ -133,6 +137,7 @@ export class ReplayPlayer {
       w.heldByPlayer = s[ka + 1] === 1;
       set(w.pos, mix(s[ka + 2]!, s[kb + 2]!, t), mix(s[ka + 3]!, s[kb + 3]!, t), mix(s[ka + 4]!, s[kb + 4]!, t));
       w.angle = mix(s[ka + 5]!, s[kb + 5]!, t);
+      w.holderId = s[ka + 6]!;
     }
     v.playerAmmo = s[a + LAYOUT.misc]!;
     v.playerCooldown = s[a + LAYOUT.misc + 1]!;

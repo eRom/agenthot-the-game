@@ -101,6 +101,7 @@ export class Game {
     p.pitch = 0;
     p.onGround = true;
     p.crouching = false;
+    p.eyeHeight = PLAYER.eyeStand;
     p.alive = true;
     p.weaponId = NO_ID;
     p.fireCooldown = 0;
@@ -264,6 +265,7 @@ export class Game {
     e.mobile = spawn.mobile;
     e.state = "approach";
     e.stateTime = 0;
+    e.walkDistance = 0;
     e.weaponId = NO_ID;
     e.pathLength = 0;
     e.pathIndex = 0;

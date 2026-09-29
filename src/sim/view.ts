@@ -22,8 +22,11 @@ export interface EnemyView {
   pos: Vec3;
   yaw: number;
   aimPoint: Vec3;
-  // Progression de la visée, de 0 à 1 (pour le trait de visée).
-  aimProgress: number;
+  // Progression de l'état en cours, de 0 à 1 (visée, élan, recul du tir, vacillement). 0 en approche.
+  stateProgress: number;
+  armed: boolean;
+  // Distance marchée (m) : phase du cycle de marche.
+  walkDistance: number;
 }
 
 export interface BulletView {
@@ -37,6 +40,8 @@ export interface BulletView {
 export interface WeaponView {
   visible: boolean;
   heldByPlayer: boolean;
+  // Porteur : 0 = joueur, 1..n = ennemi, -1 = personne.
+  holderId: number;
   pos: Vec3;
   angle: number;
 }
@@ -67,10 +72,19 @@ export function createWorldView(boxCount: number, shards: Shard[]): WorldView {
     timeScale: 1,
   };
   for (let i = 0; i < POOLS.enemies; i++) {
-    view.enemies.push({ visible: false, state: "inactive", pos: vec3(), yaw: 0, aimPoint: vec3(), aimProgress: 0 });
+    view.enemies.push({
+      visible: false,
+      state: "inactive",
+      pos: vec3(),
+      yaw: 0,
+      aimPoint: vec3(),
+      stateProgress: 0,
+      armed: false,
+      walkDistance: 0,
+    });
   }
   for (let i = 0; i < POOLS.bullets; i++) view.bullets.push({ active: false, pos: vec3(), vel: vec3(), origin: vec3() });
-  for (let i = 0; i < POOLS.weapons; i++) view.weapons.push({ visible: false, heldByPlayer: false, pos: vec3(), angle: 0 });
+  for (let i = 0; i < POOLS.weapons; i++) view.weapons.push({ visible: false, heldByPlayer: false, holderId: NO_ID, pos: vec3(), angle: 0 });
   return view;
 }
 
@@ -89,7 +103,10 @@ export function writeGameView(game: Game, view: WorldView): void {
     copy(v.pos, e.pos);
     v.yaw = e.yaw;
     copy(v.aimPoint, e.aimPoint);
-    v.aimProgress = e.state === "aim" ? Math.min(1, e.stateTime / ENEMY.aimTime) : 0;
+    const duration = stateDuration(e.state);
+    v.stateProgress = duration > 0 ? Math.min(1, e.stateTime / duration) : 0;
+    v.armed = e.weaponId !== NO_ID;
+    v.walkDistance = e.walkDistance;
   }
   for (let i = 0; i < game.bullets.length; i++) {
     const b = game.bullets[i]!;
@@ -104,6 +121,7 @@ export function writeGameView(game: Game, view: WorldView): void {
     const v = view.weapons[i]!;
     v.visible = w.state !== "free";
     v.heldByPlayer = w.state === "held" && w.holderId === PLAYER_ID;
+    v.holderId = w.state === "held" ? w.holderId : NO_ID;
     copy(v.pos, w.pos);
     v.angle = w.angle;
   }
@@ -111,4 +129,20 @@ export function writeGameView(game: Game, view: WorldView): void {
   view.playerAmmo = held ? held.ammo : -1;
   view.playerCooldown = p.fireCooldown;
   for (let i = 0; i < game.boxEnabled.length; i++) view.boxEnabled[i] = game.boxEnabled[i]!;
+}
+
+// Durée de l'état, en temps de simulation (0 : état sans fin programmée).
+function stateDuration(state: EnemyState): number {
+  switch (state) {
+    case "aim":
+      return ENEMY.aimTime;
+    case "cooldown":
+      return ENEMY.cooldown;
+    case "stagger":
+      return ENEMY.staggerTime;
+    case "windup":
+      return ENEMY.meleeWindup;
+    default:
+      return 0;
+  }
 }

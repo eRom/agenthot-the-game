@@ -13,6 +13,8 @@ export const PLAYER = {
   crouchHeight: 0.95,
   eyeStand: 1.7,
   eyeCrouch: 0.85,
+  // Vitesse (par seconde réelle) à laquelle les yeux rejoignent leur hauteur : pas de saut de caméra.
+  eyeRate: 14,
   // Hauteur du torse, pour la capture d'arme au vol.
   chest: 1.2,
   // Hauteur du torse accroupi : la capsule s'arrête à 0,95 m, les tireurs visent dessous.
@@ -79,6 +81,8 @@ export interface Player {
   pitch: number;
   onGround: boolean;
   crouching: boolean;
+  // Hauteur des yeux, lissée entre debout et accroupi.
+  eyeHeight: number;
   alive: boolean;
   weaponId: number;
   fireCooldown: number;
@@ -94,6 +98,8 @@ export interface Enemy {
   mobile: boolean;
   weaponId: number;
   stateTime: number;
+  // Distance marchée depuis l'apparition (m) : cadence du cycle de marche au rendu.
+  walkDistance: number;
   aimPoint: Vec3;
   path: Int32Array;
   pathLength: number;
@@ -134,6 +140,7 @@ export function createPlayer(): Player {
     pitch: 0,
     onGround: true,
     crouching: false,
+    eyeHeight: PLAYER.eyeStand,
     alive: true,
     weaponId: NO_ID,
     fireCooldown: 0,
@@ -149,6 +156,7 @@ export function createEnemy(id: number, navSize: number): Enemy {
     mobile: true,
     weaponId: NO_ID,
     stateTime: 0,
+    walkDistance: 0,
     aimPoint: vec3(),
     path: new Int32Array(Math.max(1, navSize)),
     pathLength: 0,

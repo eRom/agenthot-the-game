@@ -92,6 +92,7 @@ function moveTowards(e: Enemy, p: Vec3, dt: number): void {
   const stepLen = Math.min(len, ENEMY.speed * dt);
   e.pos.x += (dx / len) * stepLen;
   e.pos.z += (dz / len) * stepLen;
+  e.walkDistance += stepLen;
 }
 
 function followPath(game: Game, e: Enemy, dt: number): void {

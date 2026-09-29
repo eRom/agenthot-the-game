@@ -174,7 +174,7 @@ export class WorldRenderer {
         attr.setXYZ(0, e.pos.x, e.pos.y + MUZZLE_HEIGHT, e.pos.z);
         attr.setXYZ(1, e.aimPoint.x, e.aimPoint.y, e.aimPoint.z);
         attr.needsUpdate = true;
-        (line.material as THREE.LineBasicMaterial).opacity = 0.25 + 0.75 * e.aimProgress;
+        (line.material as THREE.LineBasicMaterial).opacity = 0.25 + 0.75 * e.stateProgress;
       }
     }
 

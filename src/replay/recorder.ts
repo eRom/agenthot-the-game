@@ -14,11 +14,11 @@ export const REPLAY = {
 // changer une largeur ne demande pas de recompter les offsets à la main.
 const CAMERA = 1; // x, y, z, yaw, pitch
 const ENEMIES = CAMERA + 5;
-const ENEMY_STRIDE = 10; // visible, state, x, y, z, yaw, aimX, aimY, aimZ, aimProgress
+const ENEMY_STRIDE = 12; // visible, state, x, y, z, yaw, aimX, aimY, aimZ, stateProgress, armed, walkDistance
 const BULLETS = ENEMIES + POOLS.enemies * ENEMY_STRIDE;
 const BULLET_STRIDE = 10; // active, x, y, z, vx, vy, vz, originX, originY, originZ
 const WEAPONS = BULLETS + POOLS.bullets * BULLET_STRIDE;
-const WEAPON_STRIDE = 6; // visible, held, x, y, z, angle
+const WEAPON_STRIDE = 7; // visible, held, x, y, z, angle, holderId
 const MISC = WEAPONS + POOLS.weapons * WEAPON_STRIDE; // ammo, cooldown, timeScale
 
 export const LAYOUT = {
@@ -121,7 +121,9 @@ function writeSample(s: Float32Array, o: number, simTime: number, view: WorldVie
     s[k + 6] = e.aimPoint.x;
     s[k + 7] = e.aimPoint.y;
     s[k + 8] = e.aimPoint.z;
-    s[k + 9] = e.aimProgress;
+    s[k + 9] = e.stateProgress;
+    s[k + 10] = e.armed ? 1 : 0;
+    s[k + 11] = e.walkDistance;
   }
   for (let i = 0; i < POOLS.bullets; i++) {
     const b = view.bullets[i]!;
@@ -146,6 +148,7 @@ function writeSample(s: Float32Array, o: number, simTime: number, view: WorldVie
     s[k + 3] = w.pos.y;
     s[k + 4] = w.pos.z;
     s[k + 5] = w.angle;
+    s[k + 6] = w.holderId;
   }
   s[o + LAYOUT.misc] = view.playerAmmo;
   s[o + LAYOUT.misc + 1] = view.playerCooldown;
