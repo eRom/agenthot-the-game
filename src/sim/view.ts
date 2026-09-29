@@ -30,6 +30,8 @@ export interface BulletView {
   active: boolean;
   pos: Vec3;
   vel: Vec3;
+  // Point de départ de la balle (fin de la traînée).
+  origin: Vec3;
 }
 
 export interface WeaponView {
@@ -67,7 +69,7 @@ export function createWorldView(boxCount: number, shards: Shard[]): WorldView {
   for (let i = 0; i < POOLS.enemies; i++) {
     view.enemies.push({ visible: false, state: "inactive", pos: vec3(), yaw: 0, aimPoint: vec3(), aimProgress: 0 });
   }
-  for (let i = 0; i < POOLS.bullets; i++) view.bullets.push({ active: false, pos: vec3(), vel: vec3() });
+  for (let i = 0; i < POOLS.bullets; i++) view.bullets.push({ active: false, pos: vec3(), vel: vec3(), origin: vec3() });
   for (let i = 0; i < POOLS.weapons; i++) view.weapons.push({ visible: false, heldByPlayer: false, pos: vec3(), angle: 0 });
   return view;
 }
@@ -95,6 +97,7 @@ export function writeGameView(game: Game, view: WorldView): void {
     v.active = b.active;
     copy(v.pos, b.pos);
     copy(v.vel, b.vel);
+    copy(v.origin, b.origin);
   }
   for (let i = 0; i < game.weapons.length; i++) {
     const w = game.weapons[i]!;

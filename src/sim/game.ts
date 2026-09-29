@@ -184,6 +184,7 @@ export class Game {
       b.life = 0;
       // Départ exact à l'origine : le tireur est exclu de ses balles par ownerId, et rien n'échappe au balayage.
       copy(b.pos, origin);
+      copy(b.origin, origin);
       scale(b.vel, dir, BULLET.speed);
       this.events.push("shot", this.simTime, ownerId, NO_ID, b.pos, b.vel);
       return;

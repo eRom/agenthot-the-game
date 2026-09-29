@@ -4,9 +4,9 @@ import type { RoomDefinition } from "../rooms/types";
 import { ENEMY, POOLS } from "../sim/entities";
 import { SHATTER } from "../sim/shatter";
 import type { WorldView } from "../sim/view";
+import { BULLET_LOOK, headScale, trailLength } from "./bullet-look";
 import { PALETTE } from "./palette";
 
-const TRAIL_LENGTH = 4;
 const MUZZLE_HEIGHT = ENEMY.muzzleHeight;
 
 export class WorldRenderer {
@@ -115,7 +115,7 @@ export class WorldRenderer {
     this.camera.add(this.viewModel);
 
     const bulletMat = new THREE.MeshBasicMaterial({ color: PALETTE.threatHot });
-    this.bulletHeads = new THREE.InstancedMesh(new THREE.SphereGeometry(0.07, 8, 6), bulletMat, POOLS.bullets);
+    this.bulletHeads = new THREE.InstancedMesh(new THREE.SphereGeometry(BULLET_LOOK.headRadius, 8, 6), bulletMat, POOLS.bullets);
     this.bulletHeads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.bulletHeads.frustumCulled = false;
     this.scene.add(this.bulletHeads);
@@ -195,11 +195,13 @@ export class WorldRenderer {
         continue;
       }
       this.p.set(b.pos.x, b.pos.y, b.pos.z);
-      this.m.makeTranslation(this.p.x, this.p.y, this.p.z);
+      // Tête et traînée s'effacent près de la caméra : une balle qui part de l'œil ne couvre pas l'écran.
+      this.s.setScalar(headScale(b.pos, cam.pos));
+      this.m.compose(this.p, this.q.identity(), this.s);
       this.bulletHeads.setMatrixAt(i, this.m);
       this.dir.set(-b.vel.x, -b.vel.y, -b.vel.z).normalize();
       this.q.setFromUnitVectors(this.up, this.dir);
-      this.s.set(1, TRAIL_LENGTH, 1);
+      this.s.set(1, trailLength(b.pos, b.vel, b.origin, cam.pos), 1);
       this.m.compose(this.p, this.q, this.s);
       this.bulletTrails.setMatrixAt(i, this.m);
     }

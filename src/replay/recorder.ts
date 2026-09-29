@@ -10,18 +10,28 @@ export const REPLAY = {
   eventCapacity: 64,
 } as const;
 
-// Disposition d'un échantillon dans le tableau plat.
+// Disposition d'un échantillon dans le tableau plat. Chaque bloc se calcule à partir du précédent :
+// changer une largeur ne demande pas de recompter les offsets à la main.
+const CAMERA = 1; // x, y, z, yaw, pitch
+const ENEMIES = CAMERA + 5;
+const ENEMY_STRIDE = 10; // visible, state, x, y, z, yaw, aimX, aimY, aimZ, aimProgress
+const BULLETS = ENEMIES + POOLS.enemies * ENEMY_STRIDE;
+const BULLET_STRIDE = 10; // active, x, y, z, vx, vy, vz, originX, originY, originZ
+const WEAPONS = BULLETS + POOLS.bullets * BULLET_STRIDE;
+const WEAPON_STRIDE = 6; // visible, held, x, y, z, angle
+const MISC = WEAPONS + POOLS.weapons * WEAPON_STRIDE; // ammo, cooldown, timeScale
+
 export const LAYOUT = {
   time: 0,
-  camera: 1, // x, y, z, yaw, pitch
-  enemies: 6, // par ennemi : visible, state, x, y, z, yaw, aimX, aimY, aimZ, aimProgress
-  enemyStride: 10,
-  bullets: 6 + POOLS.enemies * 10, // par balle : active, x, y, z, vx, vy, vz
-  bulletStride: 7,
-  weapons: 6 + POOLS.enemies * 10 + POOLS.bullets * 7, // par arme : visible, held, x, y, z, angle
-  weaponStride: 6,
-  misc: 6 + POOLS.enemies * 10 + POOLS.bullets * 7 + POOLS.weapons * 6, // ammo, cooldown, timeScale
-  stride: 6 + POOLS.enemies * 10 + POOLS.bullets * 7 + POOLS.weapons * 6 + 3,
+  camera: CAMERA,
+  enemies: ENEMIES,
+  enemyStride: ENEMY_STRIDE,
+  bullets: BULLETS,
+  bulletStride: BULLET_STRIDE,
+  weapons: WEAPONS,
+  weaponStride: WEAPON_STRIDE,
+  misc: MISC,
+  stride: MISC + 3,
 } as const;
 
 // Événements rejoués : ceux qui déclenchent des éclats ou changent le décor.
@@ -123,6 +133,9 @@ function writeSample(s: Float32Array, o: number, simTime: number, view: WorldVie
     s[k + 4] = b.vel.x;
     s[k + 5] = b.vel.y;
     s[k + 6] = b.vel.z;
+    s[k + 7] = b.origin.x;
+    s[k + 8] = b.origin.y;
+    s[k + 9] = b.origin.z;
   }
   for (let i = 0; i < POOLS.weapons; i++) {
     const w = view.weapons[i]!;

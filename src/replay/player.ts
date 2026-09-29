@@ -123,6 +123,7 @@ export class ReplayPlayer {
       const k = s[kb] === 1 ? t : 0;
       set(bullet.pos, mix(s[ka + 1]!, s[kb + 1]!, k), mix(s[ka + 2]!, s[kb + 2]!, k), mix(s[ka + 3]!, s[kb + 3]!, k));
       set(bullet.vel, s[ka + 4]!, s[ka + 5]!, s[ka + 6]!);
+      set(bullet.origin, s[ka + 7]!, s[ka + 8]!, s[ka + 9]!);
     }
     for (let i = 0; i < POOLS.weapons; i++) {
       const ka = a + LAYOUT.weapons + i * LAYOUT.weaponStride;

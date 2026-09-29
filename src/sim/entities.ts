@@ -121,6 +121,8 @@ export interface Bullet {
   ownerId: number;
   pos: Vec3;
   vel: Vec3;
+  // Point de départ : le rendu y arrête la traînée, pour qu'elle ne traverse pas le tireur.
+  origin: Vec3;
   life: number;
 }
 
@@ -171,7 +173,7 @@ export function createWeapon(id: number): Weapon {
 }
 
 export function createBullet(): Bullet {
-  return { active: false, ownerId: NO_ID, pos: vec3(), vel: vec3(), life: 0 };
+  return { active: false, ownerId: NO_ID, pos: vec3(), vel: vec3(), origin: vec3(), life: 0 };
 }
 
 // Direction du regard : lacet 0 = -Z, tangage positif = vers le haut.
