@@ -79,6 +79,11 @@ document.addEventListener("pointerlockchange", () => {
     setMode("paused");
   }
 });
+// Onglet en arrière-plan : la boucle d'animation s'arrête et avec elle le gel du son, qui vit dans cette
+// boucle. Sans ceci la musique et le bourdon continueraient à pleine vitesse pendant que l'image est figée.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) audio.freeze(TIME.min);
+});
 window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   world.resize(window.innerWidth / window.innerHeight);
