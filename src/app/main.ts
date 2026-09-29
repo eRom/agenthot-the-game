@@ -1,5 +1,6 @@
 // Point d'entrée de la phase « gris » : une salle, sans menu. Machine d'états réduite.
 import "./style.css";
+import { GameAudio } from "../audio/game-audio";
 import { ReplayPlayer } from "../replay/player";
 import { ReplayRecorder } from "../replay/recorder";
 import { createRenderer } from "../render/create-renderer";
@@ -7,6 +8,7 @@ import { PostPipeline } from "../render/post";
 import { WorldRenderer } from "../render/world-renderer";
 import { room01 } from "../rooms/room-01-datacenter";
 import { Game, type PlayerInput, emptyInput } from "../sim/game";
+import { TIME } from "../sim/time";
 import { createWorldView, writeGameView } from "../sim/view";
 import { Hud } from "./hud";
 import { InputController } from "./input";
@@ -29,6 +31,8 @@ const recorder = new ReplayRecorder();
 const replay = new ReplayPlayer(recorder, room01);
 const input = new InputController(renderer.domElement);
 const hud = new Hud(document.querySelector<HTMLElement>("#hud")!, debug);
+// Contexte audio créé tout de suite, suspendu jusqu'au premier geste (clic ou touche).
+const audio = new GameAudio();
 
 let mode: Mode = "start";
 let last = performance.now();
@@ -60,8 +64,10 @@ function setMode(next: Mode): void {
 // Un clic reprend le verrou du pointeur sur tous les écrans (Échap ou alt-tab l'ont peut-être perdu).
 // Sans verrou, les clics de tir ne sont jamais enregistrés : ce clic ne relance donc pas une partie.
 renderer.domElement.addEventListener("click", () => {
+  audio.unlock();
   if (mode !== "playing" && !input.locked) input.lock();
 });
+window.addEventListener("keydown", () => audio.unlock());
 document.addEventListener("pointerlockchange", () => {
   if (input.locked && (mode === "start" || mode === "paused")) {
     if (mode === "start") startRun();
@@ -117,6 +123,7 @@ renderer.setAnimationLoop(() => {
     writeGameView(game, view);
     recorder.recordEvents(game.events);
     recorder.capture(game.simTime, view, game.status !== "playing");
+    audio.frame(view, game.events);
     hud.updateCrosshair(view.playerCooldown, view.playerAmmo);
     world.update(view);
     if (game.status === "dead") setMode("dead");
@@ -127,6 +134,8 @@ renderer.setAnimationLoop(() => {
       setMode("replay");
     }
   } else if (mode === "dead" || mode === "won") {
+    // Temps figé : le son reste grave et étouffé.
+    audio.freeze(TIME.min);
     // Mort : R ou un clic relance (spec 4.4). Victoire : R seulement, le clic est trop facile à faire par erreur.
     const clicked = input.consumeFire() && mode === "dead";
     const pressedR = input.consumePress("KeyR");
@@ -149,8 +158,12 @@ renderer.setAnimationLoop(() => {
   } else if (mode === "replay") {
     replay.update(dt);
     world.update(replay.view);
+    audio.frame(replay.view, replay.events);
     hud.chant(replay.playhead);
     if (replay.finished) setMode("won");
+  } else {
+    // Départ et pause : la partie est figée, le son aussi.
+    audio.freeze(TIME.min);
   }
 
   post.render();
