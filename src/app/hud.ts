@@ -58,6 +58,11 @@ export class Hud {
     this.wasCoolingDown = cooling;
   }
 
+  // Nouvelle partie : le prochain temps de recharge terminé ne doit pas compter, on garde l'angle actuel.
+  resetCrosshair(): void {
+    this.wasCoolingDown = false;
+  }
+
   setDebug(text: string): void {
     if (!this.debug.hidden) this.debug.textContent = text;
   }

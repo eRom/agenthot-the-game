@@ -162,8 +162,15 @@ export class Game {
     w.thrownBy = NO_ID;
     w.flightTime = 0;
     set(w.vel, 0, 0, 0);
-    if (holderId === PLAYER_ID) this.player.weaponId = w.id;
-    else this.enemies[holderId - 1]!.weaponId = w.id;
+    // L'arme apparaît dans la main de son porteur : jamais dessinée à l'origine avant le premier pas.
+    if (holderId === PLAYER_ID) {
+      this.player.weaponId = w.id;
+      set(w.pos, this.player.pos.x, this.player.pos.y + PLAYER.chest, this.player.pos.z);
+    } else {
+      const holder = this.enemies[holderId - 1]!;
+      holder.weaponId = w.id;
+      set(w.pos, holder.pos.x, holder.pos.y + ENEMY.handHeight, holder.pos.z);
+    }
   }
 
   // Tire une balle depuis `origin` vers `dir` (normalisée).

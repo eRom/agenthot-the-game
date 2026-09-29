@@ -38,15 +38,20 @@ function startRun(): void {
   writeGameView(game, view);
   recorder.capture(game.simTime, view, true);
   input.clear();
+  hud.resetCrosshair();
 }
 
 function setMode(next: Mode): void {
   mode = next;
+  // Écrans de fin : on oublie les appuis du jeu (saut, R, clic de tir) pour ne pas sauter l'écran.
+  if (next === "dead" || next === "replay" || next === "won") input.clear();
   hud.show(next === "playing" ? "none" : next);
 }
 
+// Un clic reprend le verrou du pointeur sur tous les écrans (Échap ou alt-tab l'ont peut-être perdu).
+// Sans verrou, les clics de tir ne sont jamais enregistrés : ce clic ne relance donc pas une partie.
 renderer.domElement.addEventListener("click", () => {
-  if (mode === "start" || mode === "paused") input.lock();
+  if (mode !== "playing" && !input.locked) input.lock();
 });
 document.addEventListener("pointerlockchange", () => {
   if (input.locked && (mode === "start" || mode === "paused")) {
@@ -72,6 +77,12 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
 
+  // Sonde AC-6 : la relance est mesurée à l'image suivante, quand la précédente est rendue.
+  if (restartStartedAt >= 0) {
+    if (debug) console.info(`[agenthot] restart ${(now - restartStartedAt).toFixed(1)} ms`);
+    restartStartedAt = -1;
+  }
+
   if (mode === "playing") {
     game.step(dt, input.sample());
     writeGameView(game, view);
@@ -90,7 +101,12 @@ renderer.setAnimationLoop(() => {
     if (input.consumePress("KeyR") || clicked) {
       restartStartedAt = now;
       startRun();
-      setMode("playing");
+      // Sans verrou (Échap sur l'écran de fin), on le redemande et on attend qu'il revienne.
+      if (input.locked) setMode("playing");
+      else {
+        input.lock();
+        setMode("paused");
+      }
       world.update(view);
     } else if (mode === "won" && input.consumePress("Space")) {
       replay.restart();
@@ -105,19 +121,17 @@ renderer.setAnimationLoop(() => {
 
   renderer.render(world.scene, world.camera);
 
-  if (restartStartedAt >= 0) {
-    if (debug) console.info(`[agenthot] restart ${(performance.now() - restartStartedAt).toFixed(1)} ms`);
-    restartStartedAt = -1;
-  }
   fpsFrames++;
   fpsTime += dt;
   if (fpsTime >= 0.5) {
     fps = fpsFrames / fpsTime;
     fpsFrames = 0;
     fpsTime = 0;
+    if (debug) {
+      hud.setDebug(
+        `${isWebGPU ? "WebGPU" : "WebGL2"} ‧ ${fps.toFixed(0)} fps ‧ ${renderer.info.render.drawCalls} draws ‧ ` +
+          `time ${view.timeScale.toFixed(2)} ‧ sim ${game.simTime.toFixed(2)} s`,
+      );
+    }
   }
-  hud.setDebug(
-    `${isWebGPU ? "WebGPU" : "WebGL2"} ‧ ${fps.toFixed(0)} fps ‧ ${renderer.info.render.drawCalls} draws ‧ ` +
-      `time ${view.timeScale.toFixed(2)} ‧ sim ${game.simTime.toFixed(2)} s`,
-  );
 });

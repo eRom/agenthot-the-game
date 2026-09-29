@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { NO_ID, PLAYER_ID, WEAPON } from "../src/sim/entities";
+import { ENEMY, NO_ID, PLAYER, PLAYER_ID, WEAPON } from "../src/sim/entities";
 import { Game } from "../src/sim/game";
 import { enemyAt, input, run, testRoom } from "./helpers";
 
@@ -89,5 +89,20 @@ describe("désarmement et capture (AC-4)", () => {
     expect(enemy.weaponId).toBe(NO_ID);
     game.step(1 / 60, input({ fire: true }));
     expect(enemy.state).toBe("dead");
+  });
+});
+
+describe("arme en main dès la construction", () => {
+  test("une arme donnée apparaît dans la main de son porteur", () => {
+    const game = new Game(testRoom([enemyAt(3, -6)]));
+    const enemy = game.enemies[0]!;
+    const enemyWeapon = game.weapons[enemy.weaponId]!;
+    expect(enemyWeapon.pos.x).toBeCloseTo(enemy.pos.x, 6);
+    expect(enemyWeapon.pos.y).toBeCloseTo(enemy.pos.y + ENEMY.handHeight, 6);
+    expect(enemyWeapon.pos.z).toBeCloseTo(enemy.pos.z, 6);
+    const playerWeapon = game.weapons[game.player.weaponId]!;
+    expect(playerWeapon.pos.x).toBeCloseTo(game.player.pos.x, 6);
+    expect(playerWeapon.pos.y).toBeCloseTo(game.player.pos.y + PLAYER.chest, 6);
+    expect(playerWeapon.pos.z).toBeCloseTo(game.player.pos.z, 6);
   });
 });

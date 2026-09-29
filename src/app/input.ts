@@ -71,7 +71,7 @@ export class InputController {
     o.lookDY = this.mouseDY * k * (this.invertY ? -1 : 1);
     o.lookPixels = Math.abs(this.mouseDX) + Math.abs(this.mouseDY);
     o.jump = this.held.has("Space");
-    o.crouch = this.held.has("KeyC") || this.held.has("ControlLeft");
+    o.crouch = this.held.has("KeyC");
     o.fire = this.firePressed;
     o.throw = this.throwPressed;
     o.use = this.pressed.has("KeyE");
