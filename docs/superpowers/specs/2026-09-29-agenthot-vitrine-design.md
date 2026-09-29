@@ -18,7 +18,7 @@ Hors chantier : salle 2 (katana, fusil à pompe, deux étages), Hotswitch, vitre
 ## 2. Plateformes et contraintes
 
 - **Cible :** ordinateur, clavier + souris. Chrome, Safari (macOS 26+), Firefox, versions récentes.
-- **Mobile :** détecté par `matchMedia('(pointer: coarse)')` sans pointeur fin. Affiche l'écran « Joue sur ordi » (section 4.6).
+- **Mobile :** détecté par `matchMedia('(pointer: coarse)')` sans pointeur fin, **ou** absence du verrouillage de la souris (`!('requestPointerLock' in Element.prototype)`, cas de Safari iPad avec trackpad, source : brief plan 3). Affiche l'écran « Joue sur ordi » (section 4.6).
 - **Rendu :** WebGPU si disponible, sinon WebGL2. Vérifié le 2026-09-29 : WebGPU est actif par défaut sur Chrome desktop, Safari 26 et Firefox Windows ; Firefox macOS seulement sur Apple Silicon. Le repli WebGL2 est donc obligatoire.
 - **Langue du code :** identifiants en anglais, commentaires en français.
 
@@ -46,11 +46,11 @@ Versions et API à revérifier au moment du plan (brief `pre-plan-research`) : T
 
 ### 4.2 Cinématique
 
-- Vidéo Hyperframes de 20 à 30 s, 1920×1080, en WebM (AV1 ou VP9) avec repli MP4. Cible : 6 Mo au plus, lue en flux.
+- Vidéo Hyperframes de 20 à 30 s, 1920×1080. Hyperframes sort du VP9 ou du H.264 sans passe double : la version finale est ré-encodée avec ffmpeg (libsvtav1) en WebM AV1, avec repli MP4 H.264. Cible : 6 Mo au plus, lue en flux.
 - Passable par n'importe quelle touche ou un clic.
 - Pendant la lecture, le jeu (moteur, salle 1, musique en jeu) se charge en arrière-plan.
 - Jouée à la première visite seulement (drapeau `introSeen` dans `localStorage`). Ensuite, l'utilisateur arrive directement au menu. Le bouton « Intro » du menu la rejoue.
-- Fabriquée en dernier, avec de vraies séquences capturées dans le jeu, des cartes de texte et un morceau Lyria.
+- Fabriquée en dernier, avec de vraies séquences capturées dans le jeu, des cartes de texte et un morceau Lyria. Les séquences sont enregistrées par le jeu lui-même : un mode `?record=1` capture le canvas (`captureStream` + `MediaRecorder`) pendant un replay (`hyperframes capture` n'enregistre pas le jeu).
 
 ### 4.3 Menu
 
@@ -61,7 +61,7 @@ Versions et API à revérifier au moment du plan (brief `pre-plan-research`) : T
   - **Jouer** : lance la salle 1.
   - **Salles** : panneau Encre avec 2 cartes. Salle 1 jouable. Salle 2 verrouillée, « BIENTÔT ». Vignettes générées avec Nano Banana.
   - **Paramètres** : panneau Encre (section 4.5).
-  - **Crédits** : panneau Encre. Ligne exacte : `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/XXXXXX`. En dessous : nombre de tokens et coût API estimé, avec des valeurs fictives jusqu'à la fin du chantier.
+  - **Crédits** : panneau Encre. Ligne exacte : `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/XXXXXX`. En dessous : nombre de tokens et coût API estimé (décidé le 2026-09-29), avec des valeurs fictives jusqu'à la fin du chantier. Le comptage dédoublonne les lignes des transcripts par `message.id` (script en annexe du brief plan 3).
   - **Intro** : rejoue la cinématique.
 - Navigation au clavier (flèches + Entrée) et à la souris.
 
@@ -92,7 +92,7 @@ Persistés dans `localStorage` et appliqués à chaud.
 
 ### 4.7 Partage
 
-Balises Open Graph et Twitter Card, avec une image d'aperçu 1200×630 générée avec Seedream. C'est la première chose que voit quelqu'un à qui l'on partage le lien.
+Balises Open Graph et Twitter Card, avec une image d'aperçu 1200×630 : fond généré avec Seedream, logo et texte posés ensuite avec nos polices (décidé le 2026-09-29 : le texte reste net et exact). C'est la première chose que voit quelqu'un à qui l'on partage le lien.
 
 ## 5. Gameplay de la salle 1
 
@@ -367,7 +367,7 @@ src/
 
 ## 12. Points ouverts
 
-- **Hébergement :** Vercel proposé, à trancher avant l'étape 8.
+- **Hébergement :** Vercel (décidé le 2026-09-29 sur recommandation, Romain en mobilité ; alternative écartée : Cloudflare Pages, illimité mais wrangler à installer). La mise en ligne elle-même attend le « go » de Romain.
 - **Nom du repo GitHub** (`eRom/XXXXXX`).
 - **Valeurs réelles de tokens et de coût** pour les crédits, à calculer à la fin depuis les logs de sessions du projet.
 - **Voix « AGENT... HOT... » :** Lyria ou le repli en code, tranché à l'écoute.
@@ -428,7 +428,7 @@ src/
 
 **AC-12 : mobile accueilli**
 - **Comportement :** quand on ouvre le lien sur un téléphone, alors on voit l'écran « Joue sur ordi » avec la cinématique et le bouton « Copier le lien ». Aucune erreur.
-- **Vérifié par :** émulation mobile Chrome DevTools (iPhone), console sans erreur, capture de l'écran.
+- **Vérifié par :** émulation mobile Chrome DevTools (iPhone), console sans erreur, capture de l'écran ; plus le cas iPad avec trackpad (verrouillage de souris absent), simulé en retirant `requestPointerLock` du prototype.
 
 **AC-13 : l'orange signifie la menace**
 - **Comportement :** quand on regarde une scène de la salle 1, alors seuls les ennemis, les balles, leurs traînées et les traits de visée sont orange. Tout le reste est blanc, gris ou noir. Seule exception : la teinte plein écran de la mort (section 6.2).

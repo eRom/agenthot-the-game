@@ -119,3 +119,15 @@ Réglages décidés par Claude en réponse :
 - rattrapage plus tolérant (rayon 0,9 → 1,3 m ; arme d'ennemi éjectée plus franchement vers le joueur) ;
 - difficulté inchangée ;
 - effet « film d'action » du replay reporté aux plans 2 (son, cri) et 3 (typo).
+
+## Décisions en mobilité, 2026-09-29 13:50
+
+Romain : « A. Tant que je suis en mobilité, valider tes « je recommande », je ne suis pas toujours avec mon telephone ouvert ».
+
+- Fusion du plan 1 dans `main` (A).
+- Décisions du brief plan 3, prises sur recommandation de Claude :
+  - hébergeur Vercel (battu : Cloudflare Pages) ;
+  - image de partage = fond Seedream + logo posé avec nos polices (battu : texte dessiné par Seedream) ;
+  - crédits avec tokens et coût API estimé (battu : tokens seuls).
+- Intégré à la spec depuis le brief : détection iPad trackpad, ré-encodage AV1 de la cinématique, enregistrement des séquences par le jeu (`?record=1`).
+- Limites de la consigne : rien vers l'extérieur (push, déploiement) ni dépense de génération sans Romain.
