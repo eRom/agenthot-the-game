@@ -47,7 +47,9 @@ export class ReplayRecorder {
   // À appeler après chaque pas de jeu. `force` enregistre même hors cadence (dernière image).
   capture(simTime: number, view: WorldView, force = false): void {
     if (!force && simTime < this.nextSampleTime) return;
-    this.nextSampleTime = simTime + 1 / REPLAY.rateHz;
+    // Grille fixe à 60 Hz ; le rattrapage évite une rafale d'échantillons après une pause.
+    this.nextSampleTime += 1 / REPLAY.rateHz;
+    if (this.nextSampleTime <= simTime) this.nextSampleTime = simTime + 1 / REPLAY.rateHz;
     const slot = (this.head + this.count) % REPLAY.capacity;
     if (this.count < REPLAY.capacity) this.count++;
     else this.head = (this.head + 1) % REPLAY.capacity;
@@ -58,9 +60,14 @@ export class ReplayRecorder {
     for (let i = 0; i < queue.count; i++) {
       const e = queue.items[i]!;
       const typeIndex = RECORDED_EVENTS.indexOf(e.type);
-      if (typeIndex < 0 || this.eventCount >= REPLAY.eventCapacity) continue;
-      const o = this.eventCount * EVENT_STRIDE;
+      if (typeIndex < 0) continue;
       const ev = this.events;
+      // Tampon plein : on évince le plus ancien pour garder les événements récents, dans l'ordre.
+      if (this.eventCount >= REPLAY.eventCapacity) {
+        ev.copyWithin(0, EVENT_STRIDE, REPLAY.eventCapacity * EVENT_STRIDE);
+        this.eventCount--;
+      }
+      const o = this.eventCount * EVENT_STRIDE;
       ev[o] = e.time;
       ev[o + 1] = typeIndex;
       ev[o + 2] = e.targetId;

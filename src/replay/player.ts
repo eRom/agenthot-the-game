@@ -43,20 +43,22 @@ export class ReplayPlayer {
     this.startTime = this.recorder.count > 0 ? this.recorder.timeOf(0) : 0;
     this.shatter.reset();
     this.view.boxEnabled.fill(true);
-    // Les événements d'avant le premier échantillon conservé sont appliqués d'emblée (tampon plein).
-    this.applyEventsUntil(this.startTime);
+    // Les événements d'avant le premier échantillon conservé ne restaurent que l'état du décor (tampon plein).
+    this.applyEventsUntil(this.startTime, false);
     this.writeView();
   }
 
   // Avance le replay de dtReal secondes réelles.
   update(dtReal: number): void {
     this.playhead = Math.min(this.duration, this.playhead + dtReal);
-    this.applyEventsUntil(this.startTime + this.playhead);
+    this.applyEventsUntil(this.startTime + this.playhead, true);
     this.shatter.step(dtReal);
     this.writeView();
   }
 
-  private applyEventsUntil(time: number): void {
+  // `live` : false lors du redémarrage, où seuls les événements antérieurs à la fenêtre gardée
+  // sont concernés et ne doivent pas faire jaillir d'éclats.
+  private applyEventsUntil(time: number, live: boolean): void {
     const r = this.recorder;
     while (this.nextEvent < r.eventCount) {
       const o = this.nextEvent * EVENT_STRIDE;
@@ -66,13 +68,16 @@ export class ReplayPlayer {
       const targetId = r.events[o + 2]!;
       set(eventPos, r.events[o + 3]!, r.events[o + 4]!, r.events[o + 5]!);
       set(eventVel, r.events[o + 6]!, r.events[o + 7]!, r.events[o + 8]!);
+      // Une mort antérieure à la fenêtre gardée ne laisse rien à restaurer dans le décor.
+      const spawn = live || t >= this.startTime;
       if (type === "rackBurst") {
         this.view.boxEnabled[targetId] = false;
-        this.shatter.spawnBox(this.room.boxes[targetId]!, shatterSeed(1000 + targetId, t));
-      } else if (type === "enemyKilled") {
-        this.shatter.spawnBody(eventPos, ENEMY.height, ENEMY.radius, eventVel, shatterSeed(targetId, t), 0);
-      } else {
-        this.shatter.spawnBody(eventPos, PLAYER.height, PLAYER.radius, eventVel, shatterSeed(targetId, t), 2);
+        if (spawn) this.shatter.spawnBox(this.room.boxes[targetId]!, shatterSeed(1000 + targetId, t));
+      } else if (spawn) {
+        const player = type === "playerKilled";
+        const height = player ? PLAYER.height : ENEMY.height;
+        const radius = player ? PLAYER.radius : ENEMY.radius;
+        this.shatter.spawnBody(eventPos, height, radius, eventVel, shatterSeed(targetId, t), player ? 2 : 0);
       }
       this.nextEvent++;
     }

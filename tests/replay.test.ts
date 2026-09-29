@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { ReplayPlayer } from "../src/replay/player";
-import { REPLAY, ReplayRecorder } from "../src/replay/recorder";
+import { EVENT_STRIDE, REPLAY, ReplayRecorder } from "../src/replay/recorder";
+import { EventQueue } from "../src/sim/events";
 import { Game } from "../src/sim/game";
+import { vec3 } from "../src/sim/vec3";
 import { createWorldView, writeGameView } from "../src/sim/view";
 import { FRAME, enemyAt, input, testRoom } from "./helpers";
 
@@ -65,5 +67,48 @@ describe("replay (AC-7)", () => {
       frames++;
     }
     expect(replay.finished).toBe(true);
+  });
+
+  test("un éclatement d'avant la fenêtre gardée ne rejaillit pas au début du replay", () => {
+    const game = new Game(testRoom([enemyAt(0, -12, false)]));
+    const view = createWorldView(game.room.boxes.length, game.shatter.shards);
+    writeGameView(game, view);
+    const recorder = new ReplayRecorder();
+    const queue = new EventQueue(4);
+    queue.push("enemyKilled", 1.0, -1, 1, vec3(0, 0, -5), vec3(0, 0, -1));
+    queue.push("rackBurst", 2.0, -1, 0, vec3(), vec3());
+    recorder.recordEvents(queue);
+    // 120 s de simulation : les deux événements sont antérieurs à la fenêtre gardée.
+    for (let i = 0; i <= 120 * 60; i++) recorder.capture(i / 60, view, true);
+    const replay = new ReplayPlayer(recorder, game.room);
+    expect(replay.shatter.shards.some((s) => s.active)).toBe(false);
+    expect(replay.view.boxEnabled[0]).toBe(false);
+  });
+
+  test("au-delà de 64 événements, le replay garde les plus récents", () => {
+    const recorder = new ReplayRecorder();
+    const queue = new EventQueue(4);
+    for (let t = 0; t < 70; t++) {
+      queue.clear();
+      queue.push("enemyKilled", t, -1, 1, vec3(), vec3());
+      recorder.recordEvents(queue);
+    }
+    expect(recorder.eventCount).toBe(REPLAY.eventCapacity);
+    expect(recorder.events[0]).toBe(6);
+    expect(recorder.events[63 * EVENT_STRIDE]).toBe(69);
+  });
+
+  test("l'enregistrement tient 60 échantillons par seconde de simulation", () => {
+    const game = new Game(testRoom([enemyAt(10, -12, false)]));
+    const view = createWorldView(game.room.boxes.length, game.shatter.shards);
+    const recorder = new ReplayRecorder();
+    writeGameView(game, view);
+    recorder.capture(game.simTime, view, true);
+    for (let frame = 0; frame < 180; frame++) {
+      game.step(0.0166, input({ moveZ: 1 }));
+      writeGameView(game, view);
+      recorder.capture(game.simTime, view);
+    }
+    expect(recorder.count).toBeGreaterThanOrEqual(0.9 * 60 * game.simTime);
   });
 });
