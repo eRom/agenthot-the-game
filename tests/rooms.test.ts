@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { ROOMS } from "../src/rooms/registry";
+import { ROOMS, findRoom } from "../src/rooms/registry";
 import { room01 } from "../src/rooms/room-01-datacenter";
-import { PLAYER_ID, isAlive } from "../src/sim/entities";
+import { PLAYER, PLAYER_ID, isAlive } from "../src/sim/entities";
 import { Game } from "../src/sim/game";
 import { Rng } from "../src/sim/rng";
 import { FRAME, enemyAt, input, testRoom } from "./helpers";
@@ -10,7 +10,7 @@ describe("jamais de tir surprise (AC-5)", () => {
   test("sur 50 parties aléatoires, chaque tir ennemi suit au moins 0,4 s de visée continue", () => {
     const rng = new Rng(7);
     let shotsChecked = 0;
-    for (let game_i = 0; game_i < 50; game_i++) {
+    for (let gameIndex = 0; gameIndex < 50; gameIndex++) {
       const game = new Game(room01);
       const aimStart = new Map<number, number>();
       let moveX = 0;
@@ -34,7 +34,7 @@ describe("jamais de tir surprise (AC-5)", () => {
         }
         for (const enemy of game.enemies) {
           if (enemy.state === "aim") {
-            if (!aimStart.has(enemy.id)) aimStart.set(enemy.id, game.simTime - enemy.stateTime);
+            if (!aimStart.has(enemy.id)) aimStart.set(enemy.id, game.simTime);
           } else {
             aimStart.delete(enemy.id);
           }
@@ -95,8 +95,10 @@ describe("déroulé de la salle 1", () => {
       for (let i = 0; i < room01.boxes.length; i++) {
         const box = room01.boxes[i]!;
         if (!game.boxEnabled[i] || box.min.y > 1) continue;
-        const inside = p.x > box.min.x + 1e-6 && p.x < box.max.x - 1e-6 && p.z > box.min.z + 1e-6 && p.z < box.max.z - 1e-6;
-        expect(inside).toBe(false);
+        // Distance en XZ du centre du joueur au rectangle de la baie : jamais moins que le rayon.
+        const cx = Math.min(Math.max(p.x, box.min.x), box.max.x);
+        const cz = Math.min(Math.max(p.z, box.min.z), box.max.z);
+        expect(Math.hypot(p.x - cx, p.z - cz)).toBeGreaterThanOrEqual(PLAYER.radius - 1e-6);
       }
     }
   });
@@ -113,9 +115,12 @@ describe("déroulé de la salle 1", () => {
 
 describe("salles (AC-16)", () => {
   test("le registre expose la salle 1 jouable et la salle 2 verrouillée", () => {
-    const playable = ROOMS.filter((r) => r.status === "playable");
-    expect(playable.every((r) => r.definition !== undefined)).toBe(true);
-    expect(ROOMS.some((r) => r.status === "locked")).toBe(true);
+    const first = findRoom("room-01");
+    expect(first?.status).toBe("playable");
+    expect(first?.definition).toBeDefined();
+    expect(findRoom("room-02")?.status).toBe("locked");
+    expect(findRoom("does-not-exist")).toBeUndefined();
+    expect(new Set(ROOMS.map((r) => r.id)).size).toBe(ROOMS.length);
   });
 
   test("une salle de test minimale se joue jusqu'à la victoire sans toucher au moteur", () => {

@@ -25,6 +25,8 @@ const boxes: Aabb[] = [
   // Cage d'ascenseur au fond.
   aabb(-1.5, 0, -HALF_Z, 1.5, 3, -7.2),
   // Plancher de la passerelle, côté gauche, à 3,4 m : inaccessible au joueur (saut max ≈ 1,54 m).
+  // Marge sous la dalle : 3,4 − (1,8 de taille + 1,54 d'apex) ≈ 6 cm ; monter PLAYER.jumpSpeed
+  // au-delà d'environ 5,6 m/s ferait cogner la tête du joueur dans la dalle.
   aabb(-HALF_X, 3.4, -HALF_Z, -10, 3.5, 6),
 ];
 
