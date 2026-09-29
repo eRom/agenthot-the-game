@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
+import { ReplayPlayer } from "../src/replay/player";
+import { ReplayRecorder } from "../src/replay/recorder";
 import { NO_ID, PLAYER_ID } from "../src/sim/entities";
 import { Game } from "../src/sim/game";
 import { aabb } from "../src/sim/geometry";
-import { SHATTER, ShatterSystem } from "../src/sim/shatter";
+import { SHATTER, ShatterSystem, type Shard } from "../src/sim/shatter";
 import { set, vec3 } from "../src/sim/vec3";
+import { createWorldView, writeGameView } from "../src/sim/view";
 import { FRAME, enemyAt, input, run, testRoom } from "./helpers";
 
 describe("éclats et décor (plan 2)", () => {
@@ -73,5 +76,61 @@ describe("lancer et ramasser dans la même image (plan 2)", () => {
     expect(game.player.weaponId).toBe(NO_ID);
     expect(game.weapons[weaponId]!.state).toBe("flying");
     expect(game.weapons[weaponId]!.thrownBy).toBe(PLAYER_ID);
+  });
+});
+
+describe("éclats sur la passerelle : le câblage du jeu et du replay (plan 2)", () => {
+  const DECK_TOP = 3.5;
+
+  // Salle de test avec une passerelle de 12 × 12 m ; un ennemi désarmé y tient debout,
+  // un second, loin, garde la partie en cours pendant que les éclats retombent.
+  function deckRoom() {
+    const room = testRoom([{ ...enemyAt(0, -3, false, false), pos: vec3(0, DECK_TOP, -3) }, enemyAt(10, -12, false)]);
+    room.boxes.push(aabb(-6, 3.4, -6, 6, DECK_TOP, 6));
+    return room;
+  }
+
+  function shardsOnDeck(shards: readonly Shard[]): Shard[] {
+    return shards.filter((s) => s.active && Math.abs(s.pos.x) < 6 && Math.abs(s.pos.z) < 6);
+  }
+
+  function expectLandedOnDeck(shards: readonly Shard[]): void {
+    const onDeck = shardsOnDeck(shards);
+    expect(onDeck.length).toBeGreaterThan(SHATTER.shardsPerBody / 2);
+    for (const s of onDeck) expect(s.pos.y).toBeGreaterThanOrEqual(DECK_TOP - 0.01);
+  }
+
+  // Tue l'ennemi de la passerelle par l'API publique, enregistre la partie, puis laisse
+  // les éclats retomber jusqu'au repos.
+  function killAndRecord(game: Game): ReplayRecorder {
+    const recorder = new ReplayRecorder();
+    const view = createWorldView(game.room.boxes.length, game.shatter.shards);
+    writeGameView(game, view);
+    recorder.capture(game.simTime, view, true);
+    for (let frame = 0; frame < 60 * 60; frame++) {
+      game.step(FRAME, input());
+      // La mort est provoquée après le pas, pour que ses événements soient enregistrés avant le pas suivant.
+      if (frame === 0) game.killEnemy(game.enemies[0]!, vec3());
+      writeGameView(game, view);
+      recorder.recordEvents(game.events);
+      recorder.capture(game.simTime, view, game.status !== "playing");
+      if (frame > 0 && !game.shatter.shards.some((s) => s.active && !s.resting)) break;
+    }
+    return recorder;
+  }
+
+  test("dans la partie, les éclats d'un ennemi tué sur la passerelle se posent dessus", () => {
+    const game = new Game(deckRoom());
+    killAndRecord(game);
+    expect(game.status).toBe("playing");
+    expectLandedOnDeck(game.shatter.shards);
+  });
+
+  test("dans le replay, les éclats rejoués se posent aussi sur la passerelle", () => {
+    const game = new Game(deckRoom());
+    const recorder = killAndRecord(game);
+    const replay = new ReplayPlayer(recorder, game.room);
+    while (!replay.finished) replay.update(FRAME);
+    expectLandedOnDeck(replay.shatter.shards);
   });
 });
