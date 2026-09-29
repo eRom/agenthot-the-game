@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { droneGain, lowpassCutoff, musicRate, sfxRate } from "../src/audio/time-coupling";
+import { droneGain, gameMusicCutoff, lowpassCutoff, musicRate, sfxRate } from "../src/audio/time-coupling";
 import { TIME, TimeController, type TimeInput } from "../src/sim/time";
 
 const FRAME = 1 / 60;
@@ -43,5 +43,29 @@ describe("le son suit le temps (AC-19)", () => {
 
   test("le drone monte quand le joueur s'immobilise", () => {
     expect(droneGain(TIME.min)).toBeGreaterThan(droneGain(1) * 3);
+  });
+});
+
+describe("musique de jeu plus discrète (tâche 9, choix de Romain)", () => {
+  test("même à pleine vitesse, la musique de jeu reste sourde : coupure à 2,5 kHz au plus, les SFX restent ouverts", () => {
+    expect(gameMusicCutoff(1)).toBeLessThanOrEqual(2500);
+    expect(lowpassCutoff(1)).toBe(20_000);
+  });
+
+  test("elle n'est jamais plus claire que les SFX, et suit leur courbe au ralenti", () => {
+    for (let ts = TIME.min; ts <= 1; ts += 0.01) {
+      expect(gameMusicCutoff(ts)).toBeLessThanOrEqual(lowpassCutoff(ts));
+    }
+    expect(gameMusicCutoff(TIME.min)).toBe(lowpassCutoff(TIME.min));
+    expect(gameMusicCutoff(0.2)).toBe(lowpassCutoff(0.2));
+  });
+
+  test("sa coupure monte avec le temps, sans jamais redescendre", () => {
+    let previous = 0;
+    for (let ts = TIME.min; ts <= 1; ts += 0.01) {
+      const cutoff = gameMusicCutoff(ts);
+      expect(cutoff).toBeGreaterThanOrEqual(previous);
+      previous = cutoff;
+    }
   });
 });

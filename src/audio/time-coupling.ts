@@ -4,6 +4,9 @@
 export const AUDIO_TIME = {
   cutoffMin: 300,
   cutoffSpan: 19_700,
+  // Plafond de la coupure de la musique de jeu (Hz) : même à pleine vitesse, elle reste sourde sous les
+  // bruitages. Choix de Romain à l'essai de la tâche 9 (2026-09-29) : « Musique plus discrète ».
+  gameMusicCutoffMax: 2500,
   sfxRateMin: 0.2,
   musicRateMin: 0.5,
   // Drone d'ambiance : volume en mouvement, et volume ajouté quand le joueur s'immobilise.
@@ -13,9 +16,14 @@ export const AUDIO_TIME = {
   rampTime: 0.03,
 } as const;
 
-// Fréquence de coupure du passe-bas des SFX et de la musique en jeu : 300 + 19 700 × timeScale² Hz.
+// Fréquence de coupure du passe-bas des SFX : 300 + 19 700 × timeScale² Hz (la musique de jeu : gameMusicCutoff).
 export function lowpassCutoff(timeScale: number): number {
   return AUDIO_TIME.cutoffMin + AUDIO_TIME.cutoffSpan * timeScale * timeScale;
+}
+
+// Coupure de la musique de jeu : la courbe des SFX, plafonnée à gameMusicCutoffMax (identique au ralenti).
+export function gameMusicCutoff(timeScale: number): number {
+  return Math.min(AUDIO_TIME.gameMusicCutoffMax, lowpassCutoff(timeScale));
 }
 
 // Débit de lecture des SFX : clamp(0,2, 1, timeScale).
