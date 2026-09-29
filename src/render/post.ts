@@ -1,0 +1,113 @@
+// Post-traitement (spec 6.2) : contours fins à l'encre (profondeur + normales), glow limité aux
+// matériaux de menace, aberration chromatique à la mort. Un seul rendu de la scène, trois sorties (MRT).
+import { bloom } from "three/addons/tsl/display/BloomNode.js";
+import {
+  Fn,
+  abs,
+  cameraFar,
+  cameraNear,
+  color as tslColor,
+  dot,
+  float,
+  max,
+  mix,
+  mrt,
+  normalView,
+  normalize,
+  output,
+  pass,
+  perspectiveDepthToViewZ,
+  screenSize,
+  screenUV,
+  uniform,
+  vec2,
+  vec3,
+  vec4,
+} from "three/tsl";
+import * as THREE from "three/webgpu";
+import { PALETTE } from "./palette";
+
+export const POST = {
+  // Contour de profondeur : écart relatif du laplacien de 1/z (nul sur une surface plane).
+  outlineDepth: 0.1,
+  // Contour de normales : cosinus en dessous duquel deux pixels voisins forment une arête.
+  outlineNormal: 0.8,
+  bloomStrength: 1.2,
+  bloomRadius: 0.4,
+  bloomThreshold: 0,
+  // Décalage des canaux rouge et bleu à la mort, en fraction de l'écran au bord.
+  aberration: 0.012,
+} as const;
+
+// Masque de glow : seuls les matériaux de menace l'écrivent. La menace ne reçoit pas de contour encre :
+// son halo la détoure, et un trait fin (visée, traînée) serait noirci par le détecteur.
+export const GLOW_MRT = mrt({ glow: float(1) });
+
+export class PostPipeline {
+  private readonly pipeline: THREE.RenderPipeline;
+  // 0 en jeu, 1 à la mort.
+  private readonly death = uniform(0);
+
+  constructor(renderer: THREE.WebGPURenderer, scene: THREE.Scene, camera: THREE.Camera) {
+    const scenePass = pass(scene, camera);
+    scenePass.setMRT(mrt({ output, normal: normalView, glow: float(0) }));
+    const colorTex = scenePass.getTextureNode("output");
+    const normalTex = scenePass.getTextureNode("normal");
+    const depthTex = scenePass.getTextureNode("depth");
+    const glowTex = scenePass.getTextureNode("glow");
+    const texel = vec2(1).div(screenSize);
+
+    // 1/z est affine à l'écran sur un plan : son laplacien ne réagit qu'aux vraies ruptures.
+    const invZ = (uv: THREE.Node) =>
+      float(1).div(perspectiveDepthToViewZ(depthTex.sample(uv).x, cameraNear, cameraFar));
+    const edge = Fn(() => {
+      const center = invZ(screenUV);
+      const normal = normalTex.sample(screenUV).xyz;
+      // L'anticrénelage moyenne les normales en bord d'objet : on compare des directions (normalisées),
+      // et une normale presque nulle (fond, pixel à peine couvert) ne crée pas d'arête.
+      const validNormal = (n: typeof normal) => dot(n, n).greaterThan(0.09);
+      // Un pixel de menace n'a pas de contour et n'en crée pas chez ses voisins. Seuil bas :
+      // l'anticrénelage moyenne le masque d'un trait d'un pixel avec le fond.
+      const ignored = (uv: THREE.Node) => glowTex.sample(uv).x.greaterThan(0.1);
+      const laplacian = float(0).toVar();
+      const normalEdge = float(0).toVar();
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ] as const) {
+        const uv = screenUV.add(vec2(dx, dy).mul(texel));
+        // Voisin ignoré : on le remplace par le centre (écart nul).
+        const skip = ignored(uv);
+        laplacian.addAssign(skip.select(0, invZ(uv).sub(center)));
+        const neighbor = normalTex.sample(uv).xyz;
+        const trusted = skip.not().and(validNormal(normal)).and(validNormal(neighbor));
+        const cos = trusted.select(dot(normalize(normal), normalize(neighbor)), 1);
+        normalEdge.assign(max(normalEdge, cos.lessThan(POST.outlineNormal).select(1, 0)));
+      }
+      const depthEdge = abs(laplacian).div(abs(center)).greaterThan(POST.outlineDepth).select(1, 0);
+      return ignored(screenUV).select(0, max(depthEdge, normalEdge));
+    })();
+
+    // Aberration : rouge et bleu glissent vers les bords, seulement à la mort.
+    const shift = screenUV.sub(0.5).mul(this.death.mul(POST.aberration));
+    const color = vec3(
+      colorTex.sample(screenUV.add(shift)).r,
+      colorTex.sample(screenUV).g,
+      colorTex.sample(screenUV.sub(shift)).b,
+    );
+    const inked = mix(color, tslColor(PALETTE.ink), edge);
+    const glow = bloom(colorTex.mul(glowTex.x), POST.bloomStrength, POST.bloomRadius, POST.bloomThreshold);
+
+    this.pipeline = new THREE.RenderPipeline(renderer, vec4(inked.add(glow.rgb), 1));
+  }
+
+  setDeath(amount: number): void {
+    this.death.value = amount;
+  }
+
+  render(): void {
+    this.pipeline.render();
+  }
+}

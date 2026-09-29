@@ -1,4 +1,5 @@
-// Rendu « gris » : dessine une WorldView (jeu ou replay) sans jamais modifier la simulation.
+// Rendu du monde : dessine une WorldView (jeu ou replay) sans jamais modifier la simulation.
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import * as THREE from "three/webgpu";
 import type { RoomDefinition } from "../rooms/types";
 import { PLAYER_ID, POOLS } from "../sim/entities";
@@ -6,8 +7,8 @@ import { SHATTER } from "../sim/shatter";
 import type { WorldView } from "../sim/view";
 import { BULLET_LOOK, headScale, trailLength } from "./bullet-look";
 import { EnemyBodies } from "./enemy-bodies";
+import { aimLineMaterial, inkMaterial, threatBasicMaterial, threatMaterial, worldMaterial } from "./materials";
 import { PALETTE } from "./palette";
-
 
 export class WorldRenderer {
   readonly scene = new THREE.Scene();
@@ -15,13 +16,16 @@ export class WorldRenderer {
   private readonly racks: THREE.InstancedMesh;
   private readonly rackMatrices: THREE.Matrix4[] = [];
   private readonly bodies: EnemyBodies;
-  private readonly aimLines: THREE.Line[] = [];
+  // Traits de visée de tous les ennemis : un seul LineSegments (2 sommets par ennemi).
+  private readonly aimLines: THREE.LineSegments;
   // Armes du monde (au sol, en vol, tenues par un ennemi) : un seul InstancedMesh.
   private readonly weapons: THREE.InstancedMesh;
   private readonly viewModel: THREE.Mesh;
   private readonly bulletHeads: THREE.InstancedMesh;
   private readonly bulletTrails: THREE.InstancedMesh;
-  private readonly shards: THREE.InstancedMesh;
+  // Éclats de menace (glow) et éclats neutres (décor, joueur) : deux InstancedMesh.
+  private readonly threatShards: THREE.InstancedMesh;
+  private readonly neutralShards: THREE.InstancedMesh;
   private readonly room: RoomDefinition;
   // Objets temporaires réutilisés : zéro allocation par image.
   private readonly m = new THREE.Matrix4();
@@ -34,8 +38,10 @@ export class WorldRenderer {
   private readonly euler = new THREE.Euler(0, 0, 0, "YXZ");
   private readonly one = new THREE.Vector3(1, 1, 1);
   private readonly hidden = new THREE.Matrix4().makeScale(0, 0, 0);
+  private readonly lineTint = new THREE.Color();
   private readonly colors = {
     threat: new THREE.Color(PALETTE.threat),
+    threatHot: new THREE.Color(PALETTE.threatHot),
     world: new THREE.Color(PALETTE.world2),
     ink: new THREE.Color(PALETTE.ink),
   };
@@ -48,28 +54,46 @@ export class WorldRenderer {
     this.scene.add(this.camera);
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, PALETTE.void2, 1.4));
+    // Soleil qui porte des ombres douces sur toute la salle (24 × 16 m).
     const sun = new THREE.DirectionalLight(0xffffff, 1.6);
     sun.position.set(6, 12, 4);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -16;
+    sun.shadow.camera.right = 16;
+    sun.shadow.camera.top = 16;
+    sun.shadow.camera.bottom = -16;
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 40;
+    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.02;
     this.scene.add(sun);
 
-    const worldMat = new THREE.MeshStandardMaterial({ color: PALETTE.world, roughness: 0.9 });
+    const worldMat = worldMaterial(PALETTE.world);
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), worldMat);
     floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
     this.scene.add(floor);
 
-    // Boîtes fixes (murs, ascenseur, passerelle) : un mesh chacune, elles sont peu nombreuses.
+    // Boîtes fixes (murs, ascenseur, passerelle) : fusionnées en un seul mesh, un seul appel de dessin.
     const rackSet = new Set(room.rackBoxIndices);
+    const fixed: THREE.BufferGeometry[] = [];
     room.boxes.forEach((box, i) => {
       if (rackSet.has(i)) return;
       const size = new THREE.Vector3().subVectors(toV3(box.max), toV3(box.min));
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), worldMat);
-      mesh.position.addVectors(toV3(box.min), toV3(box.max)).multiplyScalar(0.5);
-      this.scene.add(mesh);
+      const center = new THREE.Vector3().addVectors(toV3(box.min), toV3(box.max)).multiplyScalar(0.5);
+      fixed.push(new THREE.BoxGeometry(size.x, size.y, size.z).translate(center.x, center.y, center.z));
     });
+    const walls = new THREE.Mesh(mergeGeometries(fixed), worldMat);
+    walls.castShadow = true;
+    walls.receiveShadow = true;
+    this.scene.add(walls);
 
     // Baies : un seul InstancedMesh, une baie explosée est mise à l'échelle 0.
-    const rackMat = new THREE.MeshStandardMaterial({ color: PALETTE.world2, roughness: 0.8 });
-    this.racks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), rackMat, room.rackBoxIndices.length);
+    this.racks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), worldMaterial(PALETTE.world2), room.rackBoxIndices.length);
+    this.racks.castShadow = true;
+    this.racks.receiveShadow = true;
     room.rackBoxIndices.forEach((boxIndex, i) => {
       const box = room.boxes[boxIndex]!;
       const matrix = new THREE.Matrix4().compose(
@@ -82,54 +106,54 @@ export class WorldRenderer {
     });
     this.scene.add(this.racks);
 
-    const threatMat = new THREE.MeshStandardMaterial({
-      color: PALETTE.threat,
-      emissive: PALETTE.threat,
-      emissiveIntensity: 0.25,
-      roughness: 0.5,
-    });
+    const threatMat = threatMaterial();
     this.bodies = new EnemyBodies(threatMat);
     for (const mesh of this.bodies.meshes) this.scene.add(mesh);
-    const aimMat = new THREE.LineBasicMaterial({ color: PALETTE.threatHot, transparent: true });
-    for (let i = 0; i < POOLS.enemies; i++) {
-      const lineGeo = new THREE.BufferGeometry();
-      lineGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(6), 3));
-      const line = new THREE.Line(lineGeo, aimMat.clone());
-      line.visible = false;
-      line.frustumCulled = false;
-      this.aimLines.push(line);
-      this.scene.add(line);
-    }
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(POOLS.enemies * 6), 3));
+    lineGeo.setAttribute("color", new THREE.BufferAttribute(new Float32Array(POOLS.enemies * 6), 3));
+    this.aimLines = new THREE.LineSegments(lineGeo, aimLineMaterial());
+    this.aimLines.frustumCulled = false;
+    this.scene.add(this.aimLines);
 
-    const inkMat = new THREE.MeshStandardMaterial({ color: PALETTE.ink, roughness: 0.6 });
+    const inkMat = inkMaterial();
     this.weapons = new THREE.InstancedMesh(new THREE.BoxGeometry(0.08, 0.15, 0.3), inkMat, POOLS.weapons);
     this.weapons.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.weapons.frustumCulled = false;
+    this.weapons.castShadow = true;
     this.scene.add(this.weapons);
     // Arme en main : plus petite et plus loin que les armes du monde, pour ne pas boucher la vue.
     this.viewModel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.24), inkMat);
     this.viewModel.position.set(0.2, -0.2, -0.55);
     this.camera.add(this.viewModel);
 
-    const bulletMat = new THREE.MeshBasicMaterial({ color: PALETTE.threatHot });
+    const bulletMat = threatBasicMaterial(PALETTE.threatHot);
     this.bulletHeads = new THREE.InstancedMesh(new THREE.SphereGeometry(BULLET_LOOK.headRadius, 8, 6), bulletMat, POOLS.bullets);
     this.bulletHeads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.bulletHeads.frustumCulled = false;
     this.scene.add(this.bulletHeads);
     // Traînée : cylindre unitaire le long de +Y, étiré et orienté selon -vitesse.
     const trailGeo = new THREE.CylinderGeometry(0.03, 0.03, 1, 6).translate(0, 0.5, 0);
-    const trailMat = new THREE.MeshBasicMaterial({ color: PALETTE.threat, transparent: true, opacity: 0.85 });
+    const trailMat = threatBasicMaterial(PALETTE.threat);
     this.bulletTrails = new THREE.InstancedMesh(trailGeo, trailMat, POOLS.bullets);
     this.bulletTrails.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.bulletTrails.frustumCulled = false;
     this.scene.add(this.bulletTrails);
 
-    const shardMat = new THREE.MeshStandardMaterial({ roughness: 0.4, flatShading: true });
-    this.shards = new THREE.InstancedMesh(new THREE.TetrahedronGeometry(1), shardMat, SHATTER.capacity);
-    this.shards.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.shards.frustumCulled = false;
-    for (let i = 0; i < SHATTER.capacity; i++) this.shards.setColorAt(i, this.colors.threat);
-    this.scene.add(this.shards);
+    const shardGeo = new THREE.TetrahedronGeometry(1);
+    this.threatShards = new THREE.InstancedMesh(shardGeo, threatMat, SHATTER.capacity);
+    const neutralMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.4, flatShading: true });
+    this.neutralShards = new THREE.InstancedMesh(shardGeo, neutralMat, SHATTER.capacity);
+    for (let i = 0; i < SHATTER.capacity; i++) {
+      this.threatShards.setMatrixAt(i, this.hidden);
+      this.neutralShards.setMatrixAt(i, this.hidden);
+      this.neutralShards.setColorAt(i, this.colors.world);
+    }
+    for (const mesh of [this.threatShards, this.neutralShards]) {
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.frustumCulled = false;
+      this.scene.add(mesh);
+    }
   }
 
   resize(aspect: number): void {
@@ -156,19 +180,26 @@ export class WorldRenderer {
     this.racks.instanceMatrix.needsUpdate = true;
 
     this.bodies.update(view.enemies);
+    const linePos = this.aimLines.geometry.getAttribute("position") as THREE.BufferAttribute;
+    const lineColor = this.aimLines.geometry.getAttribute("color") as THREE.BufferAttribute;
     for (let i = 0; i < POOLS.enemies; i++) {
       const e = view.enemies[i]!;
-      const line = this.aimLines[i]!;
-      line.visible = e.visible && e.state === "aim";
-      if (!line.visible) continue;
-      // Le trait de visée part de la main qui tient l'arme.
+      if (!e.visible || e.state !== "aim") {
+        // Trait masqué : ses deux sommets confondus, il ne dessine rien.
+        linePos.setXYZ(i * 2, 0, -100, 0);
+        linePos.setXYZ(i * 2 + 1, 0, -100, 0);
+        continue;
+      }
+      // Le trait part de la main qui tient l'arme ; il chauffe de threat à threat-hot pendant la visée.
       const hand = this.bodies.pose(i).hand;
-      const attr = line.geometry.getAttribute("position") as THREE.BufferAttribute;
-      attr.setXYZ(0, hand.x, hand.y, hand.z);
-      attr.setXYZ(1, e.aimPoint.x, e.aimPoint.y, e.aimPoint.z);
-      attr.needsUpdate = true;
-      (line.material as THREE.LineBasicMaterial).opacity = 0.25 + 0.75 * e.stateProgress;
+      linePos.setXYZ(i * 2, hand.x, hand.y, hand.z);
+      linePos.setXYZ(i * 2 + 1, e.aimPoint.x, e.aimPoint.y, e.aimPoint.z);
+      this.lineTint.lerpColors(this.colors.threat, this.colors.threatHot, e.stateProgress);
+      lineColor.setXYZ(i * 2, this.lineTint.r, this.lineTint.g, this.lineTint.b);
+      lineColor.setXYZ(i * 2 + 1, this.lineTint.r, this.lineTint.g, this.lineTint.b);
     }
+    linePos.needsUpdate = true;
+    lineColor.needsUpdate = true;
 
     for (let i = 0; i < POOLS.weapons; i++) {
       const w = view.weapons[i]!;
@@ -216,7 +247,8 @@ export class WorldRenderer {
     for (let i = 0; i < view.shards.length; i++) {
       const sh = view.shards[i]!;
       if (!sh.active) {
-        this.shards.setMatrixAt(i, this.hidden);
+        this.threatShards.setMatrixAt(i, this.hidden);
+        this.neutralShards.setMatrixAt(i, this.hidden);
         continue;
       }
       this.p.set(sh.pos.x, sh.pos.y, sh.pos.z);
@@ -224,11 +256,18 @@ export class WorldRenderer {
       this.q.setFromAxisAngle(this.axis, sh.angle);
       this.s.setScalar(sh.size);
       this.m.compose(this.p, this.q, this.s);
-      this.shards.setMatrixAt(i, this.m);
-      this.shards.setColorAt(i, sh.kind === 0 ? this.colors.threat : sh.kind === 1 ? this.colors.world : this.colors.ink);
+      if (sh.kind === 0) {
+        this.threatShards.setMatrixAt(i, this.m);
+        this.neutralShards.setMatrixAt(i, this.hidden);
+      } else {
+        this.threatShards.setMatrixAt(i, this.hidden);
+        this.neutralShards.setMatrixAt(i, this.m);
+        this.neutralShards.setColorAt(i, sh.kind === 1 ? this.colors.world : this.colors.ink);
+      }
     }
-    this.shards.instanceMatrix.needsUpdate = true;
-    if (this.shards.instanceColor) this.shards.instanceColor.needsUpdate = true;
+    this.threatShards.instanceMatrix.needsUpdate = true;
+    this.neutralShards.instanceMatrix.needsUpdate = true;
+    if (this.neutralShards.instanceColor) this.neutralShards.instanceColor.needsUpdate = true;
   }
 }
 

@@ -10,6 +10,9 @@ export async function createRenderer(container: HTMLElement, forceWebGL: boolean
   const renderer = new THREE.WebGPURenderer({ antialias: true, forceWebGL });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
+  // Ombres douces : PCF filtré (PCFSoftShadowMap n'existe plus en r186, il retombe sur PCF).
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   container.appendChild(renderer.domElement);
   await renderer.init();
   // `isWebGPUBackend` n'est typé que sur WebGPUBackend : lecture par cast (brief r186).

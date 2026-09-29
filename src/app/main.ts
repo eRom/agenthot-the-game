@@ -3,6 +3,7 @@ import "./style.css";
 import { ReplayPlayer } from "../replay/player";
 import { ReplayRecorder } from "../replay/recorder";
 import { createRenderer } from "../render/create-renderer";
+import { PostPipeline } from "../render/post";
 import { WorldRenderer } from "../render/world-renderer";
 import { room01 } from "../rooms/room-01-datacenter";
 import { Game, type PlayerInput, emptyInput } from "../sim/game";
@@ -21,6 +22,7 @@ const debug = params.has("debug");
 const app = document.querySelector<HTMLElement>("#app")!;
 const { renderer, isWebGPU } = await createRenderer(app, params.get("renderer") === "webgl");
 const world = new WorldRenderer(room01, window.innerWidth / window.innerHeight);
+const post = new PostPipeline(renderer, world.scene, world.camera);
 const game = new Game(room01);
 const view = createWorldView(room01.boxes.length, game.shatter.shards);
 const recorder = new ReplayRecorder();
@@ -51,6 +53,8 @@ function setMode(next: Mode): void {
   // Écrans de fin : on oublie les appuis du jeu (saut, R, clic de tir) pour ne pas sauter l'écran.
   if (next === "dead" || next === "replay" || next === "won") input.clear();
   hud.show(next === "playing" ? "none" : next);
+  // Aberration chromatique : seulement pendant l'écran de mort (spec 6.2).
+  post.setDeath(next === "dead" ? 1 : 0);
 }
 
 // Un clic reprend le verrou du pointeur sur tous les écrans (Échap ou alt-tab l'ont peut-être perdu).
@@ -81,6 +85,7 @@ if (debug) {
   (window as unknown as { agenthot: unknown }).agenthot = {
     renderer,
     game,
+    post,
     advance(seconds: number, overrides: Partial<PlayerInput> = {}): void {
       const frameInput = { ...emptyInput(), ...overrides };
       for (let t = 0; t < seconds; t += 1 / 60) {
@@ -90,6 +95,7 @@ if (debug) {
       }
       writeGameView(game, view);
       world.update(view);
+      // Le rendu reste celui de la boucle : ses appels de dessin se lisent dans le panneau debug.
     },
   };
 }
@@ -147,7 +153,7 @@ renderer.setAnimationLoop(() => {
     if (replay.finished) setMode("won");
   }
 
-  renderer.render(world.scene, world.camera);
+  post.render();
 
   fpsFrames++;
   fpsTime += dt;
