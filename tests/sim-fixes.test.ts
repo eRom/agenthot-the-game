@@ -7,6 +7,9 @@ import { aabb } from "../src/sim/geometry";
 import { SHATTER, ShatterSystem, type Shard } from "../src/sim/shatter";
 import { set, vec3 } from "../src/sim/vec3";
 import { createWorldView, writeGameView } from "../src/sim/view";
+import { room01 } from "../src/rooms/room-01-datacenter";
+import type { Enemy } from "../src/sim/entities";
+import { playerEye } from "../src/sim/player-system";
 import { FRAME, enemyAt, input, run, testRoom } from "./helpers";
 
 describe("éclats et décor (plan 2)", () => {
@@ -132,5 +135,76 @@ describe("éclats sur la passerelle : le câblage du jeu et du replay (plan 2)",
     const replay = new ReplayPlayer(recorder, game.room);
     while (!replay.finished) replay.update(FRAME);
     expectLandedOnDeck(replay.shatter.shards);
+  });
+});
+
+describe("éclats plafonnés à 5 m/s (spec 5.8, décision de Romain du 2026-09-29)", () => {
+  // Les éclats d'un même tirage (même graine) ne diffèrent d'un impact nul que par la part d'impact :
+  // v(impact) - v(nul) = part d'impact, éclat par éclat.
+  function shareOf(impact: ReturnType<typeof vec3>): { x: number; y: number; z: number }[] {
+    const hit = new ShatterSystem();
+    const none = new ShatterSystem();
+    hit.spawnBody(vec3(0, 0, 0), 1.8, 0.3, impact, 7, 0);
+    none.spawnBody(vec3(0, 0, 0), 1.8, 0.3, vec3(), 7, 0);
+    return hit.shards
+      .filter((s) => s.active)
+      .map((s, i) => ({ x: s.vel.x - none.shards[i]!.vel.x, y: s.vel.y - none.shards[i]!.vel.y, z: s.vel.z - none.shards[i]!.vel.z }));
+  }
+
+  test("une balle à 45 m/s ne donne que 5 m/s de part d'impact, dans son sens", () => {
+    const shares = shareOf(vec3(45, 0, 0));
+    expect(shares.length).toBe(SHATTER.shardsPerBody);
+    for (const v of shares) {
+      expect(v.x).toBeCloseTo(SHATTER.maxImpactSpeed, 6);
+      expect(v.y).toBeCloseTo(0, 6);
+      expect(v.z).toBeCloseTo(0, 6);
+    }
+  });
+
+  test("le plafond garde la direction de l'impact", () => {
+    // Impact de norme 50 : part brute 30 m/s, ramenée à 5 en gardant le rapport 3:4.
+    for (const v of shareOf(vec3(30, 0, 40))) {
+      expect(v.x).toBeCloseTo(3, 6);
+      expect(v.z).toBeCloseTo(4, 6);
+    }
+  });
+
+  test("sous le plafond, la part d'impact reste 0,6 × l'impact", () => {
+    // 5 m/s d'impact : part de 3 m/s, sous le plafond.
+    for (const v of shareOf(vec3(0, 0, -5))) {
+      expect(v.z).toBeCloseTo(-5 * SHATTER.impactShare, 6);
+      expect(v.x).toBeCloseTo(0, 6);
+    }
+  });
+
+  // Vise le buste de l'ennemi depuis l'œil du joueur (lacet 0 = -Z, tangage positif = vers le haut).
+  function aimAt(game: Game, enemy: Enemy): void {
+    const eye = playerEye(game, vec3());
+    const p = game.player;
+    p.yaw = Math.atan2(-(enemy.pos.x - eye.x), -(enemy.pos.z - eye.z));
+    p.pitch = Math.atan2(enemy.pos.y + 1.2 - eye.y, Math.hypot(enemy.pos.x - eye.x, enemy.pos.z - eye.z));
+  }
+
+  // Un vrai tir du joueur (touche de tir, balle à 45 m/s) qui tue l'ennemi, puis les éclats retombent jusqu'au repos.
+  function shootAndSettle(game: Game, enemy: Enemy): Shard[] {
+    aimAt(game, enemy);
+    game.step(FRAME, input({ fire: true }));
+    run(game, () => input(), () => enemy.state === "dead", 5);
+    expect(enemy.state).toBe("dead");
+    for (let i = 0; i < 60 * 20 && game.shatter.shards.some((s) => s.active && !s.resting); i++) {
+      game.shatter.step(FRAME, game.room.boxes, game.boxEnabled);
+    }
+    return game.shatter.shards.filter((s) => s.active);
+  }
+
+  test("tué par une vraie balle au centre de la salle 1, l'ennemi éclate dans la salle", () => {
+    const room = { ...room01, spawns: [{ pos: vec3(0, 0, 0), yaw: Math.PI, armed: false, mobile: false, trigger: { kind: "start" as const } }] };
+    const game = new Game(room);
+    const shards = shootAndSettle(game, game.enemies[0]!);
+    expect(shards.length).toBe(SHATTER.shardsPerBody);
+    for (const s of shards) {
+      expect(Math.abs(s.pos.x)).toBeLessThanOrEqual(12);
+      expect(Math.abs(s.pos.z)).toBeLessThanOrEqual(8);
+    }
   });
 });

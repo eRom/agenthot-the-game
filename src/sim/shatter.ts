@@ -13,6 +13,9 @@ export const SHATTER = {
   // Force de dispersion aléatoire, en m/s.
   spread: 3,
   impactShare: 0.6,
+  // Plafond (m/s) de la part d'impact transmise aux éclats. Décision de Romain le 2026-09-29 (spec 5.8) :
+  // sans lui, une balle à 45 m/s donnait 27 m/s aux éclats, projetés hors de la salle et à travers les murs.
+  maxImpactSpeed: 5,
 } as const;
 
 // 0 = menace (orange), 1 = décor (blanc), 2 = encre (joueur).
@@ -61,19 +64,20 @@ export class ShatterSystem {
   // Fait éclater un corps (capsule verticale posée sur `base`).
   spawnBody(base: Vec3, height: number, radius: number, impactVel: Vec3, seed: number, kind: ShardKind): void {
     this.rng.reset(seed);
+    cappedImpact(impactVel);
     for (let i = 0; i < SHATTER.shardsPerBody; i++) {
       const s = this.take();
       const a = this.rng.range(0, Math.PI * 2);
       const r = this.rng.range(0, radius);
       set(s.pos, base.x + Math.cos(a) * r, base.y + this.rng.range(0.1, height), base.z + Math.sin(a) * r);
-      this.launch(s, impactVel, kind, this.rng.range(0.05, 0.14));
+      this.launch(s, kind, this.rng.range(0.05, 0.14));
     }
   }
 
   // Fait éclater une boîte du décor (baie de serveurs qui explose).
   spawnBox(box: Aabb, seed: number): void {
     this.rng.reset(seed);
-    set(tmpVel, 0, 0, 0);
+    set(shareVel, 0, 0, 0);
     for (let i = 0; i < SHATTER.shardsPerBox; i++) {
       const s = this.take();
       set(
@@ -82,7 +86,7 @@ export class ShatterSystem {
         this.rng.range(box.min.y, box.max.y),
         this.rng.range(box.min.z, box.max.z),
       );
-      this.launch(s, tmpVel, 1, this.rng.range(0.1, 0.25));
+      this.launch(s, 1, this.rng.range(0.1, 0.25));
     }
   }
 
@@ -123,7 +127,8 @@ export class ShatterSystem {
     return s;
   }
 
-  private launch(s: Shard, impactVel: Vec3, kind: ShardKind, size: number): void {
+  // La part d'impact (déjà plafonnée) est lue dans `shareVel`, renseigné par spawnBody / spawnBox.
+  private launch(s: Shard, kind: ShardKind, size: number): void {
     s.active = true;
     s.resting = false;
     s.bounced = false;
@@ -136,9 +141,9 @@ export class ShatterSystem {
     const force = this.rng.range(0.3, 1) * SHATTER.spread;
     set(
       s.vel,
-      impactVel.x * SHATTER.impactShare + k * Math.cos(phi) * force,
-      impactVel.y * SHATTER.impactShare + Math.abs(u) * force,
-      impactVel.z * SHATTER.impactShare + k * Math.sin(phi) * force,
+      shareVel.x + k * Math.cos(phi) * force,
+      shareVel.y + Math.abs(u) * force,
+      shareVel.z + k * Math.sin(phi) * force,
     );
     set(s.axis, this.rng.range(-1, 1), this.rng.range(-1, 1), this.rng.range(-1, 1));
     const len = Math.hypot(s.axis.x, s.axis.y, s.axis.z) || 1;
@@ -150,9 +155,19 @@ export class ShatterSystem {
   }
 }
 
-const tmpVel = vec3();
+// Part d'impact transmise aux éclats du corps ou de la boîte en cours d'éclatement.
+const shareVel = vec3();
 const NO_BOXES: readonly Aabb[] = [];
 const NO_FLAGS: readonly boolean[] = [];
+
+// Calcule dans `shareVel` la part d'impact des éclats : `impactShare` × impact, plafonnée en norme à `maxImpactSpeed`.
+function cappedImpact(impactVel: Vec3): void {
+  set(shareVel, impactVel.x * SHATTER.impactShare, impactVel.y * SHATTER.impactShare, impactVel.z * SHATTER.impactShare);
+  const speed = Math.hypot(shareVel.x, shareVel.y, shareVel.z);
+  if (speed <= SHATTER.maxImpactSpeed) return;
+  const k = SHATTER.maxImpactSpeed / speed;
+  set(shareVel, shareVel.x * k, shareVel.y * k, shareVel.z * k);
+}
 
 // Hauteur du sol sous (x, z) : le dessus le plus haut d'une boîte active située sous `fromY`, ou 0.
 function groundBelow(x: number, z: number, fromY: number, boxes: readonly Aabb[], enabled: readonly boolean[]): number {
