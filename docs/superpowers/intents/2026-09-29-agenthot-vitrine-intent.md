@@ -93,3 +93,12 @@ Spec associée : `docs/superpowers/specs/2026-09-29-agenthot-vitrine-design.md`.
 - Valeurs réelles de tokens et de coût pour les crédits.
 - Réussite de la voix « AGENT... HOT... » via Lyria 3.5 (sinon repli en code).
 - Les docs d'idéation (`docs/superpowers/idea/*`) restent la source des chiffres de départ ; la spec prime en cas de conflit.
+
+## Révisions après la spec
+
+2026-09-29, pendant l'écriture du plan 1 (le code de simulation a été prototypé et testé) :
+
+- **AC-1 :** 10 m / 7 s devient 7,9 m / 5 s. Raison : la portée de tir ennemie de 8 m (section 5.6) interdit un tir à 10 m. La vitesse perçue reste la même (1,35 m/s à 3 %).
+- **Munitions :** une arme reprise garde ses balles. Raison : un test a montré qu'une arme vide lancée puis rattrapée redevenait pleine, soit des munitions infinies.
+- **Arme lancée qui touche un ennemi :** elle tombe à ses pieds au lieu de rebondir vers le joueur. L'arme de l'ennemi part vers celui qui l'a frappé (et non « vers l'arrière »). Raison : sinon le joueur rattrapait sa propre arme vide au lieu de celle de l'ennemi, ce qui cassait la boucle désarmement / capture.
+- **Découpage :** l'implémentation est coupée en 3 plans (1 : salle en gris jouable ; 2 : beauté et son ; 3 : écrans, assets, cinématique, mise en ligne), dans l'ordre de fabrication de la spec. Les plans 2 et 3 s'écrivent après le test de sensation du plan 1.

@@ -138,10 +138,11 @@ Le pas de simulation vaut `simDt = dtReal × timeScale`, plafonné à 1/60 s. Le
 ### 5.4 Objets lancés, désarmement, capture
 
 - **Arme lancée :** vol balistique (gravité 9,81 m/s²), rotation sur elle-même.
-  - Touche un ennemi : il vacille 1,5 s, son tir en cours est annulé et il lâche son arme.
+  - Touche un ennemi : il vacille 1,5 s, son tir en cours est annulé et il lâche son arme. L'arme lancée tombe aux pieds de l'ennemi.
   - Touche le décor : elle rebondit une fois, puis tombe au sol.
-- **Arme lâchée par un ennemi :** éjectée vers le haut et vers l'arrière avec une impulsion, en arc lisible au ralenti. Captable en vol.
-- **Arme captée ou ramassée :** chargeur plein, prête à tirer tout de suite.
+- **Arme lâchée par un ennemi :** éjectée vers le haut et vers celui qui l'a frappé, en arc lisible au ralenti. Captable en vol.
+- **Arme captée ou ramassée :** prête à tirer tout de suite, et elle garde ses balles. Une arme d'ennemi est pleine ; une arme vidée par le joueur reste vide (sinon, munitions infinies).
+- **Deux armes à portée en même temps :** le joueur attrape la plus chargée.
 
 ### 5.5 Coup de poing
 
@@ -374,8 +375,8 @@ src/
 ## Critères d'acceptation
 
 **AC-1 : le temps ralentit à l'arrêt**
-- **Comportement :** quand le joueur est immobile et ne touche à rien, alors une balle ennemie tirée à 10 m met au moins 7 s réelles à l'atteindre.
-- **Vérifié par :** partie scriptée `bun test` (joueur immobile, un ennemi à 10 m qui tire). Le temps réel simulé jusqu'à l'impact est ≥ 7,0 s.
+- **Comportement :** quand le joueur est immobile et ne touche à rien, alors une balle ennemie tirée à 7,9 m (juste sous la portée de tir de 8 m) met au moins 5 s réelles à l'atteindre.
+- **Vérifié par :** partie scriptée `bun test` (joueur immobile, un ennemi à 7,9 m qui tire). Le temps réel écoulé entre le tir et l'impact est ≥ 5,0 s.
 
 **AC-2 : le temps reprend en mouvement**
 - **Comportement :** quand le joueur marche, alors le temps passe à pleine vitesse en moins de 0,3 s réelle. Quand il s'arrête, le temps redescend vers 3 %.
