@@ -102,3 +102,20 @@ Spec associée : `docs/superpowers/specs/2026-09-29-agenthot-vitrine-design.md`.
 - **Munitions :** une arme reprise garde ses balles. Raison : un test a montré qu'une arme vide lancée puis rattrapée redevenait pleine, soit des munitions infinies.
 - **Arme lancée qui touche un ennemi :** elle tombe à ses pieds au lieu de rebondir vers le joueur. L'arme de l'ennemi part vers celui qui l'a frappé (et non « vers l'arrière »). Raison : sinon le joueur rattrapait sa propre arme vide au lieu de celle de l'ennemi, ce qui cassait la boucle désarmement / capture.
 - **Découpage :** l'implémentation est coupée en 3 plans (1 : salle en gris jouable ; 2 : beauté et son ; 3 : écrans, assets, cinématique, mise en ligne), dans l'ordre de fabrication de la spec. Les plans 2 et 3 s'écrivent après le test de sensation du plan 1.
+
+## Test de sensation (tâche 8 du plan 1), 2026-09-29
+
+Romain a joué au trackpad, main droite pas encore à 100 %, et a gagné. Réponses (questions à choix) :
+
+- Le temps : « Trop nerveux ».
+- Les balles au ralenti : « Trop discrètes ».
+- Nombre d'essais : « 3 à 5 », dans la cible.
+- Le replay : « Bof ».
+- Lancer / désarmer / rattraper : « ça me demande trop de synchronisation pour la main droite, c'est pas grave ».
+
+Réglages décidés par Claude en réponse :
+- montée du temps plus douce (λ 5 en montée, 12 en descente), regard 0,15 → 0,10 ; AC-2 passe à « 95 % en 0,6 s » ;
+- balles plus visibles au rendu seulement (zone de touche inchangée) ;
+- rattrapage plus tolérant (rayon 0,9 → 1,3 m ; arme d'ennemi éjectée plus franchement vers le joueur) ;
+- difficulté inchangée ;
+- effet « film d'action » du replay reporté aux plans 2 (son, cri) et 3 (typo).

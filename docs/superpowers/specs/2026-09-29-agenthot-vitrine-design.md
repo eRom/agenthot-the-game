@@ -103,14 +103,14 @@ Toutes les durées de gameplay sont en **temps de simulation**, sauf mention con
 À chaque image, `timeScale` (entre 0,03 et 1) est calculé à partir de trois composantes :
 
 - `moveAlpha = |v_joueur| / v_max` ;
-- `lookAlpha = min(1, (|dx| + |dy|) / lookThreshold) × 0,15`, où `dx`, `dy` sont le mouvement souris de l'image ;
+- `lookAlpha = min(1, vitesse souris / lookThreshold) × 0,10`, où la vitesse souris est `(|dx| + |dy|)` par seconde réelle et `lookThreshold` = 800 px/s (0,15 au départ, baissé à 0,10 après le test de Romain au trackpad) ;
 - `actionAlpha` passe à 1 au tir, au coup ou au lancer, puis décroît exponentiellement en 0,2 s de **temps réel**.
 
 Calcul :
 
 - `raw = clamp(0,03, 1, moveAlpha + lookAlpha + actionAlpha)` ;
 - pendant la phase montante d'un saut, `raw = 1` ;
-- lissage : `timeScale += (raw − timeScale) × (1 − e^(−12 × dtReal))`.
+- lissage asymétrique : `timeScale += (raw − timeScale) × (1 − e^(−λ × dtReal))`, avec λ = 5 quand le temps accélère et λ = 12 quand il ralentit. Montée douce pour que les petits pas coûtent peu, arrêt net. Réglé le 2026-09-29 : le temps unique à λ = 12 était « trop nerveux ».
 
 Le pas de simulation vaut `simDt = dtReal × timeScale`, plafonné à 1/60 s. Les balles utilisent une détection de collision continue (section 5.3), donc un pas variable est sûr.
 
@@ -379,8 +379,8 @@ src/
 - **Vérifié par :** partie scriptée `bun test` (joueur immobile, un ennemi à 7,9 m qui tire). Le temps réel écoulé entre le tir et l'impact est ≥ 5,0 s.
 
 **AC-2 : le temps reprend en mouvement**
-- **Comportement :** quand le joueur marche, alors le temps passe à pleine vitesse en moins de 0,3 s réelle. Quand il s'arrête, le temps redescend vers 3 %.
-- **Vérifié par :** `bun test` sur `TimeController`. Entrée marche : `timeScale` ≥ 0,95 à t = 0,3 s. Arrêt : `timeScale` ≤ 0,05 à t = 0,5 s.
+- **Comportement :** quand le joueur marche, alors le temps monte en douceur jusqu'à pleine vitesse en 0,6 s réelle au plus. Quand il s'arrête, le temps redescend vers 3 %, plus vite qu'il n'est monté.
+- **Vérifié par :** `bun test` sur `TimeController`. Entrée marche : `timeScale` ≥ 0,95 à t = 0,6 s. Arrêt : `timeScale` ≤ 0,05 à t = 0,5 s.
 
 **AC-3 : aucune balle ne traverse un mur**
 - **Comportement :** quand une balle à 45 m/s vole à pleine vitesse vers un mur de 5 cm, alors elle s'arrête sur le mur, quelle que soit la cadence d'image.
