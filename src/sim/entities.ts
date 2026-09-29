@@ -46,6 +46,12 @@ export const ENEMY = {
   repathInterval: 0.5,
   // Distance à laquelle un nœud du chemin est considéré atteint.
   waypointReach: 0.4,
+  // Amplitude de foulée : elle monte vers 1 quand l'ennemi avance, retombe vers 0 quand il s'arrête.
+  // Taux du lissage en temps de simulation : 1 - e^(-10 dt) par pas, soit ~95 % en 0,3 s. Portée par la
+  // simulation (et non déduite de la progression d'état au rendu) pour ne jamais sauter à un changement d'état.
+  strideRate: 10,
+  // Déplacement minimal (m) par pas pour compter comme un pas de marche.
+  strideMoveEpsilon: 1e-4,
   // Arme éjectée : vitesse vers le haut, puis vers celui qui a frappé.
   ejectUp: 4.5,
   ejectToward: 2.5,
@@ -104,6 +110,8 @@ export interface Enemy {
   stateTime: number;
   // Distance marchée depuis l'apparition (m) : cadence du cycle de marche au rendu.
   walkDistance: number;
+  // Amplitude de la foulée, de 0 (pieds joints) à 1 (marche pleine) : lissée en temps de simulation.
+  strideAmp: number;
   aimPoint: Vec3;
   path: Int32Array;
   pathLength: number;
@@ -163,6 +171,7 @@ export function createEnemy(id: number, navSize: number): Enemy {
     weaponId: NO_ID,
     stateTime: 0,
     walkDistance: 0,
+    strideAmp: 0,
     aimPoint: vec3(),
     path: new Int32Array(Math.max(1, navSize)),
     pathLength: 0,

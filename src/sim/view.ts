@@ -27,6 +27,8 @@ export interface EnemyView {
   armed: boolean;
   // Distance marchée (m) : phase du cycle de marche.
   walkDistance: number;
+  // Amplitude de la foulée, de 0 (pieds joints) à 1 (marche pleine).
+  strideAmp: number;
 }
 
 export interface BulletView {
@@ -81,6 +83,7 @@ export function createWorldView(boxCount: number, shards: Shard[]): WorldView {
       stateProgress: 0,
       armed: false,
       walkDistance: 0,
+      strideAmp: 0,
     });
   }
   for (let i = 0; i < POOLS.bullets; i++) view.bullets.push({ active: false, pos: vec3(), vel: vec3(), origin: vec3() });
@@ -107,6 +110,7 @@ export function writeGameView(game: Game, view: WorldView): void {
     v.stateProgress = duration > 0 ? Math.min(1, e.stateTime / duration) : 0;
     v.armed = e.weaponId !== NO_ID;
     v.walkDistance = e.walkDistance;
+    v.strideAmp = e.strideAmp;
   }
   for (let i = 0; i < game.bullets.length; i++) {
     const b = game.bullets[i]!;

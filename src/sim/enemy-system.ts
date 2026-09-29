@@ -16,6 +16,8 @@ export function updateEnemies(game: Game, dt: number): void {
   playerEye(game, target);
   for (const e of game.enemies) {
     if (!isAlive(e)) continue;
+    const x0 = e.pos.x;
+    const z0 = e.pos.z;
     e.stateTime += dt;
     switch (e.state) {
       case "stagger":
@@ -36,7 +38,16 @@ export function updateEnemies(game: Game, dt: number): void {
       default:
         break;
     }
+    updateStride(e, x0, z0, dt);
   }
+}
+
+// Amplitude de foulée : compare la position avant et après le déplacement du pas, puis lisse en temps de simulation.
+function updateStride(e: Enemy, x0: number, z0: number, dt: number): void {
+  const dx = e.pos.x - x0;
+  const dz = e.pos.z - z0;
+  const moved = dx * dx + dz * dz > ENEMY.strideMoveEpsilon * ENEMY.strideMoveEpsilon;
+  e.strideAmp += ((moved ? 1 : 0) - e.strideAmp) * (1 - Math.exp(-ENEMY.strideRate * dt));
 }
 
 function enterState(e: Enemy, state: Enemy["state"]): void {

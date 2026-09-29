@@ -124,6 +124,8 @@ export class ReplayPlayer {
       e.stateProgress = sameState ? mix(s[ka + 9]!, s[kb + 9]!, t) : s[ka + 9]!;
       e.armed = s[ka + 10] === 1;
       e.walkDistance = sameState ? mix(s[ka + 11]!, s[kb + 11]!, t) : s[ka + 11]!;
+      // Amplitude continue d'un échantillon à l'autre, même à un changement d'état : toujours interpolée.
+      e.strideAmp = mix(s[ka + 12]!, s[kb + 12]!, t);
     }
     for (let i = 0; i < POOLS.bullets; i++) {
       const ka = a + LAYOUT.bullets + i * LAYOUT.bulletStride;

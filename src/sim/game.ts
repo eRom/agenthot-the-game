@@ -270,6 +270,7 @@ export class Game {
     e.state = "approach";
     e.stateTime = 0;
     e.walkDistance = 0;
+    e.strideAmp = 0;
     e.weaponId = NO_ID;
     e.pathLength = 0;
     e.pathIndex = 0;

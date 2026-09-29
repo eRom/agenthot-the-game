@@ -15,7 +15,7 @@ export const REPLAY = {
 // changer une largeur ne demande pas de recompter les offsets à la main.
 const CAMERA = 1; // x, y, z, yaw, pitch
 const ENEMIES = CAMERA + 5;
-const ENEMY_STRIDE = 12; // visible, state, x, y, z, yaw, aimX, aimY, aimZ, stateProgress, armed, walkDistance
+const ENEMY_STRIDE = 13; // visible, state, x, y, z, yaw, aimX, aimY, aimZ, stateProgress, armed, walkDistance, strideAmp
 const BULLETS = ENEMIES + POOLS.enemies * ENEMY_STRIDE;
 const BULLET_STRIDE = 10; // active, x, y, z, vx, vy, vz, originX, originY, originZ
 const WEAPONS = BULLETS + POOLS.bullets * BULLET_STRIDE;
@@ -132,6 +132,7 @@ function writeSample(s: Float32Array, o: number, simTime: number, view: WorldVie
     s[k + 9] = e.stateProgress;
     s[k + 10] = e.armed ? 1 : 0;
     s[k + 11] = e.walkDistance;
+    s[k + 12] = e.strideAmp;
   }
   for (let i = 0; i < POOLS.bullets; i++) {
     const b = view.bullets[i]!;

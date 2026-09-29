@@ -6,13 +6,14 @@ import { set } from "../src/sim/vec3";
 import { type EnemyView, createWorldView } from "../src/sim/view";
 
 // Un ennemi en (2, 0, −3), qui regarde vers −Z (lacet 0) sauf mention contraire.
-function enemy(state: EnemyState, progress = 0, walkDistance = 0, armed = true): EnemyView {
+function enemy(state: EnemyState, progress = 0, walkDistance = 0, armed = true, strideAmp = 0): EnemyView {
   const e = createWorldView(0, []).enemies[0]!;
   e.visible = true;
   e.state = state;
   e.stateProgress = progress;
   e.walkDistance = walkDistance;
   e.armed = armed;
+  e.strideAmp = strideAmp;
   set(e.pos, 2, 0, -3);
   set(e.aimPoint, 2, 1.2, -9);
   e.yaw = 0;
@@ -35,7 +36,7 @@ describe("pose procédurale des ennemis (spec 5.6)", () => {
   });
 
   test("en marche, les jambes se croisent et les deux pieds restent au sol", () => {
-    const pose = poseEnemy(enemy("approach", 0, BODY.strideLength / 4), createEnemyPose());
+    const pose = poseEnemy(enemy("approach", 0, BODY.strideLength / 4, true, 1), createEnemyPose());
     const left = pose.segments[SEGMENT.legL]!.pitch;
     const right = pose.segments[SEGMENT.legR]!.pitch;
     expect(Math.abs(left)).toBeGreaterThan(0.3);
@@ -44,9 +45,9 @@ describe("pose procédurale des ennemis (spec 5.6)", () => {
     expect(bottomY(pose, SEGMENT.legR)).toBeCloseTo(0, 5);
   });
 
-  test("à l'arrêt en visée, la foulée s'est résorbée : les pieds sont joints et touchent le sol", () => {
+  test("à l'arrêt en visée, l'amplitude de foulée est nulle : les pieds sont joints et touchent le sol", () => {
     // walkDistance figé au pic de la foulée (le sim ne l'incrémente plus quand l'ennemi s'arrête).
-    const pose = poseEnemy(enemy("aim", 1, BODY.strideLength / 4), createEnemyPose());
+    const pose = poseEnemy(enemy("aim", 1, BODY.strideLength / 4, true, 0), createEnemyPose());
     const left = pose.segments[SEGMENT.legL]!.pitch;
     const right = pose.segments[SEGMENT.legR]!.pitch;
     expect(Math.abs(left - right)).toBeLessThan(0.01);
