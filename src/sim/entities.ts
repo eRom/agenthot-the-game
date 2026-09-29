@@ -15,6 +15,8 @@ export const PLAYER = {
   eyeCrouch: 0.85,
   // Hauteur du torse, pour la capture d'arme au vol.
   chest: 1.2,
+  // Hauteur du torse accroupi : la capsule s'arrête à 0,95 m, les tireurs visent dessous.
+  crouchChest: 0.6,
   punchRange: 1.6,
   pickupRange: 2,
   catchRadius: 1.3,
@@ -37,6 +39,8 @@ export const ENEMY = {
   fireRange: 8,
   meleeRange: 1.2,
   meleeWindup: 0.35,
+  // Écart de hauteur maximal pour qu'un coup de mêlée porte (passerelle au-dessus du joueur).
+  meleeReachY: 1,
   repathInterval: 0.5,
   // Distance à laquelle un nœud du chemin est considéré atteint.
   waypointReach: 0.4,

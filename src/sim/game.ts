@@ -165,6 +165,8 @@ export class Game {
     // L'arme apparaît dans la main de son porteur : jamais dessinée à l'origine avant le premier pas.
     if (holderId === PLAYER_ID) {
       this.player.weaponId = w.id;
+      // Une arme prise est prête à tirer tout de suite (spec 5.4).
+      this.player.fireCooldown = 0;
       set(w.pos, this.player.pos.x, this.player.pos.y + PLAYER.chest, this.player.pos.z);
     } else {
       const holder = this.enemies[holderId - 1]!;
@@ -255,6 +257,8 @@ export class Game {
     if (!e) return;
     this.pendingSpawns[spawnIndex] = false;
     copy(e.pos, spawn.pos);
+    // Pas de trait de visée périmé (ou à l'origine) avant la première visée.
+    copy(e.aimPoint, e.pos);
     e.yaw = spawn.yaw;
     e.mobile = spawn.mobile;
     e.state = "approach";

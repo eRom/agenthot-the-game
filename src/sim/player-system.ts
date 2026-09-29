@@ -1,7 +1,7 @@
 // Le joueur vit en temps réel : regard, déplacement, saut, actions (spec section 5.2).
 import { ENEMY, NO_ID, PLAYER, PLAYER_ID, WEAPON, type Weapon, forwardFromAngles, isAlive } from "./entities";
 import type { Game, PlayerInput } from "./game";
-import { pushCircleOutOfAabbs, sweepSphereCapsule } from "./geometry";
+import { pushCircleOutOfAabbs, segmentBlocked, sweepSphereCapsule } from "./geometry";
 import type { TimeInput } from "./time";
 import { addScaled, copy, distance, set, vec3 } from "./vec3";
 
@@ -10,6 +10,7 @@ const eye = vec3();
 const chest = vec3();
 const reach = vec3();
 const punchVel = vec3();
+const punchTarget = vec3();
 // Réutilisé à chaque image : aucune allocation dans la boucle.
 const timeInput: TimeInput = { moveAlpha: 0, lookPixels: 0, action: false, jumpRising: false };
 
@@ -112,10 +113,12 @@ function punch(game: Game): void {
     const e = game.enemies[i]!;
     if (!isAlive(e)) continue;
     const t = sweepSphereCapsule(eye, reach, 0.1, e.pos, ENEMY.height, ENEMY.radius);
-    if (t >= 0 && t < bestT) {
-      bestT = t;
-      best = i;
-    }
+    if (t < 0 || t >= bestT) continue;
+    // Le poing ne traverse pas le décor : rien à toucher derrière une baie.
+    set(punchTarget, e.pos.x, e.pos.y + ENEMY.eyeHeight, e.pos.z);
+    if (segmentBlocked(eye, punchTarget, game.room.boxes, game.boxEnabled)) continue;
+    bestT = t;
+    best = i;
   }
   if (best < 0) return;
   const e = game.enemies[best]!;
@@ -149,23 +152,27 @@ function throwWeapon(game: Game): void {
   game.events.push("weaponThrown", game.simTime, PLAYER_ID, w.id, w.pos, w.vel);
 }
 
+// E : ramasse l'arme la plus chargée à portée, la plus proche à charge égale (spec 5.4).
+// Une arme tenue au moins aussi chargée que la meilleure candidate reste en main.
 function pickUpNearest(game: Game): void {
   const p = game.player;
   set(chest, p.pos.x, p.pos.y + PLAYER.chest, p.pos.z);
   let best: Weapon | null = null;
-  let bestDist: number = PLAYER.pickupRange;
+  let bestDist = 0;
   for (const w of game.weapons) {
     if (w.state !== "ground" && w.state !== "flying") continue;
     const d = distance(w.pos, chest);
-    if (d <= bestDist) {
+    if (d > PLAYER.pickupRange) continue;
+    if (!best || w.ammo > best.ammo || (w.ammo === best.ammo && d < bestDist)) {
       bestDist = d;
       best = w;
     }
   }
   if (!best) return;
   if (p.weaponId !== NO_ID) {
-    // On lâche l'arme tenue à ses pieds.
     const held = game.weapons[p.weaponId]!;
+    if (held.ammo >= best.ammo) return;
+    // On lâche l'arme tenue à ses pieds.
     held.state = "ground";
     held.holderId = NO_ID;
     set(held.pos, p.pos.x, WEAPON.radius, p.pos.z);
