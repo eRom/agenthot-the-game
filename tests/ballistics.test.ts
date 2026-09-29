@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { BULLET, PLAYER_ID } from "../src/sim/entities";
+import { BULLET, PLAYER_ID, WEAPON } from "../src/sim/entities";
 import { Game } from "../src/sim/game";
 import { aabb } from "../src/sim/geometry";
 import { Rng } from "../src/sim/rng";
@@ -57,6 +57,25 @@ describe("balles (AC-3)", () => {
     expect(log.some((e) => e.type === "bulletImpact")).toBe(true);
     expect(log.some((e) => e.type === "enemyKilled")).toBe(false);
     expect(game.enemies[0]!.state).not.toBe("dead");
+  });
+
+  test("une arme lancée à plat contre un mur rebondit puis retombe au sol", () => {
+    // Un ennemi désarmé et immobile, loin : sans lui la partie serait gagnée dès la 1re image.
+    const game = new Game(testRoom([enemyAt(10, -14, false)]));
+    const weaponId = game.player.weaponId;
+    game.player.yaw = 0;
+    game.player.pitch = 0;
+    // À 5 m du mur du fond : l'arme le heurte en plein vol, bien au-dessus du sol.
+    game.player.pos.z = -10;
+    game.step(1 / 60, input({ throw: true }));
+    expect(game.weapons[weaponId]!.state).toBe("flying");
+    // Le temps est ralenti à 3 % : on fait avancer les armes directement, au pas de simulation minimal.
+    const simDt = (1 / 60) * 0.03;
+    for (let i = 0; i < 60 * 20 / 0.03 && game.weapons[weaponId]!.state === "flying"; i++) updateWeapons(game, simDt);
+    const w = game.weapons[weaponId]!;
+    expect(w.state).toBe("ground");
+    expect(w.pos.z).toBeGreaterThan(-15);
+    expect(w.pos.y).toBeCloseTo(WEAPON.radius, 5);
   });
 
   test("un chargeur vide fait un clic sec, sans balle", () => {

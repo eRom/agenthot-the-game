@@ -105,7 +105,8 @@ export function updateWeapons(game: Game, dt: number): void {
       const t = sweepSphereAabb(w.pos, next, WEAPON.radius, boxes[i]!);
       if (t < 0) continue;
       const box = boxes[i]!;
-      lerp(next, w.pos, next, t);
+      // Un peu avant le point de contact : posée pile sur la surface, l'arme y resterait collée.
+      lerp(next, w.pos, next, Math.max(0, t - 0.05));
       // Arrivée par le dessus (passerelle, haut d'une baie) : l'arme se pose.
       if (w.pos.y >= box.max.y) {
         next.y = box.max.y + WEAPON.radius;
