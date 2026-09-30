@@ -128,13 +128,14 @@ renderer.setAnimationLoop(() => {
   }
 
   if (mode === "playing") {
-    game.step(dt, input.sample());
+    const simDt = game.step(dt, input.sample());
     writeGameView(game, view);
+    for (let i = 0; i < game.events.count; i++) if (game.events.items[i]!.type === "punch") world.viewModel.punch();
     recorder.recordEvents(game.events);
     recorder.capture(game.simTime, view, game.status !== "playing");
     audio.frame(view, game.events);
     hud.updateCrosshair(view.playerCooldown, view.playerAmmo);
-    world.update(view);
+    world.update(view, simDt);
     if (game.status === "dead") setMode("dead");
     if (game.status === "won") {
       // Preuve AC-7 : la durée rejouée doit coller au temps de simulation écoulé.
@@ -168,7 +169,7 @@ renderer.setAnimationLoop(() => {
     }
   } else if (mode === "replay") {
     replay.update(dt);
-    world.update(replay.view);
+    world.update(replay.view, dt);
     audio.frame(replay.view, replay.events);
     hud.chant(replay.playhead);
     if (replay.finished) setMode("won");

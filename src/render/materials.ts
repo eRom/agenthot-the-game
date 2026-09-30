@@ -44,7 +44,9 @@ export function enemyBodyMaterial(): THREE.MeshStandardNodeMaterial {
 export function inkMaterial(): THREE.MeshStandardNodeMaterial {
   const mat = new THREE.MeshStandardNodeMaterial({ color: PALETTE.ink, roughness: 0.6, flatShading: true });
   const facing = max(dot(normalView, positionViewDirection), float(0));
-  mat.emissiveNode = color(PALETTE.world).mul(float(1).sub(facing).pow(3)).mul(0.7);
+  // Puissance 5 : sur des pavés à faces plates, le liseré ne doit éclairer que les faces presque rasantes,
+  // pas des faces entières (réglé au plan 3 avec le pistolet en code : à la puissance 3, l'arme virait au gris).
+  mat.emissiveNode = color(PALETTE.world).mul(float(1).sub(facing).pow(5)).mul(0.6);
   return mat;
 }
 

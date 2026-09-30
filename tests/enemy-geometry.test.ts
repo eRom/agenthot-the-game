@@ -15,15 +15,16 @@ interface ExpectedBox {
 const EXPECTED: Record<number, ExpectedBox> = {
   // La tête ne dépasse pas sa taille en largeur ; le cou descend dans les trapèzes.
   [SEGMENT.head]: { halfX: BODY.headSize / 2, front: 0.13, back: 0.13, below: 0.08, above: 0.03 },
-  // Le torse ne dépasse pas l'axe des bras ; le bassin couvre le haut des cuisses.
-  [SEGMENT.torso]: { halfX: BODY.shoulderX, front: 0.15, back: 0.14, below: 0.08, above: 0.06 },
+  // Le torse ne dépasse pas l'axe des bras ; le bassin couvre le haut des cuisses, entrejambe compris.
+  [SEGMENT.torso]: { halfX: BODY.shoulderX, front: 0.15, back: 0.14, below: 0.13, above: 0.06 },
   [SEGMENT.upperArmL]: { halfX: 0.08, front: 0.08, back: 0.08, below: 0.04, above: 0.06 },
   [SEGMENT.upperArmR]: { halfX: 0.08, front: 0.08, back: 0.08, below: 0.04, above: 0.06 },
   [SEGMENT.forearmL]: { halfX: 0.06, front: 0.06, back: 0.06, below: 0.08, above: 0.04 },
   [SEGMENT.forearmR]: { halfX: 0.06, front: 0.06, back: 0.06, below: 0.08, above: 0.04 },
   // Une cuisse ne passe pas l'axe du corps ; le pied part vers l'avant ; la semelle est au bout exact de la jambe.
-  [SEGMENT.legL]: { halfX: BODY.hipX, front: 0.17, back: 0.11, below: 0, above: 0.06 },
-  [SEGMENT.legR]: { halfX: BODY.hipX, front: 0.17, back: 0.11, below: 0, above: 0.06 },
+  // La rotule de hanche remonte dans le bassin.
+  [SEGMENT.legL]: { halfX: BODY.hipX, front: 0.17, back: 0.11, below: 0, above: 0.09 },
+  [SEGMENT.legR]: { halfX: BODY.hipX, front: 0.17, back: 0.11, below: 0, above: 0.09 },
 };
 
 interface Bounds {
@@ -84,6 +85,15 @@ describe("corps des ennemis façon cristal (tâche 9, spec 5.6 et 6.2)", () => {
       // Le segment couvre ses deux articulations.
       expect(b.minY).toBeLessThanOrEqual(-half + 1e-6);
       expect(b.maxY).toBeGreaterThanOrEqual(half);
+    }
+  });
+
+  test("la hanche ne se voit pas de près : le bassin descend 10 cm sous l'articulation, la cuisse remonte 7 cm dedans", () => {
+    // Avant le plan 3 : 6 cm et 2,5 cm ; de près, une marche nette séparait le bassin des jambes (report 23).
+    const hip = -BODY.torsoLength / 2;
+    expect(bounds(segmentMesh(SEGMENT.torso).positions).minY).toBeLessThanOrEqual(hip - 0.1);
+    for (const leg of [SEGMENT.legL, SEGMENT.legR]) {
+      expect(bounds(segmentMesh(leg).positions).maxY).toBeGreaterThanOrEqual(BODY.legLength / 2 + 0.07);
     }
   });
 

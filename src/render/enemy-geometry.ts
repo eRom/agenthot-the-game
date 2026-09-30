@@ -69,12 +69,14 @@ const HEAD: Profile = {
 
 const TORSO: Profile = {
   sides: 10,
-  // Le bassin descend sous les hanches pour couvrir le haut des cuisses.
-  bottom: { y: -0.34, z: 0.01 },
+  // Le bassin descend nettement sous les hanches (entrejambe) et enveloppe le haut des cuisses : de près,
+  // aucune marche entre le bassin et les jambes (plan 2, report 23).
+  bottom: { y: -0.4, z: 0.01 },
   top: { y: 0.32 },
   rings: [
-    { y: -0.31, rx: 0.15, rz: 0.09, z: 0.01 },
-    { y: -0.24, rx: 0.185, rz: 0.11, z: 0.012 }, // bassin : il couvre le haut des cuisses
+    { y: -0.37, rx: 0.12, rz: 0.08, z: 0.01 }, // entrejambe
+    { y: -0.31, rx: 0.18, rz: 0.105, z: 0.012 }, // bas du bassin, aussi large que les deux cuisses
+    { y: -0.24, rx: 0.19, rz: 0.112, z: 0.012 }, // bassin : il couvre le haut des cuisses
     { y: -0.14, rx: 0.15, rz: 0.1, z: 0.005 },
     { y: -0.04, rx: 0.14, rz: 0.095 }, // taille
     { y: 0.05, rx: 0.165, rz: 0.11, z: -0.01 },
@@ -118,8 +120,8 @@ const LEG: Profile = {
   sides: 9,
   // Semelle plate au ras du sol (bas du segment), pied tourné vers l'avant (−Z).
   bottom: { y: -0.475, z: -0.045 },
-  // Le haut de la cuisse entre dans le bassin.
-  top: { y: 0.5 },
+  // Le haut de la cuisse est une rotule qui monte dans le bassin : jambe pliée, rien ne dépasse à la hanche.
+  top: { y: 0.56 },
   rings: [
     { y: -0.475, rx: 0.048, rz: 0.11, z: -0.045 }, // semelle
     { y: -0.44, rx: 0.048, rz: 0.085, z: -0.03 }, // coup de pied
@@ -129,7 +131,8 @@ const LEG: Profile = {
     { y: 0, rx: 0.056, rz: 0.058 }, // genou
     { y: 0.15, rx: 0.075, rz: 0.08 },
     { y: 0.3, rx: 0.09, rz: 0.095, z: -0.006 }, // cuisse
-    { y: 0.44, rx: 0.082, rz: 0.09 }, // haut de cuisse, rentré dans le bassin
+    { y: 0.44, rx: 0.085, rz: 0.092 }, // haut de cuisse, rentré dans le bassin
+    { y: 0.51, rx: 0.07, rz: 0.076 }, // rotule de hanche, dans le bassin
   ],
 };
 

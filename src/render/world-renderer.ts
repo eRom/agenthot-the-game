@@ -9,6 +9,7 @@ import { BULLET_LOOK, headScale, trailLength } from "./bullet-look";
 import { EnemyBodies } from "./enemy-bodies";
 import { aimLineMaterial, enemyBodyMaterial, inkMaterial, threatBasicMaterial, threatMaterial, worldMaterial } from "./materials";
 import { PALETTE } from "./palette";
+import { ViewModel, pistolGeometry } from "./view-model";
 
 export class WorldRenderer {
   readonly scene = new THREE.Scene();
@@ -20,7 +21,8 @@ export class WorldRenderer {
   private readonly aimLines: THREE.LineSegments;
   // Armes du monde (au sol, en vol, tenues par un ennemi) : un seul InstancedMesh.
   private readonly weapons: THREE.InstancedMesh;
-  private readonly viewModel: THREE.Mesh;
+  // Arme et mains du joueur, accrochées à la caméra.
+  readonly viewModel: ViewModel;
   private readonly bulletHeads: THREE.InstancedMesh;
   private readonly bulletTrails: THREE.InstancedMesh;
   // Éclats de menace (glow) et éclats neutres (décor, joueur) : deux InstancedMesh.
@@ -118,15 +120,13 @@ export class WorldRenderer {
     this.scene.add(this.aimLines);
 
     const inkMat = inkMaterial();
-    this.weapons = new THREE.InstancedMesh(new THREE.BoxGeometry(0.08, 0.15, 0.3), inkMat, POOLS.weapons);
+    this.weapons = new THREE.InstancedMesh(pistolGeometry(), inkMat, POOLS.weapons);
     this.weapons.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.weapons.frustumCulled = false;
     this.weapons.castShadow = true;
     this.scene.add(this.weapons);
-    // Arme en main : plus petite et plus loin que les armes du monde, pour ne pas boucher la vue.
-    this.viewModel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.24), inkMat);
-    this.viewModel.position.set(0.2, -0.2, -0.55);
-    this.camera.add(this.viewModel);
+    this.viewModel = new ViewModel(inkMat);
+    this.camera.add(this.viewModel.group);
 
     const bulletMat = threatBasicMaterial(PALETTE.threatHot);
     this.bulletHeads = new THREE.InstancedMesh(new THREE.SphereGeometry(BULLET_LOOK.headRadius, 8, 6), bulletMat, POOLS.bullets);
@@ -167,12 +167,13 @@ export class WorldRenderer {
     this.camera.updateProjectionMatrix();
   }
 
-  update(view: WorldView): void {
+  // `dtSim` : temps de simulation de l'image, pour les gestes du joueur (recul, coup de poing).
+  update(view: WorldView, dtSim = 0): void {
     const cam = view.camera;
     this.camera.position.set(cam.pos.x, cam.pos.y, cam.pos.z);
     this.camera.rotation.y = cam.yaw;
     this.camera.rotation.x = cam.pitch;
-    this.viewModel.visible = view.playerAmmo >= 0;
+    this.viewModel.update(view, dtSim);
 
     const rackIndices = this.room.rackBoxIndices;
     for (let i = 0; i < rackIndices.length; i++) {
