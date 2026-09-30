@@ -3,8 +3,9 @@ import "./style.css";
 import { GameAudio } from "../audio/game-audio";
 import { ReplayPlayer } from "../replay/player";
 import { ReplayRecorder } from "../replay/recorder";
-import { createRenderer } from "../render/create-renderer";
+import { basePixelRatio, createRenderer } from "../render/create-renderer";
 import { PostPipeline } from "../render/post";
+import { FrameLimiter, QualityGovernor } from "../render/quality";
 import { WorldRenderer } from "../render/world-renderer";
 import { room01 } from "../rooms/room-01-datacenter";
 import { Game, type PlayerInput, emptyInput } from "../sim/game";
@@ -34,6 +35,9 @@ const hud = new Hud(document.querySelector<HTMLElement>("#hud")!, debug);
 // Contexte audio créé tout de suite, suspendu jusqu'au premier geste (clic ou touche).
 const audio = new GameAudio();
 void audio.loadMusic();
+// Qualité auto (spec 9.2) : 60 images par seconde au plus, résolution adaptative. Le réglage arrive avec les paramètres.
+const quality = new QualityGovernor("auto");
+const limiter = new FrameLimiter();
 
 let mode: Mode = "start";
 let last = performance.now();
@@ -117,6 +121,9 @@ if (debug) {
 
 renderer.setAnimationLoop(() => {
   const now = performance.now();
+  // Écran plus rapide que la limite : on saute cette image de l'écran, rien n'avance.
+  if (!limiter.shouldRender(now, quality.fpsCap)) return;
+  if (quality.sample(now - last)) renderer.setPixelRatio(basePixelRatio(isWebGPU) * quality.scale);
   // Plafond de 0,1 s : un onglet en arrière-plan ne doit pas faire un bond dans le temps.
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
@@ -188,7 +195,7 @@ renderer.setAnimationLoop(() => {
     fpsTime = 0;
     if (debug) {
       hud.setDebug(
-        `${isWebGPU ? "WebGPU" : "WebGL2"} ‧ ${fps.toFixed(0)} fps ‧ ${renderer.info.render.drawCalls} draws ‧ ` +
+        `${isWebGPU ? "WebGPU" : "WebGL2"} ‧ ${fps.toFixed(0)} fps ‧ res ${quality.scale} ‧ ${renderer.info.render.drawCalls} draws ‧ ` +
           `time ${view.timeScale.toFixed(2)} ‧ sim ${game.simTime.toFixed(2)} s`,
       );
     }
