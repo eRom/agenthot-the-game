@@ -106,9 +106,10 @@ export class ShatterSystem {
       const vy0 = s.vel.y;
       // Durée parcourue dans ce pas : tout le pas, ou jusqu'au sol s'il est touché en route. Le sol borne ainsi le
       // trajet avant le balayage (sur un grand pas, la fin du pas passait sous le bas des baies posées au sol).
-      const floorHit = s.pos.y + vy0 * dt - 0.5 * SHATTER.gravity * dt * dt < r;
+      const endY = s.pos.y + vy0 * dt - 0.5 * SHATTER.gravity * dt * dt;
+      const floorHit = endY < r;
       const span = floorHit ? floorContactTime(s.pos.y - r, vy0, dt) : dt;
-      const y = floorHit ? r : s.pos.y + vy0 * dt - 0.5 * SHATTER.gravity * dt * dt;
+      const y = floorHit ? r : endY;
       set(next, s.pos.x + s.vel.x * span, y, s.pos.z + s.vel.z * span);
       s.angle += s.angVel * dt;
 
@@ -217,9 +218,10 @@ function cappedImpact(impactVel: Vec3): void {
 
 // Instant (s, dans [0, dt]) où un éclat à `height` au-dessus de sa position de repos, de vitesse verticale `vy`,
 // touche le sol en chute libre : racine positive de height + vy·t − g·t²/2 = 0.
+// Un éclat à hauteur de repos qui remonte (vy > 0) retombe au bout de 2·vy/g : pas de raccourci à height = 0, sinon
+// il resterait figé à hauteur de repos sur un grand pas (le temps parcouru serait nul à chaque pas).
 function floorContactTime(height: number, vy: number, dt: number): number {
-  if (height <= 0) return 0;
-  const t = (vy + Math.sqrt(vy * vy + 2 * SHATTER.gravity * height)) / SHATTER.gravity;
+  const t = (vy + Math.sqrt(vy * vy + 2 * SHATTER.gravity * Math.max(0, height))) / SHATTER.gravity;
   return Math.min(dt, t);
 }
 
