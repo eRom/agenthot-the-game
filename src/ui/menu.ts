@@ -57,7 +57,7 @@ export class MenuScreen {
     this.root.innerHTML = `
       <div class="menu-veil" aria-hidden="true"></div>
       <div class="menu-brand">
-        <p class="label menu-tag">Le temps n'avance que quand tu bouges</p>
+        <p class="label menu-tag">Le temps est ton arme</p>
         <div class="menu-logo">${logoMarkup()}<div class="menu-shards" aria-hidden="true">${shards}</div></div>
         <p class="label menu-tag">Made with Claude Opus 5.5</p>
       </div>

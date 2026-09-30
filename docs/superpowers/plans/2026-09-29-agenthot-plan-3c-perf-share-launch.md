@@ -37,7 +37,7 @@
 
 **Retours de Romain à la recette (2026-09-30, 18 h 57) :**
 - Ligne des crédits sans « AGENTHOT ‧ » en tête : `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`. AC-3c-4 et la spec (4.3, AC-15) se lisent avec cette ligne. Police de la ligne à 12 px : l'adresse du dépôt tient entière sur la deuxième ligne.
-- Titre de la page : « AGENTHOT ‧ Le temps est votre arme » (remplace la décision 13).
+- Titre de la page : « AGENTHOT ‧ Le temps est ton arme » (remplace la décision 13 ; tutoiement choisi par Romain à 19 h 07). La même phrase remplace « Le temps n'avance que quand tu bouges » au menu et sur l'image de partage (`public/og-v1.jpg` refaite, 57 354 octets ; même nom, le site n'a jamais été en ligne, aucune plateforme n'a l'ancienne en cache). Les descriptions (Google, `llms.txt`, README, écran mobile) gardent la phrase qui explique le jeu.
 - Safari, repli WebGL2, icône, README, `llms.txt` : validés.
 - AC-3c-5 : sa partie donne `worstWindowP95Ms` 25,7, `maxMs` 31,9, `maxDrawCalls` 63. Au-dessus de l'ancien seuil de 20. Romain a accepté à 19 h 01 : son critère (jamais sous 30 images par seconde) devient l'officiel, et il est tenu. Voir AC-3c-5.
 
