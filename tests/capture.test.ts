@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { CAPTURE, captureDisplaySize, captureFileName, captureMimeType, captureTarget } from "../src/app/capture";
+import { CAPTURE, captureDisplayRect, captureFileName, captureMimeType, captureTarget } from "../src/app/capture";
 
 describe("enregistrement des séquences de la cinématique (plan 3b)", () => {
   test("?record=1 filme le replay, ?record=menu le fond du menu, sans paramètre rien", () => {
@@ -27,12 +27,24 @@ describe("enregistrement des séquences de la cinématique (plan 3b)", () => {
   });
 
   test("pendant l'enregistrement, l'image 16:9 tient dans la fenêtre sans être déformée", () => {
-    // Fenêtre 16:10 (MacBook) : bandes en bas ; fenêtre très large : bandes sur le côté.
-    expect(captureDisplaySize(1728, 1080)).toEqual({ width: 1728, height: 972 });
-    expect(captureDisplaySize(2560, 1080)).toEqual({ width: 1920, height: 1080 });
-    const { width, height } = captureDisplaySize(1512, 945);
+    // Fenêtre 16:10 (MacBook) : bandes en haut et en bas ; fenêtre très large : bandes sur les côtés.
+    expect(captureDisplayRect(1728, 1080)).toEqual({ left: 0, top: 54, width: 1728, height: 972 });
+    expect(captureDisplayRect(2560, 1080)).toEqual({ left: 320, top: 0, width: 1920, height: 1080 });
+    const { width, height } = captureDisplayRect(1512, 945);
     expect(width).toBeLessThanOrEqual(1512);
     expect(height).toBeLessThanOrEqual(945);
     expect(width / height).toBeCloseTo(CAPTURE.width / CAPTURE.height, 2);
+  });
+
+  test("le centre de l'image reste au centre de la fenêtre : le viseur tombe là où partent les balles", () => {
+    for (const [w, h] of [[1728, 1080], [1512, 945], [2560, 1080], [1398, 767]] as const) {
+      const rect = captureDisplayRect(w, h);
+      expect(Math.abs(rect.left + rect.width / 2 - w / 2)).toBeLessThanOrEqual(1);
+      expect(Math.abs(rect.top + rect.height / 2 - h / 2)).toBeLessThanOrEqual(1);
+      expect(rect.left).toBeGreaterThanOrEqual(0);
+      expect(rect.top).toBeGreaterThanOrEqual(0);
+      expect(rect.left + rect.width).toBeLessThanOrEqual(w);
+      expect(rect.top + rect.height).toBeLessThanOrEqual(h);
+    }
   });
 });

@@ -13,7 +13,7 @@ import type { Settings } from "../settings/settings";
 import { Game, type PlayerInput, emptyInput } from "../sim/game";
 import { TIME } from "../sim/time";
 import { createWorldView, writeGameView } from "../sim/view";
-import { CAPTURE, CanvasCapture, type CaptureTarget, captureDisplaySize } from "./capture";
+import { CAPTURE, CanvasCapture, type CaptureTarget, captureDisplayRect } from "./capture";
 import { Hud } from "./hud";
 import { InputController } from "./input";
 
@@ -79,9 +79,12 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     if (capture) {
       renderer.setPixelRatio(1);
       renderer.setSize(CAPTURE.width, CAPTURE.height, false);
-      const shown = captureDisplaySize(window.innerWidth, window.innerHeight);
-      renderer.domElement.style.width = `${shown.width}px`;
-      renderer.domElement.style.height = `${shown.height}px`;
+      const shown = captureDisplayRect(window.innerWidth, window.innerHeight);
+      const style = renderer.domElement.style;
+      style.width = `${shown.width}px`;
+      style.height = `${shown.height}px`;
+      style.marginLeft = `${shown.left}px`;
+      style.marginTop = `${shown.top}px`;
       world.resize(CAPTURE.width / CAPTURE.height);
       return;
     }

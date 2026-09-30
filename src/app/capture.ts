@@ -40,10 +40,17 @@ export function captureMimeType(isSupported: (type: string) => boolean): string 
   return "";
 }
 
-// Taille d'affichage du canvas pendant un enregistrement : l'image 16:9 tient dans la fenêtre sans être déformée.
-export function captureDisplaySize(windowWidth: number, windowHeight: number): { width: number; height: number } {
+// Cadre d'affichage du canvas pendant un enregistrement : l'image 16:9 tient dans la fenêtre sans être déformée, et
+// elle est centrée (bandes égales de part et d'autre). Le centre de l'image doit rester au centre de la fenêtre, là
+// où le HUD place le viseur : les balles partent de l'axe de la caméra, donc du centre de l'image.
+export function captureDisplayRect(
+  windowWidth: number,
+  windowHeight: number,
+): { left: number; top: number; width: number; height: number } {
   const scale = Math.min(windowWidth / CAPTURE.width, windowHeight / CAPTURE.height);
-  return { width: Math.round(CAPTURE.width * scale), height: Math.round(CAPTURE.height * scale) };
+  const width = Math.round(CAPTURE.width * scale);
+  const height = Math.round(CAPTURE.height * scale);
+  return { left: Math.round((windowWidth - width) / 2), top: Math.round((windowHeight - height) / 2), width, height };
 }
 
 export class CanvasCapture {
