@@ -17,7 +17,12 @@ if (!args.ok) {
   process.exit(1);
 }
 const ledgerFile = Bun.file(LEDGER_PATH);
-const ledgerText = (await ledgerFile.exists()) ? await ledgerFile.text() : "";
+// Un journal introuvable n'est jamais « 0 $ dépensés » (cwd hors de la racine du dépôt) : on refuse.
+if (!(await ledgerFile.exists())) {
+  console.error(`ledger not found: ${LEDGER_PATH} (run from the repository root)`);
+  process.exit(1);
+}
+const ledgerText = await ledgerFile.text();
 const command = args.command;
 
 if (command.kind === "summary") {

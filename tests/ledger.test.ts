@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { BUDGETS, NANO_BANANA, checkSpend, ledgerSummary, nanoBananaEntry, parseSpendArgs } from "../scripts/ledger";
+import { BUDGETS, GO_CAPS, NANO_BANANA, checkSpend, ledgerSummary, nanoBananaEntry, parseSpendArgs } from "../scripts/ledger";
 
 const line = (tool: string, costUsd: number) => JSON.stringify({ date: "2026-09-30", tool, model: "m", prompt: "p", output: "o", costUsd });
 const LEDGER = [line("lyria", 0.08), line("lyria", 0.08), "", line("nanobanana", 0.067)].join("\n");
@@ -25,9 +25,26 @@ describe("journal des dépenses : totaux par outil (spec 8, AC-17)", () => {
 });
 
 describe("journal des dépenses : contrôle avant un appel payant", () => {
-  test("sans plafond, seul le budget de la spec compte", () => {
-    expect(checkSpend(LEDGER, "lyria", 0.08, null)).toMatchObject({ ok: true, limitUsd: 3 });
-    expect(checkSpend(`${line("seedream", 2.95)}\n`, "seedream", 0.09, null).ok).toBe(false);
+  test("sans plafond en argument, le plafond du go s'applique seul, sous le budget de la spec", () => {
+    expect(GO_CAPS).toEqual({ lyria: 0.48, nanobanana: 0.4, seedream: 0.36 });
+    expect(checkSpend(LEDGER, "lyria", 0.08, null)).toMatchObject({ ok: true, limitUsd: 0.48 });
+    expect(checkSpend(`${line("seedream", 0.3)}\n`, "seedream", 0.09, null)).toMatchObject({ ok: false, limitUsd: 0.36 });
+  });
+
+  test("sans plafond en argument, un appel Lyria à 0,48 $ de total passe, un de plus est refusé", () => {
+    const ledger = [line("lyria", 0.08), line("lyria", 0.08), line("lyria", 0.08), line("lyria", 0.08), line("lyria", 0.08)].join("\n");
+    expect(checkSpend(ledger, "lyria", 0.08, null)).toMatchObject({ ok: true, spentUsd: expect.closeTo(0.4, 9), limitUsd: 0.48 });
+    expect(checkSpend(`${ledger}\n${line("lyria", 0.08)}`, "lyria", 0.08, null)).toMatchObject({ ok: false, limitUsd: 0.48 });
+  });
+
+  test("un plafond en argument plus haut que celui du go ne l'élargit pas, un plus bas le resserre", () => {
+    expect(checkSpend("", "lyria", 0.08, 10)).toMatchObject({ ok: true, limitUsd: 0.48 });
+    expect(checkSpend("", "lyria", 0.6, 10).ok).toBe(false);
+    expect(checkSpend("", "lyria", 0.08, 0.05)).toMatchObject({ ok: false, limitUsd: 0.05 });
+  });
+
+  test("un outil absent des plafonds du go échoue fermé, même avec un plafond en argument", () => {
+    expect(checkSpend("", "mystery", 0.01, 10)).toMatchObject({ ok: false, limitUsd: 0 });
   });
 
   test("le plafond du go s'applique au total de l'outil : 0,16 $ déjà dépensés + 4 essais à 0,08 $ tiennent dans 0,48 $, pas un 5e", () => {
@@ -49,7 +66,7 @@ describe("journal des dépenses : contrôle avant un appel payant", () => {
   });
 
   test("un plafond plus haut que le budget de la spec ne l'élargit pas", () => {
-    expect(checkSpend(`${line("nanobanana", 2.45)}\n`, "nanobanana", 0.067, 10)).toMatchObject({ ok: false, limitUsd: 2.5 });
+    expect(checkSpend(`${line("nanobanana", 0.39)}\n`, "nanobanana", 0.067, 10)).toMatchObject({ ok: false, limitUsd: 0.4 });
   });
 });
 

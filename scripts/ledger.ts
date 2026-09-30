@@ -22,6 +22,11 @@ export const BUDGETS: Readonly<Record<string, number>> = {
   [NANO_BANANA.ledgerTool]: NANO_BANANA.budgetUsd,
 };
 
+// Plafonds du « go » de Romain (« go pour les générations payantes », 2026-09-30, 08:37), en totaux absolus du
+// journal par outil : le total de Lyria inclut les 0,16 $ dépensés au plan 2. Un nouveau go se traduit en éditant
+// cette constante ; un outil absent d'ici est refusé.
+export const GO_CAPS: Readonly<Record<string, number>> = { lyria: 0.48, nanobanana: 0.4, seedream: 0.36 };
+
 export interface ToolSpend {
   tool: string;
   calls: number;
@@ -47,11 +52,11 @@ export function ledgerSummary(ledgerText: string): ToolSpend[] {
   }));
 }
 
-// Contrôle avant un appel payant : le total de l'outil plus le coût doit rester sous le budget de la spec 8, et sous
-// le plafond du « go » de Romain quand il est donné (total de l'outil dans le journal, pas seulement ce chantier).
+// Contrôle avant un appel payant : le total de l'outil plus le coût doit rester sous le budget de la spec 8 et sous le
+// plafond du go (GO_CAPS). Le plafond en argument ne peut que resserrer la limite, jamais l'élargir.
 export function checkSpend(ledgerText: string, tool: string, costUsd: number, capUsd: number | null): { ok: boolean; spentUsd: number; limitUsd: number } {
   const spent = spentUsd(ledgerText, tool);
-  const limitUsd = Math.min(BUDGETS[tool] ?? 0, capUsd ?? Number.POSITIVE_INFINITY);
+  const limitUsd = Math.min(BUDGETS[tool] ?? 0, GO_CAPS[tool] ?? 0, capUsd ?? Number.POSITIVE_INFINITY);
   return { ok: spent + costUsd <= limitUsd + 1e-9, spentUsd: spent, limitUsd };
 }
 
