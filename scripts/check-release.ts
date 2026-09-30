@@ -9,9 +9,9 @@
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import {
-  DISCOVERY_CONTENT_TYPES,
   DISCOVERY_FILES,
   INDEXNOW_KEY,
+  contentTypeVerdict,
   discoveryFileProblems,
   headProblems,
   jsonLdProblems,
@@ -137,8 +137,11 @@ async function checkSite(base: string): Promise<void> {
     const response = await get(path);
     const type = response.headers.get("content-type") ?? "";
     const text = await response.text();
-    const served = response.status === 200 && type.includes(DISCOVERY_CONTENT_TYPES[path]);
-    report(served, `${path} served`, `${response.status} ${type}`);
+    const verdict = contentTypeVerdict(path, type);
+    const served = response.status === 200 && verdict !== "wrong";
+    // Un type de repli est un avertissement : le fichier est bien servi, son contenu est contrôlé plus bas.
+    if (served && verdict === "fallback") console.info(`warn ${path} served (${response.status} ${type}: fallback type, not blocking)`);
+    else report(served, `${path} served`, `${response.status} ${type}`);
     // Une page d'erreur ou le repli vers index.html n'est pas le fichier : inutile d'en lire le contenu.
     if (!served) continue;
     reportProblems(path, discoveryFileProblems(path, text, SITE_URL));

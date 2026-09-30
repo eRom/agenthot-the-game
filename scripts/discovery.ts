@@ -35,6 +35,23 @@ export const DISCOVERY_CONTENT_TYPES: Readonly<Record<(typeof DISCOVERY_FILES)[n
   "manifest.webmanifest": "application/manifest+json",
 };
 
+// Type de repli accepté pour trois fichiers : Vercel ne documente pas la surcharge de Content-Type par une règle
+// `headers` sur un fichier statique. Sans elle, llms.txt arrive en text/plain et le catalogue en application/json,
+// ce que les lecteurs tolèrent : un avertissement, pas un échec.
+export const DISCOVERY_FALLBACK_TYPES: Readonly<Partial<Record<(typeof DISCOVERY_FILES)[number], string>>> = {
+  "llms.txt": "text/plain",
+  "llms-full.txt": "text/plain",
+  ".well-known/ai-catalog.json": "application/json",
+};
+
+// Verdict sur le type servi d'un fichier de découverte : attendu, repli toléré, ou faux. Comparaison par `includes`
+// pour tolérer « ; charset=utf-8 ».
+export function contentTypeVerdict(path: (typeof DISCOVERY_FILES)[number], contentType: string): "ok" | "fallback" | "wrong" {
+  if (contentType.includes(DISCOVERY_CONTENT_TYPES[path])) return "ok";
+  const fallback = DISCOVERY_FALLBACK_TYPES[path];
+  return fallback !== undefined && contentType.includes(fallback) ? "fallback" : "wrong";
+}
+
 // Clé IndexNow du site : publique par nature, servie à /<clé>.txt (indexnow.org). Envoi : scripts/submit-indexnow.ts.
 export const INDEXNOW_KEY = "agenthot-hjjp0jh6j53192gxquqxg84k";
 

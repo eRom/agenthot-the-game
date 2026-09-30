@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   DISCOVERY_LIMITS,
   catalogProblems,
+  contentTypeVerdict,
   headProblems,
   indexNowPayload,
   jsonLdProblems,
@@ -284,5 +285,28 @@ describe("IndexNow", () => {
       keyLocation: `${SITE}agenthot-key.txt`,
       urlList: [SITE],
     });
+  });
+});
+
+describe("type de contenu des fichiers de découverte", () => {
+  test("llms.txt : le type attendu passe, le repli text/plain est un avertissement, un autre type est faux", () => {
+    expect(contentTypeVerdict("llms.txt", "text/markdown; charset=utf-8")).toBe("ok");
+    expect(contentTypeVerdict("llms.txt", "text/plain; charset=utf-8")).toBe("fallback");
+    expect(contentTypeVerdict("llms.txt", "text/html")).toBe("wrong");
+  });
+
+  test("llms-full.txt a le même repli que llms.txt", () => {
+    expect(contentTypeVerdict("llms-full.txt", "text/plain")).toBe("fallback");
+  });
+
+  test("ai-catalog.json accepte application/json en repli", () => {
+    expect(contentTypeVerdict(".well-known/ai-catalog.json", "application/ai-catalog+json")).toBe("ok");
+    expect(contentTypeVerdict(".well-known/ai-catalog.json", "application/json; charset=utf-8")).toBe("fallback");
+    expect(contentTypeVerdict(".well-known/ai-catalog.json", "text/html")).toBe("wrong");
+  });
+
+  test("un fichier sans repli : un autre type est faux", () => {
+    expect(contentTypeVerdict("manifest.webmanifest", "application/manifest+json")).toBe("ok");
+    expect(contentTypeVerdict("manifest.webmanifest", "application/json")).toBe("wrong");
   });
 });
