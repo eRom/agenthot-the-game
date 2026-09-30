@@ -96,12 +96,16 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
   // Relance (R, clic à la mort, Recommencer) : même salle, sans rien recharger (AC-6).
   function restartRun(): void {
     restartPending = true;
-    startRun();
-    // Sans verrou (Échap sur l'écran de fin), on le redemande et on attend qu'il revienne.
-    if (input.locked) setMode("playing");
-    else {
+    if (input.locked) {
+      startRun();
+      setMode("playing");
+    } else {
+      // Sans verrou (Échap sur l'écran de fin), on le redemande : la salle attend au départ (« CLIQUE POUR JOUER »,
+      // comme en entrant depuis le menu) et la partie démarre quand il revient. Pas de panneau Pause entre les deux.
+      game.reset();
+      writeGameView(game, view);
+      setMode("start");
       input.lock();
-      setMode("paused");
     }
     world.update(view);
   }

@@ -18,6 +18,8 @@ export class RoomPanels {
     const action = this.actions.find((a) => a.code !== undefined && a.code === event.code);
     if (!action) return;
     event.preventDefault();
+    // Touche tenue : une seule exécution. Sinon un R tenu relance la salle en boucle (musique, panneau qui clignote).
+    if (event.repeat) return;
     action.run();
   };
 
