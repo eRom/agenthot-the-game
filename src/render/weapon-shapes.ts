@@ -27,11 +27,12 @@ export const PISTOL = {
     [0.17, 0.092], // dessus de la culasse
     [-0.01, 0.092],
   ] as readonly (readonly [number, number])[],
+  // 22 mm de haut : le chanfrein (4 mm par bord) en mange 8, il reste une vraie ouverture lisible en jeu.
   guardHole: [
-    [0.046, 0.022],
-    [0.082, 0.022],
-    [0.088, 0.034],
-    [0.048, 0.034],
+    [0.044, 0.018],
+    [0.084, 0.018],
+    [0.09, 0.04],
+    [0.046, 0.04],
   ] as readonly (readonly [number, number])[],
 } as const;
 
