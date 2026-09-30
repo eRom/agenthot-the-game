@@ -46,6 +46,8 @@
 
 **Porte 1, le push (tâche 11), faite le 2026-09-30 à 19 h 59** par la session venus, sur les mots de Romain : « garde mon adresse Gmail, go push » et « supprime la branche une fois fait et checké ». `main` et `origin/main` au même hash (`60c4deb`), dépôt public, branche par défaut `main`, description et site posés. Branche `feat/agenthot-plan-3c` supprimée en local (jamais poussée). **AC-3c-11 tenu :** `https://github.com/eRom/agenthot-the-game` répond `200` sans connexion (relu par le contrôleur à 20 h 00). Porte suivante : le déploiement Vercel (tâche 12), sur son go.
 
+**Porte 2, le déploiement (tâche 12), fait le 2026-09-30 à 20 h 05** par le contrôleur, sur les mots de Romain (« go deploy », dit à la session venus à 20 h 01). Projet Vercel `agenthot-the-game` (équipe `romain-ecarnots-projects`), construit sur le Mac depuis `d2f309f`, déploiement `dpl_5u8rAVSoH4yEUm4HvofsGrQP4Ui9`, adresse de production `https://agenthot-the-game.vercel.app/`. `bun scripts/check-release.ts https://agenthot-the-game.vercel.app/` : `release check: all good`, code 0 (`.superpowers/plan-3c-vercel-check.log`). Vidéos en `206`, cache d'un an immuable sur tout `/assets/`, fichier absent en `404`, et les types de contenu de `vercel.json` appliqués, `.well-known/` compris (aucune ligne `warn`). Dates : `datePublished` et `lastmod` étaient déjà au 2026-09-30, aucun commit. Porte suivante : le DNS (tâche 13), sur son go.
+
 **Place de ce plan :** plan 3c sur 3, le dernier.
 - **3a** (fait, fusionné à `54a6288`) : finitions du jeu et écrans.
 - **3b** (fait, fusionné à `fd71576`) : assets générés, `?record`, cinématique.

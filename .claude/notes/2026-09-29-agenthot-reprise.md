@@ -1,6 +1,11 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
-## Mise à jour du 2026-09-30 à 20:02 (prime sur le reste de la note)
+## Mise à jour du 2026-09-30 à 20:07 (prime sur le reste de la note)
+- **Déployé** (porte 2, tâche 12, sur « go deploy » de Romain à 20:01) : `https://agenthot-the-game.vercel.app/`, projet Vercel `agenthot-the-game`. Contrôle en ligne : all good (vidéos en 206, cache long, 404, types de contenu). Le domaine n'est pas encore branché.
+- `vercel link` a créé `.env.local` (jeton OIDC de Vercel) : ignoré par git (`.env*`), ne pas l'ouvrir.
+- **Prochaine porte : le DNS (tâche 13)**, sur son go. Puis la tâche 13b (jeton WebMCP, Search Console et Bing, IndexNow) et la recette en ligne (tâche 14).
+
+## Mise à jour du 2026-09-30 à 20:02
 - **Poussé** (porte 1, tâche 11, faite par la session venus à 19:59, sur les mots de Romain : « garde mon adresse Gmail, go push » et « supprime la branche une fois fait et checké »). `origin/main` = `60c4deb`, dépôt public, page GitHub en 200. Branche `feat/agenthot-plan-3c` supprimée en local. AC-3c-11 tenu.
 - Ce commit de note est **local** (`main` un commit devant `origin`) : il part au prochain push, sur un go.
 - **Prochaine porte : le déploiement Vercel (tâche 12)**, sur son go. Puis le DNS (tâche 13) et la tâche 13b.
