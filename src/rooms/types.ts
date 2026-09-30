@@ -29,6 +29,8 @@ export interface RoomDefinition {
   rackBoxIndices: number[];
   // Indices des boîtes de collision jamais dessinées (plafond invisible) : le rendu les ignore.
   hiddenBoxIndices?: number[];
+  // Indices des boîtes dessinées comme étagères murales garnies (adossées au mur du fond, côté -Z).
+  shelfBoxIndices?: number[];
   // Volume intérieur de la salle (demi-largeurs et hauteur sous plafond) : le rendu y pose plafond et bandeaux.
   interior?: { halfX: number; halfZ: number; height: number };
   playerStart: Vec3;

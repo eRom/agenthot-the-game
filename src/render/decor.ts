@@ -14,8 +14,8 @@ export const DECOR = {
   rack: 0xf1f1ee,
   // Teinte des tiroirs, en part du blanc de la baie : ils se détachent du châssis sans trait.
   drawerTint: 0.9,
-  // Plafond : dalle lumineuse à 6 m, panneaux suspendus dessous.
-  panelY: 5.25,
+  // Plafond : dalle lumineuse à la hauteur des murs, panneaux suspendus dessous (écart en mètres).
+  panelDrop: 0.7,
   panelSize: 2.15,
   panelPitch: 2.4,
   panel: 0xf4f4f2,
@@ -139,7 +139,7 @@ export function buildCeiling(halfX: number, halfZ: number, height: number): THRE
   const m = new THREE.Matrix4();
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      m.makeTranslation((c - (cols - 1) / 2) * DECOR.panelPitch, DECOR.panelY, (r - (rows - 1) / 2) * DECOR.panelPitch);
+      m.makeTranslation((c - (cols - 1) / 2) * DECOR.panelPitch, height - DECOR.panelDrop, (r - (rows - 1) / 2) * DECOR.panelPitch);
       panels.setMatrixAt(r * cols + c, m);
     }
   }
@@ -154,4 +154,43 @@ export function buildCeiling(halfX: number, halfZ: number, height: number): THRE
   ]);
   group.add(new THREE.Mesh(strips, light));
   return group;
+}
+
+// Étagère murale garnie, adossée au mur du côté -z : montants, trois planches, et des boîtiers posés dessus
+// (tailles tirées d'une suite fixe : la même étagère à chaque chargement). Centrée sur l'origine, à taille réelle.
+export function shelfGeometry(width: number, height: number, depth: number, seed: number): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [];
+  const board = 0.04;
+  const posts = Math.max(2, Math.round(width / 1.4) + 1);
+  for (let i = 0; i < posts; i++) {
+    const x = -width / 2 + board / 2 + (i / (posts - 1)) * (width - board);
+    parts.push(part(board, height, depth, x, 0, 0));
+  }
+  const levels = [0.12, 0.42, 0.72, 1];
+  let n = seed;
+  // Suite pseudo-aléatoire fixe, entre 0 et 1.
+  const next = (): number => {
+    n = (n * 1103515245 + 12345) % 2147483648;
+    return n / 2147483648;
+  };
+  levels.forEach((level, li) => {
+    const y = -height / 2 + level * height - board / 2;
+    parts.push(part(width, board, depth, 0, y, 0));
+    if (li === levels.length - 1) return;
+    const room = (levels[li + 1]! - level) * height - board - 0.06;
+    let x = -width / 2 + 0.12;
+    while (x < width / 2 - 0.35) {
+      const w = 0.25 + next() * 0.65;
+      const h = Math.min(room, 0.14 + next() * 0.4);
+      const d = depth * (0.55 + next() * 0.35);
+      // Un emplacement sur cinq reste vide.
+      if (next() > 0.2 && x + w < width / 2 - 0.1) {
+        parts.push(part(w, h, d, x + w / 2, y + board / 2 + h / 2, -depth / 2 + d / 2 + 0.02, 0.88 + next() * 0.12));
+      }
+      x += w + 0.04 + next() * 0.18;
+    }
+  });
+  const merged = mergeGeometries(parts);
+  for (const geo of parts) geo.dispose();
+  return merged;
 }

@@ -6,7 +6,7 @@ import { PLAYER_ID, POOLS } from "../sim/entities";
 import { SHATTER } from "../sim/shatter";
 import type { WorldView } from "../sim/view";
 import { BULLET_LOOK, headScale, trailLength } from "./bullet-look";
-import { buildCeiling, floorMaterial, rackGeometry, rackMaterial } from "./decor";
+import { buildCeiling, floorMaterial, rackGeometry, rackMaterial, shelfGeometry } from "./decor";
 import { EnemyBodies } from "./enemy-bodies";
 import { aimLineMaterial, enemyBodyMaterial, inkMaterial, threatBasicMaterial, threatMaterial, worldMaterial } from "./materials";
 import { PALETTE } from "./palette";
@@ -90,7 +90,7 @@ export class WorldRenderer {
 
     // Boîtes fixes (murs, ascenseur, passerelle) : fusionnées en un seul mesh, un seul appel de dessin.
     // Ni les baies (instanciées plus bas) ni les boîtes cachées (plafond de collision) n'y entrent.
-    const skipped = new Set([...room.rackBoxIndices, ...(room.hiddenBoxIndices ?? [])]);
+    const skipped = new Set([...room.rackBoxIndices, ...(room.hiddenBoxIndices ?? []), ...(room.shelfBoxIndices ?? [])]);
     const fixed: THREE.BufferGeometry[] = [];
     room.boxes.forEach((box, i) => {
       if (skipped.has(i)) return;
@@ -102,6 +102,20 @@ export class WorldRenderer {
     walls.castShadow = true;
     walls.receiveShadow = true;
     this.scene.add(walls);
+
+    // Étagères murales : une géométrie par boîte, fusionnées en un seul mesh.
+    const shelves = (room.shelfBoxIndices ?? []).map((boxIndex, i) => {
+      const box = room.boxes[boxIndex]!;
+      const size = new THREE.Vector3().subVectors(toV3(box.max), toV3(box.min));
+      const center = new THREE.Vector3().addVectors(toV3(box.min), toV3(box.max)).multiplyScalar(0.5);
+      return shelfGeometry(size.x, size.y, size.z, 7 + i * 31).translate(center.x, center.y, center.z);
+    });
+    if (shelves.length > 0) {
+      const shelfMesh = new THREE.Mesh(mergeGeometries(shelves), rackMaterial());
+      shelfMesh.castShadow = true;
+      shelfMesh.receiveShadow = true;
+      this.scene.add(shelfMesh);
+    }
 
     if (room.interior) this.scene.add(buildCeiling(room.interior.halfX, room.interior.halfZ, room.interior.height));
 

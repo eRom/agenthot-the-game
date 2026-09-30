@@ -133,7 +133,7 @@ describe("salles (AC-16)", () => {
 });
 
 describe("plafond invisible de la salle 1 (tâche 9, M1)", () => {
-  test("une balle tirée à la verticale n'est arrêtée qu'à la hauteur des murs (6 m), jamais plus bas", () => {
+  test("une balle tirée à la verticale n'est arrêtée qu'à la hauteur des murs, jamais plus bas", () => {
     const game = new Game(room01);
     game.player.pitch = PLAYER.maxPitch;
     let impactY = -1;
@@ -145,8 +145,9 @@ describe("plafond invisible de la salle 1 (tâche 9, M1)", () => {
         if (e.type === "bulletImpact" && e.ownerId === PLAYER_ID) impactY = e.pos.y;
       }
     }
-    expect(impactY).toBeGreaterThan(5.9);
-    expect(impactY).toBeLessThanOrEqual(6);
+    const wallHeight = room01.interior!.height;
+    expect(impactY).toBeGreaterThan(wallHeight - 0.1);
+    expect(impactY).toBeLessThanOrEqual(wallHeight);
   });
 
   test("le plafond est déclaré caché (hors des baies) et passe au-dessus de toute tête", () => {

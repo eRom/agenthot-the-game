@@ -7,7 +7,9 @@ import type { RoomDefinition } from "./types";
 const HALF_X = 12;
 const HALF_Z = 8;
 const WALL = 0.5;
-const WALL_HEIGHT = 6;
+// 7,5 m (6 m avant l'essai de rendu du 2026-09-30) : l'ennemi de la passerelle (tête vers 5,3 m) ne doit pas
+// sembler toucher les panneaux du plafond.
+const WALL_HEIGHT = 7.5;
 
 const RACK_WIDTH = 1.0;
 const RACK_DEPTH = 0.8;
@@ -40,10 +42,23 @@ for (const x of RACK_ROWS_X) {
   }
 }
 
+// Étagères du mur du fond, de part et d'autre de la cage d'ascenseur : une boîte de collision chacune, jamais
+// dessinée telle quelle (le rendu y pose des étagères garnies).
+const SHELF_DEPTH = 0.45;
+const SHELF_HEIGHT = 2.1;
+const shelfBoxIndices: number[] = [];
+for (const [x0, x1] of [
+  [-8.2, -2.6],
+  [2.6, 8.2],
+] as const) {
+  shelfBoxIndices.push(boxes.length);
+  boxes.push(aabb(x0, 0, -HALF_Z, x1, SHELF_HEIGHT, -HALF_Z + SHELF_DEPTH));
+}
+
 // Plafond invisible à la hauteur des murs, sur toute la salle : les éclats ne passent plus par-dessus les murs
 // (tâche 9, M1). Collision seulement, jamais dessiné : la salle reste ouverte sur le vide. Personne n'y monte
 // (tête du joueur au plus vers 3,4 m, ennemi de la passerelle vers 5,3 m) ; une balle ou une arme lancée vers
-// le haut s'y arrête à 6 m.
+// le haut s'y arrête à cette hauteur.
 const ceilingIndex = boxes.length;
 boxes.push(aabb(-HALF_X - WALL, WALL_HEIGHT, -HALF_Z - WALL, HALF_X + WALL, WALL_HEIGHT + WALL, HALF_Z + WALL));
 
@@ -72,6 +87,7 @@ export const room01: RoomDefinition = {
   boxes,
   rackBoxIndices,
   hiddenBoxIndices: [ceilingIndex],
+  shelfBoxIndices,
   interior: { halfX: HALF_X, halfZ: HALF_Z, height: WALL_HEIGHT },
   playerStart: vec3(0, 0, 6.5),
   playerYaw: 0,
