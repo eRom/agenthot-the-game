@@ -5,7 +5,7 @@
 **Goal :** mettre AGENTHOT en ligne à `https://agenthot.erom.cloud/`, avec un cache long sur tout ce qui pèse, un aperçu propre quand on partage le lien, des crédits vrais, et la preuve que les critères de la spec tiennent sur le site réel.
 
 **Architecture :**
-- Le code d'abord (tâches 1 à 8), sans rien toucher au-dehors : un contrôle de mise en ligne rejouable (`bun scripts/check-release.ts`), les fichiers lourds servis par Vite sous un nom haché, le MP4 de la cinématique ré-encodé pour les vieux décodeurs, les balises de partage, une sonde d'images pour AC-8, les crédits définitifs, la configuration Vercel, le README.
+- Le code d'abord (tâches 1 à 8), sans rien toucher au-dehors : un contrôle de mise en ligne rejouable (`bun scripts/check-release.ts`), les fichiers lourds servis par Vite sous un nom haché, le MP4 de la cinématique contrôlé (niveau H.264 4.1, pour les vieux décodeurs), les balises de partage, une sonde d'images pour AC-8, les crédits définitifs, la configuration Vercel, le README.
 - Puis la recette locale et la relecture de Romain (tâche 9), la revue finale et la fusion (tâche 10).
 - Puis les trois portes de Romain, chacune un arrêt : le push (tâche 11), le déploiement Vercel (tâche 12), le DNS (tâche 13). Le déploiement envoie un site construit sur ce Mac (`vercel build` puis `vercel deploy --prebuilt`) : ce qui part en ligne est ce qui a été contrôlé.
 - Enfin la recette sur le site réel et la passation (tâche 14).
@@ -13,6 +13,17 @@
 **Tech Stack :** Vite 8, TypeScript 6 (strict), bun 1.4, Three.js r186, ffmpeg 9.0.2 (`libx264`), Chrome sans écran, CLI Vercel 59.20.0 (`~/.bun/bin/vercel`, compte `eromleduk`, équipe `romain-ecarnots-projects`), `gh`, `dig`, `curl`, MCP Chrome DevTools.
 
 **Spec :** `docs/superpowers/specs/2026-09-29-agenthot-vitrine-design.md`, étape 8 de la section 11 : sections 4.2 (repli MP4), 4.3 (crédits), 4.7 (partage), 9.2 (performance), 12 (points ouverts) ; AC-8, AC-9, AC-10, AC-12, AC-15, AC-17. Entrées obligatoires : `.claude/notes/2026-09-29-agenthot-reprise.md`, `.claude/notes/agenthot-plan-3-remaining.md` (section 3c), `.claude/notes/agenthot-pitfalls.md`, brief `docs/superpowers/research/2026-09-29-agenthot-plan-3-brief.md` (sections 5, 7, 8), revue `docs/superpowers/reports/2026-09-30-agenthot-plan-3b-final-review.md` (points 6 et 7).
+
+**Révision du 2026-09-30 à 18 h :** le plan a été rejoué sur `main` à `19bd64d` (nouveau rendu de la salle, cinématique et images refaites). Ce qui a changé :
+- Les diffs et les fichiers viennent du prototype rejoué sur `19bd64d`. Les sept commits de code s'y posent sans conflit.
+- Tests : 282 → 302 → 309 → 311 (avant : 279 → 299 → 306 → 308).
+- Tâche 3 : le MP4 est déjà au niveau 4.1 depuis la nouvelle cinématique (`af9bf26`). Elle ne ré-encode plus, elle contrôle.
+- Image de partage : faite d'une capture du jeu (`og-background-game.png`), 59 914 octets.
+- Seuil de 80 appels de dessin et « ombre des coins » (spec révisée le 30/09).
+- Crédits recomptés : 955 020 037 tokens, 373,80 $ à 17 h 58.
+- README : la ligne « Images » dit que l'image de partage et la vignette de la salle 1 sont des captures du jeu.
+- Tâche 7 : `.gitignore` porte deux lignes non commitées de Romain. Le commit ne prend que la ligne `.vercel/`.
+- Build : point d'entrée 40,13 Ko, moteur 1 010 Ko (le nouveau rendu pèse 17 Ko de plus).
 
 **Place de ce plan :** plan 3c sur 3, le dernier.
 - **3a** (fait, fusionné à `54a6288`) : finitions du jeu et écrans.
@@ -27,12 +38,12 @@
 - **Qui exécute :** les tâches 1 à 8 se délèguent (Sonnet, jamais Haiku). Les tâches 9 à 14 sont faites par le contrôleur : recette au navigateur, portes de Romain, gestes visibles du dehors.
 - **Langue :** identifiants, clés, noms de fichiers, messages de log en anglais ; commentaires en français. Textes vus par le joueur ou par un tiers en français (balises de partage, README). Descriptions de test en français. Aucun tiret cadratin dans un texte lu par un tiers.
 - **Outillage :** `bun` pour le projet. Jamais `npm`, `npx`, `pip`. La CLI Vercel est déjà installée (`~/.bun/bin/vercel`) : ne pas la mettre à jour. Suppression par `trash`, jamais `rm`. Aucune nouvelle dépendance.
-- **Git :** branche `feat/agenthot-plan-3c` depuis `main`. `git add` de fichiers nommés seulement, jamais `git add -A` ni `git add .`. Fichiers de Romain à laisser hors des commits : `docs/superpowers/idea/*` (dont `ideation.md`, `Lyria-prompt-guide.md`, `Seedream-5.0-Pro.md`, la planche Gemini, `screenshots/`), la modification de `docs/superpowers/idea/OVERVIEW.md`, `.impeccable/`, `.ignore`, `rendu-simule/`.
+- **Git :** branche `feat/agenthot-plan-3c` depuis `main`. `git add` de fichiers nommés seulement, jamais `git add -A` ni `git add .`. Fichiers de Romain à laisser hors des commits : `docs/superpowers/idea/*` (dont `ideation.md`, `Lyria-prompt-guide.md`, `Seedream-5.0-Pro.md`, la planche Gemini, `screenshots/`), la modification de `docs/superpowers/idea/OVERVIEW.md`, `.impeccable/`, `.ignore`, `rendu-simule/`, `.claude/helpers/`, `.claude/skills/`, `.claude/settings.json`, `.mcp.json`, et les deux lignes non commitées de `.gitignore` (`.impeccable/`, `rendu-simule/` : voir la tâche 7).
 - **Commandes Bash :** chaque commande qui écrit commence par `cd /Users/recarnot/dev/claudehot-videogame &&`. Sortie brute des tests : préfixe `RTK_DISABLED=1`. Toute sortie de test citée dans un rapport vient d'une commande passée par `tee` vers un fichier nommé dans le rapport ; `bun test | tee` masque le code de sortie : lire la ligne `pass`/`fail` du fichier.
 - **Secrets :** ne jamais afficher une clé. Un contrôle de présence se fait par un compte (`grep -c`), jamais par un affichage.
 - **Chrome :** MCP Chrome DevTools (profil unique ; s'il est pris, l'extension claude-in-chrome). La boucle d'animation s'arrête quand l'onglet est caché : toute mesure se fait fenêtre au premier plan. Attendre 2 s après une navigation avant de sonder.
 - **Vite :** en développement et en `vite preview`, un fichier absent répond `200 text/html`. Chez Vercel il répond `404`. Vérifier la présence d'un fichier par son type de contenu ou par `ls`, jamais par le code HTTP local.
-- **Valeurs de la spec à tenir** (9.2 et critères) : 60 images par seconde au pire moment ; moins de 60 appels de dessin ; poids initial hors cinématique et musiques sous 3 Mo ; « APPUIE SUR UNE TOUCHE » en 2 s au plus ; cinématique de 6 Mo au plus par fichier ; image de partage en 1200 × 630.
+- **Valeurs de la spec à tenir** (9.2 et critères) : 60 images par seconde au pire moment ; moins de 80 appels de dessin (spec révisée le 2026-09-30) ; poids initial hors cinématique et musiques sous 3 Mo ; « APPUIE SUR UNE TOUCHE » en 2 s au plus ; cinématique de 6 Mo au plus par fichier ; image de partage en 1200 × 630.
 
 ## Review Focus
 
@@ -97,7 +108,7 @@ scripts/        release.ts (nouveau : contrôles purs) ; check-release.ts (nouve
                 count-tokens.sh (nouveau : tokens et coût des sessions)
                 og/icon.html (nouveau : gabarit de l'icône PNG) ; og/og.html, build-fonts.sh (modifiés : nouveau dossier des polices)
 src/audio/      tracks/{game,menu,replay}.mp3 (déplacés depuis public/audio/) ; game-audio.ts (modifié : import)
-src/ui/         video/intro.{webm,mp4} (déplacés depuis public/video/ ; le MP4 est ré-encodé)
+src/ui/         video/intro.{webm,mp4} (déplacés depuis public/video/ ; le MP4 est contrôlé)
                 fonts/*.woff2 (déplacés depuis public/fonts/) ; media.ts, tokens.css, credits.ts (modifiés)
 src/rooms/      thumbnails/room-0{1,2}.webp (déplacés depuis public/rooms/) ; registry.ts (modifié : import)
 src/app/        frame-stats.ts (nouveau : sonde AC-8) ; engine.ts (modifié : branchement)
@@ -115,16 +126,16 @@ Chaque fichier a une seule responsabilité :
 
 ## Prototype vérifié
 
-Tout le code de ce plan a été exécuté avant d'être écrit ici (2026-09-30), sur une copie de `main` au commit `cbc015c`.
-- **Rejeu par tâche dans un dossier vide :** `tsc` passe à chaque étape ; les diffs de ce plan s'appliquent dans l'ordre et redonnent exactement l'arbre du prototype. Suite : 279 → 299 (tâche 1) → 299 (2, 3, 4) → 306 (5) → 308 (6). Build final : point d'entrée 39,98 Ko (14,29 Ko gzip), moteur 992 Ko (276 Ko gzip).
-- **Noms hachés :** après la tâche 2, tout ce qui pèse sort dans `dist/assets/` avec un hash, polices préchargées comprises (Vite réécrit les `<link rel="preload">` de `index.html`). `dist/` ne garde hors de `assets/` que `index.html`, `og-v1.jpg`, les deux icônes et `fonts/LICENSES.txt`. L'image de partage reconstruite avec les polices déplacées fait 100 492 octets, comme `public/og-v1.jpg` : les polices se chargent bien depuis leur nouveau dossier.
-- **MP4 au niveau 4.1 :** 5 610 507 octets, `h264`, `High`, `level=41`, 1920 × 1080, 30 images par seconde, 26,3 s, `moov` avant `mdat`, décodage complet sans erreur, aucune image figée. QuickLook (le décodeur d'Apple, celui de Safari) en tire une vignette.
+Tout le code de ce plan a été exécuté avant d'être écrit ici (2026-09-30), d'abord sur `main` au commit `cbc015c`, puis rejoué à 18 h sur `main` au commit `19bd64d`. Les lignes ci-dessous donnent les mesures du rejeu, sauf celles marquées « avant le nouveau rendu », prises au navigateur sur `cbc015c` et à reprendre à la tâche 9.
+- **Rejeu par tâche dans un dossier vide :** `tsc` passe à chaque étape ; les diffs de ce plan s'appliquent dans l'ordre et redonnent exactement l'arbre du prototype. Suite : 282 → 302 (tâche 1) → 302 (2, 3, 4) → 309 (5) → 311 (6). Build final : point d'entrée 40,13 Ko (14,36 Ko gzip), moteur 1 010 Ko (282 Ko gzip).
+- **Noms hachés :** après la tâche 2, tout ce qui pèse sort dans `dist/assets/` avec un hash, polices préchargées comprises (Vite réécrit les `<link rel="preload">` de `index.html`). `dist/` ne garde hors de `assets/` que `index.html`, `og-v1.jpg`, les deux icônes et `fonts/LICENSES.txt`. L'image de partage reconstruite avec les polices déplacées fait 59 914 octets, octet pour octet `public/og-v1.jpg` (`cmp`) : les polices se chargent bien depuis leur nouveau dossier.
+- **MP4 au niveau 4.1 :** déjà fait avec la nouvelle cinématique (`af9bf26`). Lu le 2026-09-30 à 18 h sur `public/video/intro.mp4` : 5 789 099 octets, `h264`, `High`, `level=41`, 1920 × 1080, 30 images par seconde, 26,3 s, `moov` avant `mdat`, décodage complet sans erreur, aucune image figée.
 - **Contrôle de mise en ligne :** sur le site construit, `release check: all good`. Lancé contre `vite preview`, il échoue là où il doit : 12 fichiers sans cache long et un fichier absent qui répond `200`. C'est exactement ce que Vercel doit corriger.
-- **Invite (AC-10) :** sur `vite preview`, cache vide, l'invite arrive à 1 253 ms sans limite de réseau, et à 1 933 ms en « Fast 4G » (9 Mb/s, plus sévère que les 50 Mb/s de la spec). Ce qui la retarde alors, ce sont les attentes plafonnées à 1,5 s du plan 3a (polices, boucle du menu, début de la cinématique). Poids hors cinématique et musiques : 0,34 Mo.
-- **Sonde d'images :** au menu, 360 images en 6 s, `p95Ms` 17,5, 41 appels de dessin ; en qualité « haute » (120 images par seconde), `p95Ms` 9,1. L'heure des images donnée par le navigateur porte environ 0,8 ms de gigue : une cadence parfaite de 60 se lit 17,5, pas 16,7.
-- **Crédits :** `zsh scripts/count-tokens.sh ~/.claude/projects/*claudehot*`, le 2026-09-30 à 15 h 04 : 852 244 097 tokens, 328,19 $ (Opus 5.5 : 260,99 $ ; Sonnet 5.5 : 67,19 $). Dix minutes plus tard : 861 229 775 tokens, 332,07 $. Le total monte avec chaque session : il se mesure une dernière fois juste avant la fusion. Prix relus le 2026-09-30 sur `platform.claude.com/docs/en/about-claude/pricing`.
-- **Écran mobile :** émulation iPhone sur le site construit : « Joue sur ordi », vidéo `/assets/intro-….webm` en lecture, muette, aucun canvas, moteur non demandé.
-- **Historique du dépôt :** aucune clé dans tout l'historique (0 résultat sur les motifs de clés Google, OpenRouter, Anthropic et GitHub).
+- **Invite (AC-10), avant le nouveau rendu :** sur `vite preview`, cache vide, l'invite arrive à 1 253 ms sans limite de réseau, et à 1 933 ms en « Fast 4G » (9 Mb/s, plus sévère que les 50 Mb/s de la spec). Ce qui la retarde alors, ce sont les attentes plafonnées à 1,5 s du plan 3a (polices, boucle du menu, début de la cinématique). Poids hors cinématique et musiques : 0,34 Mo.
+- **Sonde d'images, avant le nouveau rendu :** au menu, 360 images en 6 s, `p95Ms` 17,5, 41 appels de dessin (62 à 70 depuis le nouveau rendu) ; en qualité « haute » (120 images par seconde), `p95Ms` 9,1. L'heure des images donnée par le navigateur porte environ 0,8 ms de gigue : une cadence parfaite de 60 se lit 17,5, pas 16,7.
+- **Crédits :** `zsh scripts/count-tokens.sh ~/.claude/projects/*claudehot*`, le 2026-09-30 à 17 h 58 : 955 020 037 tokens, 373,80 $ (Opus 5.5 : 304,51 $ ; Sonnet 5.5 : 69,29 $). À 15 h 04 : 852 244 097 tokens, 328,19 $. Le total monte avec chaque session : il se mesure une dernière fois juste avant la fusion. Prix relus le 2026-09-30 sur `platform.claude.com/docs/en/about-claude/pricing`.
+- **Écran mobile, avant le nouveau rendu :** émulation iPhone sur le site construit : « Joue sur ordi », vidéo `/assets/intro-….webm` en lecture, muette, aucun canvas, moteur non demandé.
+- **Historique du dépôt (relu à `19bd64d`) :** aucune clé dans tout l'historique (0 résultat sur les motifs de clés Google, OpenRouter, Anthropic et GitHub).
 
 **Ce qui n'a pas été exécuté, parce que ce sont les portes de Romain :** `git push`, toute commande `vercel` qui écrit, le DNS. Les commandes des tâches 11 à 13 viennent de l'aide de la CLI installée (`vercel <commande> --help`, version 59.20.0) et de la documentation lue le 2026-09-30 (section suivante). Elles sont données avec ce qu'elles doivent produire : si une commande répond autrement, on s'arrête et on lit son aide, on n'improvise pas.
 
@@ -724,7 +735,7 @@ Expected : `tsc` sans erreur ; le contrôle sort en code 1 avec `release check: 
 - 5 lignes `FAIL long cache (… bytes outside assets/, fetched again at every visit: …)` pour `video/intro.webm`, `video/intro.mp4`, `audio/menu.mp3`, `audio/replay.mp3`, `audio/game.mp3` ;
 - `ok   2 cited assets exist`.
 
-Puis la suite entière : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun test 2>&1 | tail -4`. Expected : `299 pass`, `0 fail`.
+Puis la suite entière : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun test 2>&1 | tail -4`. Expected : `302 pass`, `0 fail`.
 
 - [ ] **Step 7 : commit**
 
@@ -821,7 +832,7 @@ index 76b7837..e047f26 100644
 -ls -l "$OUT"
 +ls -l "$OUT" "$LICENSE_DIR"
 diff --git a/scripts/og/og.html b/scripts/og/og.html
-index 2cdaf93..d52e5c2 100644
+index 6174937..de026b4 100644
 --- a/scripts/og/og.html
 +++ b/scripts/og/og.html
 @@ -7,12 +7,12 @@
@@ -1006,7 +1017,7 @@ index df83e2b..68fe6da 100644
 - [ ] **Step 3 : rien n'est cassé**
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tail -4`
-Expected : `tsc` sans erreur ; `299 pass`, `0 fail`.
+Expected : `tsc` sans erreur ; `302 pass`, `0 fail`.
 
 - [ ] **Step 4 : le site construit ne garde rien de lourd hors de `assets/`**
 
@@ -1017,8 +1028,8 @@ Expected : le build liste 12 fichiers hachés en plus du code (5 polices, 2 vign
 
 L'image de partage se refait à l'identique, ce qui prouve que `og.html` trouve les polices :
 
-Run : `cd /Users/recarnot/dev/claudehot-videogame && zsh scripts/build-og.sh ../../assets/images/og-background.jpg dist/og-test.jpg`
-Expected : `1200,630` puis `dist/og-test.jpg: 100492 bytes (q=3)`, le poids exact de `public/og-v1.jpg`. Un autre poids : ouvrir `dist/og-test.jpg`, les polices sont tombées sur une police système.
+Run : `cd /Users/recarnot/dev/claudehot-videogame && zsh scripts/build-og.sh ../../assets/images/og-background-game.png dist/og-test.jpg && cmp public/og-v1.jpg dist/og-test.jpg && echo same`
+Expected : `1200,630`, puis `dist/og-test.jpg: 59914 bytes (q=3)`, puis `same` (les mêmes octets que `public/og-v1.jpg`). Un autre poids : ouvrir `dist/og-test.jpg`, les polices sont tombées sur une police système.
 
 En développement, lancer `bun run dev --port 5299 --strictPort` en arrière-plan, puis :
 
@@ -1035,39 +1046,24 @@ cd /Users/recarnot/dev/claudehot-videogame && git add src/audio/tracks src/ui/vi
 
 ---
 
-### Task 3 : le MP4 de la cinématique au niveau H.264 4.1
+### Task 3 : le MP4 de la cinématique est au niveau H.264 4.1 (contrôle seul)
 
-Le MP4 actuel est au niveau 5.0 (5 images de référence), qu'un vieux décodeur matériel peut refuser (revue finale du 3b, point 6). On le refait depuis le master, au niveau 4.1, même débit. Le WebM AV1 ne change pas.
+La revue finale du 3b (point 6) demandait un MP4 au niveau 4.1 : au niveau 5.0, un vieux décodeur matériel peut le refuser. C'est fait depuis la nouvelle cinématique (`af9bf26`, 2026-09-30). Cette tâche ne ré-encode rien : elle prouve que le fichier, à sa nouvelle place, est conforme. Aucun commit.
 
 **Files :**
-- Modify : `src/ui/video/intro.mp4` (binaire, refait)
-- Lit : `videos/agenthot-intro/renders/master.mp4` (21 Mo, ignoré par git, présent sur ce Mac seulement)
+- Lit : `src/ui/video/intro.mp4` (binaire, inchangé)
 
 **Interfaces :**
 - Consumes : `src/ui/video/intro.mp4` à sa place de la tâche 2.
-- Produces : le même fichier, `h264` `High` `level=41`.
+- Produces : la preuve pour AC-3c-3 : `h264` `High` `level=41`.
 
-- [ ] **Step 1 : le master est là**
-
-Run : `cd /Users/recarnot/dev/claudehot-videogame && ls -l videos/agenthot-intro/renders/master.mp4 && ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 videos/agenthot-intro/renders/master.mp4`
-Expected : un fichier d'environ 21 Mo, durée `26.300000`. **Fichier absent : arrêt.** Ne pas ré-encoder depuis `intro.mp4` (deux compressions de suite) ; le dire à Romain, le master se refait par le rendu Hyperframes de la tâche 11 du plan 3b.
-
-- [ ] **Step 2 : ré-encoder en deux passes**
-
-Débit vidéo : `5600 × 8 / durée − 96` kb/s, soit `1607k` pour 26,3 s (même calcul qu'au plan 3b).
-
-```bash
-cd /Users/recarnot/dev/claudehot-videogame && ffmpeg -loglevel error -y -i videos/agenthot-intro/renders/master.mp4 -c:v libx264 -preset slow -profile:v high -level:v 4.1 -refs 4 -b:v 1607k -pass 1 -passlogfile .superpowers/h264pass -an -f null /dev/null
-cd /Users/recarnot/dev/claudehot-videogame && ffmpeg -loglevel error -y -i videos/agenthot-intro/renders/master.mp4 -c:v libx264 -preset slow -profile:v high -level:v 4.1 -refs 4 -b:v 1607k -pass 2 -passlogfile .superpowers/h264pass -c:a aac -b:a 96k -movflags +faststart src/ui/video/intro.mp4
-```
-
-- [ ] **Step 3 : le fichier est conforme**
+- [ ] **Step 1 : le fichier est conforme**
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && ls -l src/ui/video/intro.mp4 && ffprobe -v error -show_entries format=duration:stream=codec_name,profile,level,width,height,r_frame_rate -of default=nw=1 src/ui/video/intro.mp4`
-Expected (mesure du prototype) : environ 5 610 507 octets, en tout cas ≤ 6 000 000 ; `codec_name=h264`, `profile=High`, `level=41`, `width=1920`, `height=1080`, `r_frame_rate=30/1` ; piste `aac` ; `duration=26.300000`.
+Expected (lu le 2026-09-30) : 5 789 099 octets, en tout cas ≤ 6 000 000 ; `codec_name=h264`, `profile=High`, `level=41`, `width=1920`, `height=1080`, `r_frame_rate=30/1` ; piste `aac` ; `duration=26.300000`.
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && ffmpeg -v error -xerror -i src/ui/video/intro.mp4 -f null - && echo "decode ok" && ffmpeg -hide_banner -nostats -i src/ui/video/intro.mp4 -vf freezedetect=n=0.001:d=0.3 -an -f null - 2>&1 | grep -c freeze_start`
-Expected : `decode ok`, puis `0` (aucune image figée : Romain rejette toute image fixe).
+Expected : `decode ok`, puis `0` (aucune image figée : Romain rejette toute image fixe). `grep -c` qui compte 0 sort en code 1 : c'est normal.
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && ffprobe -v trace src/ui/video/intro.mp4 2>&1 | grep -oE "type:'(moov|mdat)'" | head -2`
 Expected : `type:'moov'` avant `type:'mdat'` (la lecture démarre avant la fin du téléchargement).
@@ -1075,10 +1071,13 @@ Expected : `type:'moov'` avant `type:'mdat'` (la lecture démarre avant la fin d
 Run : `cd /Users/recarnot/dev/claudehot-videogame && qlmanage -t -s 640 -o .superpowers src/ui/video/intro.mp4 > /dev/null 2>&1 ; ls -l .superpowers/intro.mp4.png`
 Expected : une vignette PNG non vide. QuickLook passe par le décodeur d'Apple, celui de Safari.
 
-- [ ] **Step 4 : commit**
+- [ ] **Step 2 : si un contrôle échoue**
+
+**Arrêt.** Le dire à Romain avec la sortie réelle. Ne pas ré-encoder depuis `intro.mp4` (deux compressions de suite). La recette, s'il la demande, part du master `videos/agenthot-intro/renders/master.mp4` (ignoré par git, sur ce Mac seulement), en deux passes, débit `5600 × 8 / durée − 96` kb/s :
 
 ```bash
-cd /Users/recarnot/dev/claudehot-videogame && git add src/ui/video/intro.mp4 && git commit -m "fix(cinematic): H.264 fallback re-encoded at level 4.1 for older hardware decoders"
+cd /Users/recarnot/dev/claudehot-videogame && ffmpeg -loglevel error -y -i videos/agenthot-intro/renders/master.mp4 -c:v libx264 -preset slow -profile:v high -level:v 4.1 -refs 4 -b:v 1607k -pass 1 -passlogfile .superpowers/h264pass -an -f null /dev/null
+cd /Users/recarnot/dev/claudehot-videogame && ffmpeg -loglevel error -y -i videos/agenthot-intro/renders/master.mp4 -c:v libx264 -preset slow -profile:v high -level:v 4.1 -refs 4 -b:v 1607k -pass 2 -passlogfile .superpowers/h264pass -c:a aac -b:a 96k -movflags +faststart src/ui/video/intro.mp4
 ```
 
 ---
@@ -1202,7 +1201,7 @@ ok   icon icon (/favicon.svg)
 ok   icon apple-touch-icon (/apple-touch-icon.png)
 ok   long cache
 ok   12 cited assets exist
-     20 files, 17.9 MB
+     20 files, 18.1 MB
 release check: all good
 ```
 
@@ -1485,7 +1484,7 @@ index a8bdae0..3fcffa6 100644
 - [ ] **Step 6 : tout passe**
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tail -4`
-Expected : `tsc` sans erreur ; `306 pass`, `0 fail`.
+Expected : `tsc` sans erreur ; `309 pass`, `0 fail`.
 
 - [ ] **Step 7 : la sonde répond dans le navigateur**
 
@@ -1612,12 +1611,12 @@ Prix relus le 2026-09-30 sur `platform.claude.com/docs/en/about-claude/pricing`,
 - [ ] **Step 4 : mesurer**
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && zsh scripts/count-tokens.sh ~/.claude/projects/*claudehot*`
-Expected : une ligne par modèle puis `TOTAL tokens=… cost=$…`, code 0. Mesure du prototype (2026-09-30, 15 h 04) :
+Expected : une ligne par modèle puis `TOTAL tokens=… cost=$…`, code 0. Mesure du prototype (2026-09-30, 17 h 58) :
 
 ```
-claude-sonnet-5-5 msgs=1428 in=2896 cw5m=9711854 cw1h=68663 cr=143617278 out=1390923 total=154791614 cost=$67.19
-claude-opus-5-5 msgs=2101 in=4212 cw5m=3190534 cw1h=7839875 cr=684144009 out=2273853 total=697452483 cost=$260.99
-TOTAL tokens=852244097 cost=$328.19
+claude-sonnet-5-5 msgs=1469 in=2978 cw5m=9913532 cw1h=68663 cr=149435728 out=1433935 total=160854836 cost=$69.29
+claude-opus-5-5 msgs=2468 in=4946 cw5m=3593138 cw1h=9460918 cr=778347861 out=2758338 total=794165201 cost=$304.51
+TOTAL tokens=955020037 cost=$373.80
 ```
 
 Les nombres du jour seront plus hauts : chaque session s'ajoute. Une ligne `… : pas de prix connu` et un code 3 : un modèle manque dans la table. Lire son prix sur la page citée, ajouter sa ligne `P["<id du modèle>"]`, relancer. Ne jamais recopier un total obtenu avec un code 3.
@@ -1628,14 +1627,14 @@ Le diff montre les valeurs du prototype : mettre celles de l'étape 4 (tokens av
 
 ```diff
 diff --git a/src/ui/credits.ts b/src/ui/credits.ts
-index d510d54..4e767c9 100644
+index d510d54..81d9c41 100644
 --- a/src/ui/credits.ts
 +++ b/src/ui/credits.ts
 @@ -1,10 +1,11 @@
  // Crédits (spec 4.3, AC-15) : la ligne exacte donnée par Romain, puis les tokens et le coût API estimé.
 -// Valeurs provisoires : mesure du brief plan 3 (2026-09-29, 13 h 35, chantier en cours). Le plan 3c les remplace
 -// par le total final (scripts/count-tokens.sh), et remplace XXXXXX par le nom du dépôt choisi par Romain.
-+// Mesure du 2026-09-30 à 15 h 04, toutes sessions du projet, sous-agents compris :
++// Mesure du 2026-09-30 à 17 h 58, toutes sessions du projet, sous-agents compris :
 +//   zsh scripts/count-tokens.sh ~/.claude/projects/*claudehot*
 +// À relancer juste avant la mise en ligne : chaque session de plus s'ajoute au total.
  export const CREDITS = {
@@ -1643,8 +1642,8 @@ index d510d54..4e767c9 100644
 -  tokens: 118_795_538,
 -  apiCostUsd: 50.31,
 +  repoUrl: "https://github.com/eRom/agenthot-the-game",
-+  tokens: 852_244_097,
-+  apiCostUsd: 328.19,
++  tokens: 955_020_037,
++  apiCostUsd: 373.8,
  } as const;
  
  export interface CreditsData {
@@ -1653,7 +1652,7 @@ index d510d54..4e767c9 100644
 - [ ] **Step 6 : tout passe**
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tail -4`
-Expected : `tsc` sans erreur ; `308 pass`, `0 fail`.
+Expected : `tsc` sans erreur ; `311 pass`, `0 fail`.
 
 - [ ] **Step 7 : commit**
 
@@ -1703,6 +1702,8 @@ Source de la forme : exemple officiel de la page `vercel.com/docs/project-config
 
 - [ ] **Step 2 : le dossier du lien Vercel reste hors de git**
 
+`.gitignore` porte déjà deux lignes non commitées de Romain, à la fin (`.impeccable/`, `rendu-simule/`). Elles restent hors du commit. Enregistrer le diff ci-dessous tel quel dans `.superpowers/gitignore-vercel.patch` (outil Write, une ligne vide à la fin), puis l'appliquer au fichier : `cd /Users/recarnot/dev/claudehot-videogame && git apply .superpowers/gitignore-vercel.patch`.
+
 ```diff
 diff --git a/.gitignore b/.gitignore
 index a7f1ccf..a30ef4c 100644
@@ -1727,8 +1728,13 @@ Expected : `vite bun run build dist /assets/(.*) public, max-age=31536000, immut
 - [ ] **Step 4 : commit**
 
 ```bash
-cd /Users/recarnot/dev/claudehot-videogame && git add vercel.json .gitignore && git commit -m "chore(deploy): Vercel configuration with a one-year cache on hashed assets"
+cd /Users/recarnot/dev/claudehot-videogame && git add vercel.json && git apply --cached .superpowers/gitignore-vercel.patch && git commit -m "chore(deploy): Vercel configuration with a one-year cache on hashed assets"
 ```
+
+Jamais `git add .gitignore` : il prendrait les deux lignes de Romain.
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && git show --stat HEAD | tail -3 && git diff .gitignore | grep -c "^+[.a-z]"`
+Expected : `.gitignore | 2 ++` et `vercel.json | 17 +` dans le commit ; puis `2` (les deux lignes de Romain sont toujours là, non commitées).
 
 ---
 
@@ -1780,7 +1786,7 @@ AGENTHOT est une vitrine technique de Claude Opus 5.5. Le code, les plans et les
 - **Rendu :** Three.js r186, WebGPU avec repli WebGL2, matériaux et post-traitement en TSL.
 - **Simulation :** physique, ennemis et replay écrits à la main en TypeScript, sans moteur externe.
 - **Son :** Web Audio. Les bruitages sont synthétisés en code. Les musiques viennent de Lyria 3.5.
-- **Images :** Seedream 5.0 Pro et Nano Banana 2. La cinématique est montée avec Hyperframes, à partir de séquences filmées par le jeu lui-même.
+- **Images :** l'image de partage et la vignette de la salle 1 sont des captures du jeu. La vignette de la salle 2 vient de Nano Banana 2. La cinématique est montée avec Hyperframes, à partir de séquences filmées par le jeu lui-même.
 - **Outils :** Vite, TypeScript, bun.
 
 ## Lancer en local
@@ -1825,7 +1831,7 @@ Tout ce qui se vérifie sans rien mettre en ligne, sur le site construit. Chaque
 - [ ] **Step 1 : construire et contrôler**
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tee .superpowers/plan-3c-test.log | tail -4 && RTK_DISABLED=1 bun run build && bun scripts/check-release.ts dist`
-Expected : `308 pass`, `0 fail` ; build : point d'entrée vers 40 Ko (14,3 Ko gzip), moteur vers 992 Ko (276 Ko gzip) ; `release check: all good`.
+Expected : `311 pass`, `0 fail` ; build : point d'entrée vers 40 Ko (14,4 Ko gzip), moteur vers 1 010 Ko (282 Ko gzip) ; `release check: all good`.
 
 - [ ] **Step 2 : servir le site construit**
 
@@ -1883,7 +1889,7 @@ async () => {
 }
 ```
 
-Expected : `line` vaut exactement `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game` ; `usage` porte les nombres de la tâche 6, par exemple `852 244 097 tokens ‧ coût API estimé : 328,19 $`.
+Expected : `line` vaut exactement `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game` ; `usage` porte les nombres de la tâche 6, par exemple `955 020 037 tokens ‧ coût API estimé : 373,80 $`.
 
 - [ ] **Step 5 : AC-3c-8, téléphone et iPad**
 
@@ -1922,7 +1928,7 @@ Le serveur de l'étape 2 tourne toujours. Envoyer à Romain ce message, tel quel
 > 3. **Chrome, le mode de secours.** Ouvre `http://localhost:4319/?debug&renderer=webgl`, gagne une partie. En bas, le panneau doit dire `WebGL2`. Dis-moi si l'image est la même : ombres dans les coins, lueur orange.
 > 4. **Regarde trois choses :** l'icône dans l'onglet (un losange orange) ; la phrase de la carte de partage : « Un FPS où le temps n'avance que quand tu bouges. Jouable dans ton navigateur. » ; le fichier `README.md`.
 >
-> Les crédits affichent maintenant le vrai total : environ 860 millions de tokens, environ 330 $ de coût API estimé.
+> Les crédits affichent maintenant le vrai total : environ 955 millions de tokens, environ 374 $ de coût API estimé (mettre ici les nombres de la tâche 6).
 
 Attendu de Romain :
 - Safari : la cinématique joue (AC-3c-3, en local).
