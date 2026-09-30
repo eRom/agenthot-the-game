@@ -58,5 +58,5 @@ Tout est dans `.superpowers/plan-3-proto/` (ignoré par git) :
 1. **Relire et valider le plan 3a**, puis choisir son exécution (recommandation : subagent-driven, 12 tâches aux interfaces liées).
 2. **Qualité « auto » limitée à 60 images par seconde** (ventilateur), « haute » sans limite. Recommandation : garder.
 3. **La cinématique garde son propre son** (volume musique), hors du graphe Web Audio. Recommandation : garder.
-4. **Nom du dépôt GitHub** (`eRom/XXXXXX`) : nécessaire au 3c (crédits, balises de partage).
-5. **Domaine** (URL Vercel par défaut ou domaine perso) : nécessaire au 3c (URL absolue de l'image de partage).
+4. **Nom du dépôt GitHub : `eRom/agenthot-the-game`** (tranché par Romain le 30/09). Nécessaire au 3c (crédits, balises de partage).
+5. **Domaine : `erom.cloud`** (tranché par Romain le 30/09 ; chez Hostinger, jamais utilisé ; racine ou sous-domaine à préciser). Nécessaire au 3c (URL absolue de l'image de partage).

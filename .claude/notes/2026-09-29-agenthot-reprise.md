@@ -39,8 +39,8 @@ Puis ouvrir http://localhost:5173/?debug, au casque.
 1. **Valider le plan 3a** et son exécution. Je recommande sous-agents, comme les plans 1 et 2.
 2. **Qualité « auto » limitée à 60 images/s**, contre la chauffe du Mac ; « haute » sans limite. Recommandé : garder.
 3. **La cinématique garde son propre son**, en dehors du reste de l'audio du jeu. Recommandé : garder.
-4. **Nom du dépôt GitHub** (`eRom/XXXXXX`) : il en faut un pour les crédits et le partage (plan 3c).
-5. **Domaine** : l'URL Vercel par défaut ou un domaine perso (plan 3c).
+4. **Nom du dépôt GitHub : `eRom/agenthot-the-game`** (tranché par Romain le 30/09 à 14:52). Sert aux crédits et au partage (plan 3c).
+5. **Domaine : `erom.cloud`** (tranché par Romain le 30/09 à 14:52 ; domaine neuf, pris chez Hostinger, jamais utilisé). Reste à dire : racine ou sous-domaine (plan 3c).
 6. **Liste des générations payantes du 3b** : environ 0,38 $ prévus (Lyria 0,16 + Nano Banana 0,13 + Seedream 0,09), 1,10 $ au maximum avec les nouveaux essais. Le détail est dans `.claude/notes/agenthot-plan-3-remaining.md`. Rien ne part sans ton « go » écrit.
 
 ## Où tout se trouve
