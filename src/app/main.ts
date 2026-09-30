@@ -187,14 +187,14 @@ async function runBoot(loader: LoaderScreen): Promise<void> {
     if (mode === "paused") {
       roomPanels.show("Pause", "Le temps est figé", [
         { label: "Reprendre", key: "Clic", run: () => engine.resume() },
-        { label: "Recommencer", code: "KeyR", key: "R", run: () => engine.restart() },
-        { label: "Menu", code: "KeyM", key: "M", run: backToMenu },
+        { label: "Recommencer", shortcut: "r", key: "R", run: () => engine.restart() },
+        { label: "Menu", shortcut: "m", key: "M", run: backToMenu },
       ]);
     } else if (mode === "won") {
       roomPanels.show("Salle nettoyée", "Le temps t'a obéi", [
-        { label: "Rejouer", code: "KeyR", key: "R", run: () => engine.restart() },
-        { label: "Revoir le replay", code: "Space", key: "Espace", run: () => engine.rewatch() },
-        { label: "Menu", code: "KeyM", key: "M", run: backToMenu },
+        { label: "Rejouer", shortcut: "r", key: "R", run: () => engine.restart() },
+        { label: "Revoir le replay", shortcut: " ", key: "Espace", run: () => engine.rewatch() },
+        { label: "Menu", shortcut: "m", key: "M", run: backToMenu },
       ]);
     } else {
       roomPanels.hide();

@@ -4,10 +4,22 @@ import { EASE } from "./dom";
 
 export interface RoomPanelAction {
   label: string;
-  // Touche du raccourci (KeyboardEvent.code, aucune si absente) et son libellé à droite du bouton.
-  code?: string;
+  // Raccourci : la touche tapée (KeyboardEvent.key en minuscule, " " pour Espace), aucune si absente. La lettre
+  // tapée et non la position de la touche : sur un clavier AZERTY, la touche M n'est pas à la place de KeyM.
+  shortcut?: string;
+  // Libellé du raccourci, à droite du bouton.
   key: string;
   run(): void;
+}
+
+// Action dont le raccourci est la touche tapée. Un raccourci du navigateur (Cmd, Ctrl, Alt) n'en déclenche aucune.
+export function findShortcut(
+  actions: readonly RoomPanelAction[],
+  event: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey">,
+): RoomPanelAction | undefined {
+  if (event.metaKey || event.ctrlKey || event.altKey) return undefined;
+  const typed = event.key.toLowerCase();
+  return actions.find((a) => a.shortcut !== undefined && a.shortcut === typed);
 }
 
 export class RoomPanels {
@@ -15,7 +27,7 @@ export class RoomPanels {
   private current: HTMLElement | null = null;
   private actions: readonly RoomPanelAction[] = [];
   private readonly onKey = (event: KeyboardEvent): void => {
-    const action = this.actions.find((a) => a.code !== undefined && a.code === event.code);
+    const action = findShortcut(this.actions, event);
     if (!action) return;
     event.preventDefault();
     // Touche tenue : une seule exécution. Sinon un R tenu relance la salle en boucle (musique, panneau qui clignote).
