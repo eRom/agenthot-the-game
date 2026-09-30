@@ -12,12 +12,19 @@ export interface RoomPanelAction {
   run(): void;
 }
 
+// Touches qui cliquent nativement le bouton qui a le focus.
+const ACTIVATION_KEYS = [" ", "Enter"];
+
 // Action dont le raccourci est la touche tapée. Un raccourci du navigateur (Cmd, Ctrl, Alt) n'en déclenche aucune.
+// `buttonFocused` : un bouton du panneau a le focus clavier (Tab). Espace et Entrée lui reviennent alors : sinon
+// Espace sur « Menu » lancerait « Revoir le replay ».
 export function findShortcut(
   actions: readonly RoomPanelAction[],
   event: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey">,
+  buttonFocused: boolean,
 ): RoomPanelAction | undefined {
   if (event.metaKey || event.ctrlKey || event.altKey) return undefined;
+  if (buttonFocused && ACTIVATION_KEYS.includes(event.key)) return undefined;
   const typed = event.key.toLowerCase();
   return actions.find((a) => a.shortcut !== undefined && a.shortcut === typed);
 }
@@ -27,7 +34,9 @@ export class RoomPanels {
   private current: HTMLElement | null = null;
   private actions: readonly RoomPanelAction[] = [];
   private readonly onKey = (event: KeyboardEvent): void => {
-    const action = findShortcut(this.actions, event);
+    const focused = document.activeElement;
+    const buttonFocused = focused instanceof HTMLButtonElement && this.current !== null && this.current.contains(focused);
+    const action = findShortcut(this.actions, event, buttonFocused);
     if (!action) return;
     event.preventDefault();
     // Touche tenue : une seule exécution. Sinon un R tenu relance la salle en boucle (musique, panneau qui clignote).
