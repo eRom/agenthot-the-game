@@ -67,12 +67,12 @@ export function indexNowPayload(siteUrl: string, key: string): IndexNowPayload {
   return { host: new URL(siteUrl).host, key, keyLocation: `${siteUrl}${key}.txt`, urlList: [siteUrl] };
 }
 
-// Liens de découverte attendus dans le <head>. Une liste, pas un dictionnaire : `alternate` y figure deux fois.
+// Liens de découverte attendus dans le <head>. Une liste de couples (relation, adresse).
 export const DISCOVERY_LINKS: readonly { rel: string; href: string }[] = [
   { rel: "manifest", href: "/manifest.webmanifest" },
   { rel: "ai-catalog", href: "/.well-known/ai-catalog.json" },
   { rel: "ard", href: "/.well-known/ard.json" },
-  { rel: "alternate", href: "/llms.txt" },
+  { rel: "describedby", href: "/llms.txt" },
   { rel: "alternate", href: "/llms-full.txt" },
 ];
 

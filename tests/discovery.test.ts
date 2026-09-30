@@ -49,7 +49,7 @@ function page(jsonLd = graph(), head = ""): string {
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
     <link rel="ard" href="/.well-known/ard.json" type="application/json" />
-    <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM Context" />
+    <link rel="describedby" type="text/markdown" href="/llms.txt" title="LLM Context" />
     <link rel="alternate" type="text/markdown" href="/llms-full.txt" title="LLM Context Full" />
     ${head}<script type="application/ld+json">${jsonLd}</script></head><body></body></html>`;
 }
@@ -123,9 +123,9 @@ describe("titre et liens de découverte", () => {
     expect(headProblems(page().replace(/<link rel="manifest"[^>]*>/, ""))).toEqual(['missing link: rel="manifest" href="/manifest.webmanifest"']);
   });
 
-  test("le second lien alternate, celui de llms-full.txt, est réclamé lui aussi", () => {
+  test("le lien alternate de llms-full.txt et le lien describedby de llms.txt sont réclamés", () => {
     expect(headProblems(page().replace(/<link rel="alternate"[^>]*llms-full\.txt[^>]*>/, ""))).toEqual(['missing link: rel="alternate" href="/llms-full.txt"']);
-    expect(headProblems(page().replace(/<link rel="alternate"[^>]*href="\/llms\.txt"[^>]*>/, ""))).toEqual(['missing link: rel="alternate" href="/llms.txt"']);
+    expect(headProblems(page().replace(/<link rel="describedby"[^>]*href="\/llms\.txt"[^>]*>/, ""))).toEqual(['missing link: rel="describedby" href="/llms.txt"']);
   });
 
   test("une page sans titre, ou au titre vide, est refusée ; un attribut sur la balise est toléré", () => {
