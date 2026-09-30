@@ -1,5 +1,37 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
+## Point du 2026-09-30 à 20:40 : AGENTHOT est en ligne, voici ce qui reste (prime sur tout le reste)
+
+**État.** Le jeu est fini et public : https://agenthot.erom.cloud/ (Vercel, projet `agenthot-the-game`) et https://github.com/eRom/agenthot-the-game (public, historique complet, mode making-of). Plans 1, 2, 3a, 3b, 3c et le nouveau rendu de la salle : exécutés, relus, validés par Romain en jeu, fusionnés, poussés. Tous les critères du plan 3c sont tenus (le dernier, WebMCP visible dans le Chrome de Romain, confirmé à 20:37). Dépenses de génération : 0,34 $ pour le 3b, 0,50 $ en tout depuis le début.
+
+**Rien n'est urgent.** Chaque point ci-dessous se lit seul : le constat, puis l'action.
+
+### À surveiller (dates)
+1. **Essai WebMCP de Chrome.** Le jeton posé dans `index.html` expire le 2027-03-30, mais l'essai lui-même couvre Chrome 149 à 156 ; Chrome 157 sort vers le 2026-11-03. Action : début novembre, rouvrir https://agenthot.erom.cloud/ dans Chrome, console, `"modelContext" in document`. `false` : lire l'état de l'API sur developer.chrome.com/origintrials, renouveler le jeton ou retirer la phrase de `llms-full.txt`.
+2. **Crédits figés au 2026-09-30 à 19:51** (1 129 844 422 tokens, 443,80 $, dont 1 097 034 905 relus en cache). Chaque session de plus sur ce projet fait monter le vrai total. Action : à la prochaine mise en ligne, relancer `zsh scripts/count-tokens.sh ~/.claude/projects/*claudehot*` et reporter les chiffres partout où un test l'exige (panneau, README, `llms.txt`, `llms-full.txt`, `get_credits`).
+3. **Certificat HTTPS** : Let's Encrypt jusqu'au 2026-12-29, renouvelé seul par Vercel tant que le CNAME est juste. Action : rien, sauf si Vercel envoie un courriel d'erreur.
+
+### Redéployer (chaque geste sur le go de Romain)
+`bun test && bun run build && vercel build --prod && bun scripts/check-release.ts .vercel/output/static && vercel deploy --prebuilt --prod`, puis `bun scripts/check-release.ts https://agenthot.erom.cloud/`. GitHub n'est pas relié à Vercel : un push ne déploie rien.
+
+### Petits défauts connus, non corrigés (par ordre d'intérêt)
+4. **`?record=1` : seule la première prise après un chargement de page est bonne**, la suivante est figée (son juste). Cause non trouvée ; piste non testée : `src/app/capture.ts` recrée un `captureStream` à chaque prise sans arrêter les pistes de l'ancien. Contournement : recharger la page avant chaque prise. Action : à corriger avant toute nouvelle cinématique.
+5. **Qualité auto qui oscille** entre `res 1` et `res 0.85` sur un Mac chargé : elle crée sans doute les à-coups mesurés (`worstWindowP95Ms` 25,7). Hypothèse non vérifiée. Action : seulement si des visiteurs se plaignent ; regarder l'hystérésis de `src/render/quality.ts` avant de toucher au rendu.
+6. **L'occlusion ambiante pèse environ 75 % de l'image** (GTAO 4,8 ms + débruitage 3,4 ms sur 11 ms, M1 Pro en Retina). Levier : `SSAONode` de Three.js r186, environ 2 fois moins cher, mais il change le rendu que Romain a figé. Action : seulement sur une plainte de cadence, et avec Romain devant l'image. Three.js r187 doit accepter une profondeur MSAA pour le GTAO (issue 34598) : la passe de profondeur à part deviendrait inutile.
+7. **Revue finale du 3c, mineurs ouverts** (`docs/superpowers/reports/2026-09-30-agenthot-plan-3c-final-review.md`) : M5 (le contrôle en ligne ne voit que 12 des 16 fichiers de `/assets/`), M6 (la sonde d'images ne protège pas `maxMs`, un alt-tab la fausse), M7 (le greffon Vite réécrit un commentaire d'`index.html`), M8 (deux phrases publiques inexactes : `operatingSystem` et « Il démarre dès la page ouverte »), M9 (le contrôle en ligne d'AC-3c-14 ne peut pas échouer), M12 (`SITE_URL` en double, un test la compare à elle-même), M13 (`count-tokens.sh` peut sous-compter sans échouer si un transcript a le mode rapide ou un cache sans détail : 0 cas aujourd'hui), M14 (le nom d'un test de crédits promet plus qu'il ne vérifie). Action : M8 d'abord (texte public faux), le reste en un lot.
+8. **Revue finale du 3b** (`docs/superpowers/reports/2026-09-30-agenthot-plan-3b-final-review.md`) : **points 2 à 4 à corriger AVANT toute nouvelle génération payante** (scripts payants) ; points 8 à 17 au backlog. La marge du go du 30/09 est codée dans `GO_CAPS` (`scripts/ledger.ts`) : toute nouvelle dépense demande un nouveau go écrit de Romain.
+9. **Revue finale du 3a** (`docs/superpowers/reports/2026-09-30-agenthot-plan-3a-final-review.md`) : points 5 à 15 ouverts (le 6, bourdon sous la cinématique, est fait), plus le log debug `[agenthot] restart … ms` faux après une relance depuis un panneau (il compte depuis la dernière touche R).
+10. **Revue du rendu** (`docs/superpowers/reports/2026-09-30-agenthot-render-look-final-review.md`) : défaut 4 (panneaux du plafond dessinés vers 6,8 m, collision à 7,5 m : 2 éclats sur 36 les traversent), défaut 8 (suite pseudo-aléatoire des étagères, sans danger), défaut 9 (cast sur `DenoiseNode`, trou de `@types/three`), D5 (la qualité basse ne coupe pas l'occlusion, choix gardé).
+11. **Le prompt de `scripts/generate-image.ts`** demande encore des « thin black ink outlines » : il décrit l'image générée d'avant. Action : le réécrire avant toute nouvelle génération d'image.
+
+### Chantiers possibles, si Romain le veut
+12. **Salle 2** (katana et fusil à pompe, spec 1) : affichée « Bientôt ». Le moteur est construit pour la salle 1 : `enterRoom` devra reconstruire la salle (plan 3a, décision 9). Sa vignette reste l'image générée d'avant le nouveau rendu : à refaire en capture quand la salle existera.
+13. **AC-18** (trois testeurs, moins de 5 essais en moyenne pour finir la salle) : ouvert, il faut deux joueurs de plus que Romain.
+14. **Pour le site de Romain (`~/dev/linktree`), trouvé ce soir** : son `robots.txt` cite des robots périmés (`Claude-Web`, `anthropic-ai`, `cohere-ai`), et le plan 3c a vérifié que WebMCP passe par `document.modelContext` et que les outils rendent leurs données directement (brouillon du W3C), pas la forme `{ content: [...] }`. Action : le lui signaler, c'est un autre dépôt.
+
+### Fichiers de Romain, jamais commités sans son mot
+`.gitignore` (6 lignes à lui : `.impeccable/`, `rendu-simule/`, `screenshots/`, l'image Gemini, les deux guides fournisseurs), `docs/superpowers/idea/OVERVIEW.md` modifié, `docs/superpowers/idea/ideation.md`. Les captures `screenshots/` sont celles du vrai SUPERHOT : ne jamais les publier.
+
 ## Mise à jour du 2026-09-30 à 20:30 (prime sur le reste de la note)
 - **Recette en ligne validée par Romain** (« 1. ok 2. ok 3. ok 4. ok ») : Safari, une partie, la carte dans iMessage et une autre messagerie, le téléphone. Fiche JSON-LD : 0 erreur au validateur de Schema.org.
 - **Google et Bing : faits par Romain** (« fait et ok ») : sitemap déclaré dans Search Console (propriété `erom.cloud`, déjà vérifiée par un TXT), import dans Bing Webmaster Tools.
