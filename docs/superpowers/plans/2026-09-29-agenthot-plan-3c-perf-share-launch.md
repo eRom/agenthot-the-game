@@ -25,6 +25,11 @@
 - Tâche 7 : `.gitignore` porte deux lignes non commitées de Romain. Le commit ne prend que la ligne `.vercel/`.
 - Build : point d'entrée 40,13 Ko, moteur 1 010 Ko (le nouveau rendu pèse 17 Ko de plus).
 
+**Ajouts du 2026-09-30 à 18 h 30** (deux demandes de Romain, relayées par la session venus) :
+- **SEO et GEO « comme linktree » :** tâches 8b à 8e avant la recette, tâche 13b après le domaine. Critères AC-3c-12 à AC-3c-15.
+- **Dépôt public, « mode making-of » :** tâche 8f (README, `.gitignore`), contrôles d'avant push à la tâche 11. La porte du push reste fermée jusqu'aux mots de Romain.
+- Trouvé à l'exécution : tâche 2b (les scripts de musique écrivaient encore dans `public/audio`), faite (`aae5573`).
+
 **Place de ce plan :** plan 3c sur 3, le dernier.
 - **3a** (fait, fusionné à `54a6288`) : finitions du jeu et écrans.
 - **3b** (fait, fusionné à `fd71576`) : assets générés, `?record`, cinématique.
@@ -100,6 +105,26 @@ Cinq situations qu'un visiteur rencontrera et qu'aucun test de tâche ne couvre 
 **AC-3c-11 : le lien des sources mène quelque part**
 - **Comportement :** quand un visiteur suit l'adresse des crédits, alors il arrive sur le dépôt du jeu et lit son README.
 - **Vérifié par :** `curl -s -o /dev/null -w "%{http_code}" https://github.com/eRom/agenthot-the-game` rend `200` sans être connecté (tâche 11, étape 5). Si Romain garde le dépôt privé, ce critère est déclaré non tenu, par choix.
+
+**AC-3c-12 : les moteurs lisent la fiche du jeu**
+- **Comportement :** quand un moteur de recherche lit `https://agenthot.erom.cloud/`, alors il y trouve une fiche du jeu (nom, description, gratuit, auteur, cinématique), un `robots.txt` qui l'autorise et un plan du site.
+- **Vérifié par :** `bun scripts/check-release.ts https://agenthot.erom.cloud/` : lignes `structured data`, `robots.txt`, `sitemap.xml` en `ok` (tâche 13, étape 6) ; la fiche relue par `validator.schema.org` au navigateur, sans erreur (tâche 13b, étape 1).
+
+**AC-3c-13 : les agents IA trouvent le jeu**
+- **Comportement :** quand un agent lit `/llms.txt`, `/llms-full.txt` ou `/.well-known/ard.json`, alors il reçoit le fichier, dans le bon type de contenu, avec l'adresse du jeu.
+- **Vérifié par :** `bun scripts/check-release.ts https://agenthot.erom.cloud/` : lignes `llms.txt served`, `llms-full.txt served`, `.well-known/ard.json served`, `.well-known/ai-catalog.json served` en `ok` (tâche 13, étape 6).
+
+**AC-3c-14 : trois outils WebMCP répondent**
+- **Comportement :** quand un navigateur expose `document.modelContext`, alors la page y enregistre `get_game_info`, `get_controls` et `get_credits`, en lecture seule, et chacun rend les faits du jeu.
+- **Vérifié par :** sur `vite preview`, avec une API simulée : les trois noms et leurs réponses (tâche 9, étape 6b). Sur le site réel, dans Chrome, après le jeton d'origin trial : `"modelContext" in document` vaut `true` (tâche 13b, étape 3). Sans jeton, ce second point est déclaré non vérifié.
+
+**AC-3c-15 : rien de tout ça ne ralentit le jeu**
+- **Comportement :** quand un joueur ouvre le site dans un navigateur sans agent, alors l'invite arrive dans le même délai qu'avant, et le fichier des outils WebMCP n'est pas téléchargé.
+- **Vérifié par :** tâche 9, étape 3 (l'invite, AC-3c-6) et étape 6b (`webmcpRequested: false`).
+
+**AC-3c-16 : le dépôt public ne montre rien qu'il ne doit pas**
+- **Comportement :** quand le dépôt devient public, alors son historique ne contient aucune clé, et aucun fichier local de Romain n'y est.
+- **Vérifié par :** `gitleaks git` sur tout l'historique : `no leaks found` ; `git status --short` ne montre aucun fichier suivi à tort (tâche 11, étape 1).
 
 ## Structure des fichiers
 
@@ -1039,7 +1064,7 @@ Expected : `200 font/woff2`, `200 audio/mpeg`, `200 video/mp4`. Arrêter le serv
 - [ ] **Step 6 : commit**
 
 ```bash
-cd /Users/recarnot/dev/claudehot-videogame && git add src/audio/tracks src/ui/video src/rooms/thumbnails src/ui/fonts public/audio public/video public/rooms public/fonts src/audio/game-audio.ts src/audio/music.ts src/ui/media.ts src/rooms/registry.ts src/ui/tokens.css index.html scripts/og/og.html scripts/build-fonts.sh tests/music-loop.test.ts tests/loop-measure.test.ts && git commit -m "perf(assets): music, video, thumbnails and fonts go through Vite for hashed names"
+cd /Users/recarnot/dev/claudehot-videogame && git add src/audio/tracks src/ui/video src/rooms/thumbnails src/ui/fonts public/fonts src/audio/game-audio.ts src/audio/music.ts src/ui/media.ts src/rooms/registry.ts src/ui/tokens.css index.html scripts/og/og.html scripts/build-fonts.sh tests/music-loop.test.ts tests/loop-measure.test.ts && git commit -m "perf(assets): music, video, thumbnails and fonts go through Vite for hashed names"
 ```
 
 `git status --short` ne doit plus montrer que les fichiers de Romain.
@@ -1818,6 +1843,1810 @@ cd /Users/recarnot/dev/claudehot-videogame && git add README.md && git commit -m
 
 ---
 
+## Lot SEO et GEO (ajout de Romain, 2026-09-30 à 18 h)
+
+Mots de Romain, relayés par la session venus : « on fera comme mon site (~/dev/linktree) avec un maximum de SEO/GEO (a-catalog, jsonld, webmcp, ....) ». Ce lot s'exécute après la tâche 8 et avant la recette (tâche 9) : tâches 8b à 8e, puis la tâche 13b après le domaine. Mêmes règles que les tâches 1 à 8 (Sonnet, `tee`, fichiers nommés).
+
+**Ce que le lot ajoute :** une fiche du jeu pour les moteurs (JSON-LD), un titre de page descriptif, `robots.txt`, `sitemap.xml`, `llms.txt` et `llms-full.txt`, un catalogue pour agents, un manifeste, trois outils WebMCP en lecture seule, un script IndexNow. `check-release.ts` contrôle tout ça, sur le dossier construit puis sur le site.
+
+**Ce que le lot ne coûte pas au jeu :** la page grossit de 3 Ko de texte. Les outils WebMCP vivent dans un fichier à part (2,4 Ko), demandé seulement si le navigateur expose l'API. Mesuré sur le prototype : invite à 1 230 ms avec l'API simulée, 1 225 ms sans, fichier WebMCP non demandé sans l'API.
+
+### Prototype vérifié (lot SEO et GEO)
+
+Code exécuté avant d'être écrit ici, sur la branche `feat/agenthot-plan-3c` à `8ef7c5e` (tâches 1 à 8 faites).
+- **Rejeu par tâche :** `tsc`, build et `check-release` verts à chaque étape. Suite : 311 → 337 (8b) → 337 (8c) → 346 (8d) → 346 (8e).
+- **Contrôle de mise en ligne, après la tâche 8c :** 19 lignes `ok`, `31 files` après la 8d, `release check: all good`.
+- **JSON-LD :** dans `dist/index.html`, `contentUrl` vaut `https://agenthot.erom.cloud/assets/intro-<hash>.mp4`, le vrai fichier (le greffon de `vite.config.ts` le remplace au build).
+- **WebMCP, dans Chrome sur `vite preview` :** avec une API simulée (`document.modelContext` posé avant la page), les trois outils sont enregistrés, `readOnlyHint: true`, et rendent les faits du jeu. Sans API, le fichier `webmcp-….js` n'est pas demandé.
+- **Icônes :** 192 et 512 px vues (losange orange centré). L'icône de 180 px refaite avec le gabarit modifié est identique à l'octet près.
+- **Non exécuté :** les en-têtes `Content-Type` de `vercel.json` (ils ne se voient que chez Vercel : tâche 12, étape 6), le jeton d'origin trial, l'envoi IndexNow. Ce sont des gestes de Romain ou d'après-domaine (tâche 13b).
+
+### Faits vérifiés le 2026-09-30 (SEO et GEO)
+
+Référence lue sans y toucher : `~/dev/linktree` (site `www.romain-ecarnot.com`, fichiers du 19 au 28/09/2026). Actualité contrôlée sur le web le même jour. Plusieurs pièces de linktree ont vieilli : le lot suit l'état du jour, et le dit.
+
+- **WebMCP :** brouillon du W3C Web Machine Learning CG du 2026-09-29 (`webmachinelearning.github.io/webmcp`). L'API est `document.modelContext.registerTool(outil)` ; `navigator.modelContext` est l'ancien nom. Un outil : `name`, `description`, `inputSchema`, `annotations.readOnlyHint`, `execute`. Dans Chrome c'est un origin trial nommé « WebMCP » (`developer.chrome.com/blog/ai-webmcp-origin-trial`, 2026-06-09), avec un jeton lié à l'origine, posé par `<meta http-equiv="origin-trial">`. Le jeton de linktree expire le 17/11/2026 (son `AGENTS.md`). Sans jeton ni drapeau (`chrome://flags/#enable-webmcp-testing`), l'API n'existe pas. Forme du résultat d'`execute` (`content: [{ type: "text", text }]`) : reprise de linktree, non confirmée par la page de Chrome.
+- **Catalogue pour agents :** le `ai-catalog.json` de linktree suit `ai-catalog.io` (Linux Foundation). Son successeur, ARD v0.91 du 2026-08-26 (`agenticresourcediscovery.org/spec`), sert le même fichier à `/.well-known/ard.json`, avec `rel="ard"`, et garde l'ancien chemin comme repli. `representativeQueries` : 2 à 5 exemples par entrée. Peu de lecteurs connus à ce jour. [candidat 1x - un seul rapport de recherche, non relu à la source par le contrôleur]
+- **llms.txt :** `llmstxt.org`. Un titre `# `, un résumé en citation, des sections de liens. Les journaux de serveurs publiés en 2026 montrent que les grands robots le lisent très peu : c'est une assurance à bas prix, pas un levier. Lien recommandé : `rel="alternate" type="text/markdown"` (linktree déclare `text/plain`).
+- **robots.txt :** noms relevés dans la documentation de chaque éditeur. Linktree cite `Claude-Web`, `anthropic-ai` et `cohere-ai`, qui ne sont plus les noms documentés : Anthropic documente `ClaudeBot`, `Claude-User`, `Claude-SearchBot` (support.claude.com, 2026-04-07) ; OpenAI `GPTBot`, `OAI-SearchBot`, `ChatGPT-User`.
+- **Schema.org :** Google ne montre aucun résultat enrichi pour un `VideoGame` seul : « co-type the VideoGame type with another type » (`developers.google.com/search/docs/appearance/structured-data/software-app`, 2026-09-08). D'où `["VideoGame", "WebApplication"]`. Sans note ni avis, pas de résultat enrichi de toute façon : on n'en invente pas. `VideoObject` : `name`, `thumbnailUrl`, `uploadDate` exigés (`…/structured-data/video`, 2026-09-24).
+- **Sitemap :** `changefreq` et `priority` sont ignorés par Google et par Bing. Les adresses de « ping » sont mortes depuis fin 2023 : le sitemap se déclare dans Search Console et Bing Webmaster Tools, ou par la ligne `Sitemap:` de `robots.txt`.
+- **IndexNow :** `indexnow.org`. Clé de 8 à 128 caractères servie à `/<clé>.txt`. Un envoi à `api.indexnow.org` vaut pour Bing, Yandex, Naver, Seznam, Yep. Google n'y participe pas.
+- **Titre :** Bing Webmaster Tools avertit au-delà de 70 caractères (règle notée dans l'`AGENTS.md` de linktree). Les guides courants visent 60 à 65.
+- **Manifeste :** `manifest.webmanifest`, `application/manifest+json`. Il n'apporte rien au référencement. Avec `display: standalone` et des icônes de 192 et 512 px, Chrome peut proposer d'installer le jeu.
+
+### Décisions prises en écrivant ce lot
+
+Réversibles ; Romain les relit à la tâche 9.
+13. **Titre de la page :** « AGENTHOT - Le FPS où le temps n'avance que quand tu bouges » (58 caractères). `og:title` reste « AGENTHOT ». Battu : « AGENTHOT » seul (un moteur n'a rien à afficher d'autre que le nom).
+14. **Le catalogue est servi sous les deux chemins**, `ard.json` (l'actuel) et `ai-catalog.json` (celui que Romain a nommé), un seul contenu, contrôlé identique. Battu : l'ancien chemin seul (déjà dépassé) ; le nouveau seul (Romain a demandé l'ancien par son nom).
+15. **`Person` pointe sur l'identité du site de Romain** (`https://www.romain-ecarnot.com/#person`, avec ses trois `sameAs`). Le jeu dit donc « eRom = Romain Ecarnot » aux moteurs. À confirmer par Romain à la tâche 9.
+16. **Tous les robots sont autorisés**, entraînement compris, comme sur linktree. Battu : fermer aux robots d'entraînement (sans effet sur la recherche, mais contraire à « un maximum »).
+17. **Trois outils WebMCP, en lecture seule :** `get_game_info`, `get_controls`, `get_credits`. Battu : un outil qui lance une partie (il agirait à la place du joueur ; hors de « lecture seule »).
+18. **La vidéo du JSON-LD est le MP4 haché**, écrit dans la page au build par un greffon de 15 lignes (`vite.config.ts`, nouveau fichier). Battu : une copie de la vidéo à une adresse fixe dans `public/` (5,8 Mo hors du cache long) ; pas de `contentUrl` (la fiche vidéo ne sert alors à rien).
+19. **Le manifeste propose l'installation.** C'est l'effet de `display: standalone`. Battu : pas de manifeste (Romain l'a sur son site et l'a listé).
+20. **Textes en français.** Une seule phrase en anglais : une requête d'exemple du catalogue (« browser FPS where time only moves when you move »), parce que des agents cherchent en anglais.
+21. **Après le domaine, trois gestes de Romain** (tâche 13b) : le jeton d'origin trial WebMCP, la déclaration du sitemap, l'envoi IndexNow.
+
+---
+
+### Task 8b : les règles de découverte
+
+Ce qu'un moteur ou un agent doit pouvoir lire, écrit en règles pures et testées. La tâche 8c les branche au contrôle de mise en ligne.
+
+**Files :**
+- Create : `scripts/discovery.ts`
+- Test : `tests/discovery.test.ts`
+
+**Interfaces :**
+- Consumes : rien.
+- Produces : `DISCOVERY_FILES`, `DISCOVERY_CONTENT_TYPES`, `DISCOVERY_LINKS`, `DISCOVERY_LIMITS`, `INDEXNOW_KEY`, `readJsonLd`, `jsonLdProblems(html, siteUrl)`, `jsonLdSitePaths(html, siteUrl)`, `headProblems(html)`, `robotsProblems(text, siteUrl)`, `sitemapProblems(xml, siteUrl)`, `llmsProblems(text, siteUrl, name)`, `catalogProblems(text, name)`, `manifestProblems(text): { problems, icons }`, `discoveryFileProblems(path, text, siteUrl)`, `indexNowPayload(siteUrl, key)`.
+
+- [ ] **Step 1 : écrire les tests**
+
+`tests/discovery.test.ts` :
+
+```ts
+import { describe, expect, test } from "bun:test";
+import {
+  DISCOVERY_LIMITS,
+  catalogProblems,
+  headProblems,
+  indexNowPayload,
+  jsonLdProblems,
+  jsonLdSitePaths,
+  llmsProblems,
+  manifestProblems,
+  readJsonLd,
+  robotsProblems,
+  sitemapProblems,
+} from "../scripts/discovery";
+
+const SITE = "https://agenthot.erom.cloud/";
+const DASH = String.fromCodePoint(0x2014);
+
+// Un graphe complet. `patch` reçoit les quatre nœuds et peut les changer.
+function graph(patch: (nodes: Record<string, Record<string, unknown>>) => void = () => undefined): string {
+  const nodes: Record<string, Record<string, unknown>> = {
+    site: { "@type": "WebSite", "@id": `${SITE}#website`, url: SITE, name: "AGENTHOT" },
+    game: {
+      "@type": ["VideoGame", "WebApplication"],
+      "@id": `${SITE}#game`,
+      url: SITE,
+      name: "AGENTHOT",
+      image: `${SITE}og-v1.jpg`,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+      trailer: { "@id": `${SITE}#intro` },
+    },
+    person: { "@type": "Person", "@id": "https://www.romain-ecarnot.com/#person", name: "Romain Ecarnot", sameAs: ["https://github.com/eRom"] },
+    video: {
+      "@type": "VideoObject",
+      "@id": `${SITE}#intro`,
+      name: "AGENTHOT, la cinématique",
+      thumbnailUrl: `${SITE}og-v1.jpg`,
+      uploadDate: "2026-09-30T17:47:00+02:00",
+      contentUrl: `${SITE}assets/intro-DiTX2XMp.mp4`,
+    },
+  };
+  patch(nodes);
+  return JSON.stringify({ "@context": "https://schema.org", "@graph": Object.values(nodes) });
+}
+
+function page(jsonLd = graph(), head = ""): string {
+  return `<!doctype html><html lang="fr"><head><title>AGENTHOT - Le FPS où le temps n'avance que quand tu bouges</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
+    <link rel="ard" href="/.well-known/ard.json" type="application/json" />
+    <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM Context" />
+    ${head}<script type="application/ld+json">${jsonLd}</script></head><body></body></html>`;
+}
+
+describe("fiche du jeu en JSON-LD", () => {
+  test("un graphe complet n'a aucun problème", () => {
+    expect(jsonLdProblems(page(), SITE)).toEqual([]);
+    expect(readJsonLd(page())).toHaveLength(4);
+  });
+
+  test("une page sans JSON-LD, ou avec un JSON cassé, est refusée", () => {
+    expect(jsonLdProblems("<html><head></head></html>", SITE)).toEqual(["missing JSON-LD"]);
+    expect(jsonLdProblems(page("{ not json"), SITE)).toEqual(["JSON-LD does not parse"]);
+  });
+
+  test("chaque type attendu est réclamé quand il manque", () => {
+    expect(jsonLdProblems(page(graph((nodes) => delete nodes.video)), SITE)).toEqual(["JSON-LD has no VideoObject"]);
+    expect(jsonLdProblems(page(graph((nodes) => delete nodes.person)), SITE)).toEqual(["JSON-LD has no Person"]);
+  });
+
+  test("VideoGame seul n'a pas de résultat enrichi chez Google : il doit aussi être une WebApplication", () => {
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.game!["@type"] = "VideoGame"))), SITE)).toEqual(["VideoGame is not co-typed with WebApplication"]);
+  });
+
+  test("le jeu est gratuit, à l'adresse du site, et n'invente aucune note", () => {
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.game!.offers = { price: "4.99" }))), SITE)).toEqual(["VideoGame offers.price is not 0"]);
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.game!.url = "https://example.com/"))), SITE)).toEqual([
+      `VideoGame url is https://example.com/, expected ${SITE}`,
+    ]);
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.game!.aggregateRating = { ratingValue: 5 }))), SITE)).toEqual([
+      "VideoGame must not declare a rating or a review",
+    ]);
+  });
+
+  test("la vidéo porte ce que Google exige, et une date avec son fuseau", () => {
+    expect(jsonLdProblems(page(graph((nodes) => delete nodes.video!.thumbnailUrl)), SITE)).toEqual(["VideoObject has no thumbnailUrl"]);
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.video!.uploadDate = "2026-09-30"))), SITE)).toEqual([
+      "VideoObject uploadDate is not an ISO 8601 date with a time zone: 2026-09-30",
+    ]);
+  });
+
+  test("une adresse relative est refusée : un robot ne la résout pas", () => {
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.game!.image = "/og-v1.jpg"))), SITE)).toEqual([
+      "JSON-LD image is not an absolute https URL: /og-v1.jpg",
+    ]);
+  });
+
+  test("aucun tiret cadratin dans un texte du graphe", () => {
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.game!.description = `Bouge ${DASH} le temps repart.`))), SITE)).toEqual([
+      "JSON-LD description contains an em dash",
+    ]);
+  });
+
+  test("les fichiers du site cités par le graphe sont relevés une fois, sans les identifiants", () => {
+    expect(jsonLdSitePaths(page(), SITE).sort()).toEqual(["assets/intro-DiTX2XMp.mp4", "og-v1.jpg"]);
+  });
+});
+
+describe("titre et liens de découverte", () => {
+  test("la page complète passe ; chaque lien manquant est réclamé", () => {
+    expect(headProblems(page())).toEqual([]);
+    expect(headProblems(page().replace(/<link rel="ard"[^>]*>/, ""))).toEqual(['missing link: rel="ard" href="/.well-known/ard.json"']);
+    expect(headProblems(page().replace(/<link rel="manifest"[^>]*>/, ""))).toEqual(['missing link: rel="manifest" href="/manifest.webmanifest"']);
+  });
+
+  test("un titre trop long pour les moteurs est refusé, la limite passe", () => {
+    const at = (length: number): string => page().replace(/<title>[^<]*<\/title>/, `<title>${"x".repeat(length)}</title>`);
+    expect(headProblems(at(DISCOVERY_LIMITS.pageTitleChars))).toEqual([]);
+    expect(headProblems(at(DISCOVERY_LIMITS.pageTitleChars + 1))).toEqual(["<title> has 66 characters (max 65)"]);
+  });
+});
+
+describe("robots.txt", () => {
+  const robots = `User-agent: *\nAllow: /\n\nUser-agent: GPTBot\nAllow: /\n\nSitemap: ${SITE}sitemap.xml\n`;
+
+  test("ouvert à tous, avec le plan du site : rien à dire", () => {
+    expect(robotsProblems(robots, SITE)).toEqual([]);
+  });
+
+  test("un chemin fermé, une règle générale absente, un plan du site absent ou relatif : signalés", () => {
+    expect(robotsProblems(robots.replace("Allow: /\n\nUser-agent: GPTBot", "Disallow: /assets/\n\nUser-agent: GPTBot"), SITE)).toEqual([
+      "robots.txt closes a path: Disallow: /assets/",
+    ]);
+    expect(robotsProblems(robots.replace("User-agent: *", "User-agent: Googlebot"), SITE)).toEqual(["robots.txt has no rule for every robot (User-agent: *)"]);
+    expect(robotsProblems(robots.replace(`${SITE}sitemap.xml`, "/sitemap.xml"), SITE)).toEqual([`robots.txt lacks the line: Sitemap: ${SITE}sitemap.xml`]);
+  });
+
+  test("« Disallow: » vide n'interdit rien", () => {
+    expect(robotsProblems(`${robots}User-agent: Bingbot\nDisallow:\n`, SITE)).toEqual([]);
+  });
+});
+
+describe("sitemap.xml", () => {
+  const sitemap = (body: string): string => `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`;
+  const url = `<url><loc>${SITE}</loc><lastmod>2026-09-30</lastmod></url>`;
+
+  test("l'adresse du jeu et sa date : rien à dire", () => {
+    expect(sitemapProblems(sitemap(url), SITE)).toEqual([]);
+  });
+
+  test("adresse du jeu absente, autre site, date absente ou illisible : signalés", () => {
+    expect(sitemapProblems(sitemap(""), SITE)).toEqual([`sitemap.xml does not list ${SITE}`]);
+    expect(sitemapProblems(sitemap(`${url}<url><loc>https://example.com/</loc><lastmod>2026-09-30</lastmod></url>`), SITE)).toEqual([
+      "sitemap.xml lists another site: https://example.com/",
+    ]);
+    expect(sitemapProblems(sitemap(`<url><loc>${SITE}</loc></url>`), SITE)).toEqual(["sitemap.xml: every <url> needs a <lastmod>"]);
+    expect(sitemapProblems(sitemap(url.replace("2026-09-30", "30/09/2026")), SITE)).toEqual(["sitemap.xml lastmod is not a date: 30/09/2026"]);
+  });
+
+  test("changefreq et priority, ignorés par les moteurs, sont refusés", () => {
+    expect(sitemapProblems(sitemap(url.replace("</url>", "<priority>1.0</priority></url>")), SITE)).toEqual([
+      "sitemap.xml declares changefreq or priority, which search engines ignore",
+    ]);
+  });
+});
+
+describe("llms.txt", () => {
+  const llms = `# AGENTHOT\n\n> Un FPS où le temps n'avance que quand tu bouges.\n\n- [Jouer](${SITE})\n`;
+
+  test("un titre, un résumé, l'adresse du jeu : rien à dire", () => {
+    expect(llmsProblems(llms, SITE, "llms.txt")).toEqual([]);
+  });
+
+  test("sans titre, sans résumé, sans adresse, avec un tiret cadratin : signalés", () => {
+    expect(llmsProblems(llms.replace("# AGENTHOT", "AGENTHOT"), SITE, "llms.txt")).toEqual(['llms.txt does not start with a "# " title']);
+    expect(llmsProblems(llms.replace("> Un", "Un"), SITE, "llms.txt")).toEqual(['llms.txt has no "> " summary']);
+    expect(llmsProblems(llms.replace(`(${SITE})`, "(plus tard)"), SITE, "llms-full.txt")).toEqual(["llms-full.txt never gives the address of the game"]);
+    expect(llmsProblems(`${llms}Bouge ${DASH} tire.\n`, SITE, "llms.txt")).toEqual(["llms.txt contains an em dash"]);
+  });
+
+  test("une adresse du site en http, ou sans la barre du domaine, est refusée", () => {
+    expect(llmsProblems(`${llms}- http://agenthot.erom.cloud/llms.txt\n`, SITE, "llms.txt")).toEqual([
+      "llms.txt has a wrong address for the site: http://agenthot.erom.cloud/llms.txt",
+    ]);
+  });
+});
+
+describe("catalogue pour agents", () => {
+  const entry = {
+    identifier: "urn:air:erom.cloud:agenthot:game",
+    displayName: "AGENTHOT",
+    type: "text/html",
+    description: "Le jeu.",
+    url: SITE,
+    representativeQueries: ["jeu FPS gratuit dans le navigateur", "jeu où le temps n'avance que quand on bouge"],
+  };
+  const catalog = (entries: unknown[]): string => JSON.stringify({ specVersion: "1.0", entries });
+
+  test("une entrée complète : rien à dire", () => {
+    expect(catalogProblems(catalog([entry]), "ard.json")).toEqual([]);
+  });
+
+  test("JSON cassé, catalogue vide, champ manquant, adresse relative : signalés", () => {
+    expect(catalogProblems("{", "ard.json")).toEqual(["ard.json does not parse"]);
+    expect(catalogProblems(catalog([]), "ard.json")).toEqual(["ard.json has no entry"]);
+    expect(catalogProblems(catalog([{ ...entry, displayName: "" }]), "ard.json")).toEqual([
+      "ard.json: entry urn:air:erom.cloud:agenthot:game has no displayName",
+    ]);
+    expect(catalogProblems(catalog([{ ...entry, url: "/llms.txt" }]), "ard.json")).toEqual([
+      "ard.json: entry urn:air:erom.cloud:agenthot:game url is not absolute",
+    ]);
+  });
+
+  test("entre 2 et 5 requêtes d'exemple par entrée", () => {
+    expect(catalogProblems(catalog([{ ...entry, representativeQueries: ["une seule"] }]), "ard.json")).toEqual([
+      "ard.json: entry urn:air:erom.cloud:agenthot:game has 1 representativeQueries (2 to 5 expected)",
+    ]);
+  });
+});
+
+describe("manifeste", () => {
+  const manifest = {
+    name: "AGENTHOT",
+    short_name: "AGENTHOT",
+    start_url: "/",
+    display: "standalone",
+    lang: "fr",
+    icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  };
+
+  test("complet : rien à dire, et les icônes annoncées sont rendues en chemins", () => {
+    expect(manifestProblems(JSON.stringify(manifest))).toEqual({ problems: [], icons: ["icon-192.png", "icon-512.png"] });
+  });
+
+  test("JSON cassé, champ manquant, icône de 512 px absente : signalés", () => {
+    expect(manifestProblems("nope").problems).toEqual(["manifest.webmanifest does not parse"]);
+    expect(manifestProblems(JSON.stringify({ ...manifest, start_url: "" })).problems).toEqual(["manifest.webmanifest has no start_url"]);
+    expect(manifestProblems(JSON.stringify({ ...manifest, icons: manifest.icons.slice(0, 1) })).problems).toEqual([
+      "manifest.webmanifest has no 512x512 icon",
+    ]);
+  });
+});
+
+describe("IndexNow", () => {
+  test("la requête donne l'hôte sans protocole, la clé, son adresse et la page du jeu", () => {
+    expect(indexNowPayload(SITE, "agenthot-key")).toEqual({
+      host: "agenthot.erom.cloud",
+      key: "agenthot-key",
+      keyLocation: `${SITE}agenthot-key.txt`,
+      urlList: [SITE],
+    });
+  });
+});
+```
+
+- [ ] **Step 2 : ils échouent**
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun test tests/discovery.test.ts 2>&1 | tail -8`
+Expected : FAIL, `Cannot find module '../scripts/discovery'`.
+
+- [ ] **Step 3 : écrire les règles**
+
+`scripts/discovery.ts` :
+
+```ts
+// Contrôles de découverte (moteurs de recherche et agents IA) : ce qu'un robot lit en dehors des balises de partage.
+// JSON-LD de la page, robots.txt, sitemap.xml, llms.txt, catalogue pour agents, manifeste. Logique pure :
+// scripts/check-release.ts la branche au disque et au réseau.
+
+// Tiret cadratin : banni de tout texte lu par un tiers (règle de Romain).
+const EM_DASH = String.fromCodePoint(0x2014);
+
+export const DISCOVERY_LIMITS = {
+  // Bing Webmaster Tools avertit au-delà de 70 caractères ; les guides courants visent 60 à 65 (relevé le 2026-09-30).
+  pageTitleChars: 65,
+  // ARD v0.91 : « representativeQueries SHOULD contain 2-5 examples ».
+  minQueries: 2,
+  maxQueries: 5,
+} as const;
+
+// Fichiers servis à une adresse fixe, que la page ou un autre fichier annonce. Chemins relatifs à la racine du site.
+export const DISCOVERY_FILES = [
+  "robots.txt",
+  "sitemap.xml",
+  "llms.txt",
+  "llms-full.txt",
+  ".well-known/ai-catalog.json",
+  ".well-known/ard.json",
+  "manifest.webmanifest",
+] as const;
+
+// Type de contenu attendu en ligne pour chacun (réglé dans vercel.json quand l'hébergeur ne le devine pas).
+export const DISCOVERY_CONTENT_TYPES: Readonly<Record<(typeof DISCOVERY_FILES)[number], string>> = {
+  "robots.txt": "text/plain",
+  "sitemap.xml": "xml",
+  "llms.txt": "text/markdown",
+  "llms-full.txt": "text/markdown",
+  ".well-known/ai-catalog.json": "application/ai-catalog+json",
+  ".well-known/ard.json": "application/json",
+  "manifest.webmanifest": "application/manifest+json",
+};
+
+// Clé IndexNow du site : publique par nature, servie à /<clé>.txt (indexnow.org). Envoi : scripts/submit-indexnow.ts.
+export const INDEXNOW_KEY = "agenthot-hjjp0jh6j53192gxquqxg84k";
+
+export interface IndexNowPayload {
+  host: string;
+  key: string;
+  keyLocation: string;
+  urlList: string[];
+}
+
+// Corps de la requête IndexNow (indexnow.org/documentation) : l'hôte, la clé, où la lire, et les adresses changées.
+export function indexNowPayload(siteUrl: string, key: string): IndexNowPayload {
+  return { host: new URL(siteUrl).host, key, keyLocation: `${siteUrl}${key}.txt`, urlList: [siteUrl] };
+}
+
+// Liens de découverte attendus dans le <head> : `rel` → adresse.
+export const DISCOVERY_LINKS: Readonly<Record<string, string>> = {
+  manifest: "/manifest.webmanifest",
+  "ai-catalog": "/.well-known/ai-catalog.json",
+  ard: "/.well-known/ard.json",
+  alternate: "/llms.txt",
+};
+
+function attributes(tag: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const match of tag.matchAll(/([a-zA-Z][\w:-]*)\s*=\s*"([^"]*)"/g)) out[match[1]!.toLowerCase()] = match[2]!;
+  return out;
+}
+
+type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
+type JsonObject = { [key: string]: Json };
+
+function isObject(value: Json | undefined): value is JsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseJson(text: string): JsonObject | null {
+  try {
+    const value = JSON.parse(text) as Json;
+    return isObject(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+// Toutes les chaînes d'un JSON, avec le nom de la clé qui les porte.
+function strings(value: Json, key = "", out: { key: string; text: string }[] = []): { key: string; text: string }[] {
+  if (typeof value === "string") out.push({ key, text: value });
+  else if (Array.isArray(value)) for (const item of value) strings(item, key, out);
+  else if (isObject(value)) for (const [name, item] of Object.entries(value)) strings(item, name, out);
+  return out;
+}
+
+// Nœuds du graphe JSON-LD de la page ; null si un bloc ne se lit pas.
+export function readJsonLd(html: string): JsonObject[] | null {
+  const nodes: JsonObject[] = [];
+  for (const match of html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)) {
+    const block = parseJson(match[1]!);
+    if (!block) return null;
+    const graph = block["@graph"];
+    if (Array.isArray(graph)) for (const node of graph) if (isObject(node)) nodes.push(node);
+    if (!Array.isArray(graph)) nodes.push(block);
+  }
+  return nodes;
+}
+
+function types(node: JsonObject): string[] {
+  const type = node["@type"];
+  if (typeof type === "string") return [type];
+  return Array.isArray(type) ? type.filter((item): item is string => typeof item === "string") : [];
+}
+
+// Clés dont la valeur est une adresse : elle doit être absolue, un robot ne résout pas un chemin relatif.
+const URL_KEYS = new Set(["@id", "url", "image", "thumbnailUrl", "contentUrl", "sameAs"]);
+
+// Adresses du site citées par le JSON-LD, en chemins locaux (« og-v1.jpg », « assets/intro-….mp4 »).
+export function jsonLdSitePaths(html: string, siteUrl: string): string[] {
+  const paths = new Set<string>();
+  for (const node of readJsonLd(html) ?? []) {
+    for (const { key, text } of strings(node)) {
+      if (!URL_KEYS.has(key) || key === "@id" || !text.startsWith(siteUrl)) continue;
+      const path = text.slice(siteUrl.length).split(/[?#]/)[0]!;
+      if (path) paths.add(path);
+    }
+  }
+  return [...paths];
+}
+
+// Ce qui empêcherait un moteur de lire la fiche du jeu. Liste vide : le JSON-LD est prêt.
+export function jsonLdProblems(html: string, siteUrl: string): string[] {
+  const nodes = readJsonLd(html);
+  if (nodes === null) return ["JSON-LD does not parse"];
+  if (nodes.length === 0) return ["missing JSON-LD"];
+  const problems: string[] = [];
+  const find = (type: string): JsonObject | undefined => nodes.find((node) => types(node).includes(type));
+  for (const type of ["VideoGame", "WebSite", "Person", "VideoObject"]) if (!find(type)) problems.push(`JSON-LD has no ${type}`);
+  const game = find("VideoGame");
+  if (game) {
+    // Google : « co-type the VideoGame type with another type » (structured-data/software-app, 2026-09-08).
+    if (!types(game).includes("WebApplication")) problems.push("VideoGame is not co-typed with WebApplication");
+    if (game.url !== siteUrl) problems.push(`VideoGame url is ${String(game.url)}, expected ${siteUrl}`);
+    const offers = game.offers;
+    if (!isObject(offers) || String(offers.price) !== "0") problems.push("VideoGame offers.price is not 0");
+    // Une note inventée est une donnée structurée trompeuse : le jeu n'a aucun avis.
+    if ("aggregateRating" in game || "review" in game) problems.push("VideoGame must not declare a rating or a review");
+  }
+  const video = find("VideoObject");
+  if (video) {
+    // Google exige name, thumbnailUrl et uploadDate (structured-data/video, 2026-09-24).
+    for (const key of ["name", "thumbnailUrl", "uploadDate", "contentUrl"]) if (!video[key]) problems.push(`VideoObject has no ${key}`);
+    const uploaded = typeof video.uploadDate === "string" ? video.uploadDate : "";
+    if (uploaded && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/.test(uploaded)) {
+      problems.push(`VideoObject uploadDate is not an ISO 8601 date with a time zone: ${uploaded}`);
+    }
+  }
+  for (const node of nodes) {
+    for (const { key, text } of strings(node)) {
+      if (URL_KEYS.has(key) && !/^https:\/\//.test(text)) problems.push(`JSON-LD ${key} is not an absolute https URL: ${text}`);
+      if (text.includes(EM_DASH)) problems.push(`JSON-LD ${key} contains an em dash`);
+    }
+  }
+  return problems;
+}
+
+// Titre et liens de découverte du <head>.
+export function headProblems(html: string): string[] {
+  const problems: string[] = [];
+  const title = /<title>([^<]*)<\/title>/i.exec(html)?.[1]?.trim() ?? "";
+  if (title.length > DISCOVERY_LIMITS.pageTitleChars) problems.push(`<title> has ${title.length} characters (max ${DISCOVERY_LIMITS.pageTitleChars})`);
+  if (title.includes(EM_DASH)) problems.push("<title> contains an em dash");
+  const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((match) => attributes(match[0]));
+  for (const [rel, href] of Object.entries(DISCOVERY_LINKS)) {
+    if (!links.some((link) => link.rel === rel && link.href === href)) problems.push(`missing link: rel="${rel}" href="${href}"`);
+  }
+  return problems;
+}
+
+// robots.txt : tout le monde peut lire le site, et le plan du site est annoncé en adresse absolue.
+export function robotsProblems(text: string, siteUrl: string): string[] {
+  const problems: string[] = [];
+  const lines = text.split(/\r?\n/).map((line) => line.trim());
+  if (!lines.some((line) => /^user-agent:\s*\*$/i.test(line))) problems.push("robots.txt has no rule for every robot (User-agent: *)");
+  const closed = lines.filter((line) => /^disallow:\s*\S/i.test(line));
+  if (closed.length > 0) problems.push(`robots.txt closes a path: ${closed.join(" ; ")}`);
+  const sitemap = `Sitemap: ${siteUrl}sitemap.xml`;
+  if (!lines.includes(sitemap)) problems.push(`robots.txt lacks the line: ${sitemap}`);
+  return problems;
+}
+
+// sitemap.xml : l'adresse du jeu, et une date de dernière modification lisible.
+export function sitemapProblems(xml: string, siteUrl: string): string[] {
+  const problems: string[] = [];
+  const locs = [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((match) => match[1]!);
+  if (!locs.includes(siteUrl)) problems.push(`sitemap.xml does not list ${siteUrl}`);
+  for (const loc of locs) if (!loc.startsWith(siteUrl)) problems.push(`sitemap.xml lists another site: ${loc}`);
+  const dates = [...xml.matchAll(/<lastmod>([^<]*)<\/lastmod>/g)].map((match) => match[1]!);
+  if (dates.length !== locs.length) problems.push("sitemap.xml: every <url> needs a <lastmod>");
+  for (const date of dates) if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) problems.push(`sitemap.xml lastmod is not a date: ${date}`);
+  // Ignorés par Google et par Bing : les écrire laisse croire qu'ils servent.
+  if (/<(changefreq|priority)>/.test(xml)) problems.push("sitemap.xml declares changefreq or priority, which search engines ignore");
+  return problems;
+}
+
+// llms.txt (llmstxt.org) : un titre, un résumé en citation, des adresses du site justes.
+export function llmsProblems(text: string, siteUrl: string, name: string): string[] {
+  const problems: string[] = [];
+  const lines = text.split(/\r?\n/);
+  if (!/^# \S/.test(lines[0] ?? "")) problems.push(`${name} does not start with a "# " title`);
+  if (!lines.some((line) => line.startsWith("> "))) problems.push(`${name} has no "> " summary`);
+  if (text.includes(EM_DASH)) problems.push(`${name} contains an em dash`);
+  if (!text.includes(siteUrl)) problems.push(`${name} never gives the address of the game`);
+  const host = new URL(siteUrl).host;
+  for (const match of text.matchAll(/https?:\/\/[^\s)>`]+/g)) {
+    if (new URL(match[0]).host === host && !match[0].startsWith(siteUrl)) problems.push(`${name} has a wrong address for the site: ${match[0]}`);
+  }
+  return problems;
+}
+
+// Catalogue pour agents (ai-catalog.io, et son successeur ARD) : des entrées complètes, en adresses absolues.
+export function catalogProblems(text: string, name: string): string[] {
+  const catalog = parseJson(text);
+  if (!catalog) return [`${name} does not parse`];
+  const problems: string[] = [];
+  const entries = Array.isArray(catalog.entries) ? catalog.entries.filter(isObject) : [];
+  if (entries.length === 0) problems.push(`${name} has no entry`);
+  for (const entry of entries) {
+    const id = String(entry.identifier ?? "?");
+    for (const key of ["identifier", "displayName", "type", "url", "description"]) {
+      if (typeof entry[key] !== "string" || entry[key] === "") problems.push(`${name}: entry ${id} has no ${key}`);
+    }
+    if (typeof entry.url === "string" && !/^https:\/\//.test(entry.url)) problems.push(`${name}: entry ${id} url is not absolute`);
+    const queries = Array.isArray(entry.representativeQueries) ? entry.representativeQueries : [];
+    if (queries.length < DISCOVERY_LIMITS.minQueries || queries.length > DISCOVERY_LIMITS.maxQueries) {
+      problems.push(`${name}: entry ${id} has ${queries.length} representativeQueries (${DISCOVERY_LIMITS.minQueries} to ${DISCOVERY_LIMITS.maxQueries} expected)`);
+    }
+  }
+  if (strings(catalog).some(({ text: value }) => value.includes(EM_DASH))) problems.push(`${name} contains an em dash`);
+  return problems;
+}
+
+// Manifeste : un nom, une adresse de départ, et les icônes de 192 et 512 px qu'il annonce. Rend aussi leurs chemins.
+export function manifestProblems(text: string): { problems: string[]; icons: string[] } {
+  const manifest = parseJson(text);
+  if (!manifest) return { problems: ["manifest.webmanifest does not parse"], icons: [] };
+  const problems: string[] = [];
+  for (const key of ["name", "short_name", "start_url", "display", "lang"]) {
+    if (typeof manifest[key] !== "string" || manifest[key] === "") problems.push(`manifest.webmanifest has no ${key}`);
+  }
+  const icons = Array.isArray(manifest.icons) ? manifest.icons.filter(isObject) : [];
+  for (const size of ["192x192", "512x512"]) {
+    if (!icons.some((icon) => icon.sizes === size)) problems.push(`manifest.webmanifest has no ${size} icon`);
+  }
+  if (strings(manifest).some(({ text: value }) => value.includes(EM_DASH))) problems.push("manifest.webmanifest contains an em dash");
+  const paths = icons.map((icon) => String(icon.src ?? "").replace(/^\//, "")).filter((path) => path !== "");
+  return { problems, icons: paths };
+}
+
+// Problèmes d'un fichier de découverte, d'après son chemin. Le manifeste rend aussi ses icônes par manifestProblems.
+export function discoveryFileProblems(path: (typeof DISCOVERY_FILES)[number], text: string, siteUrl: string): string[] {
+  switch (path) {
+    case "robots.txt":
+      return robotsProblems(text, siteUrl);
+    case "sitemap.xml":
+      return sitemapProblems(text, siteUrl);
+    case "llms.txt":
+    case "llms-full.txt":
+      return llmsProblems(text, siteUrl, path);
+    case ".well-known/ai-catalog.json":
+    case ".well-known/ard.json":
+      return catalogProblems(text, path);
+    case "manifest.webmanifest":
+      return manifestProblems(text).problems;
+  }
+}
+```
+
+- [ ] **Step 4 : tout passe**
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun test tests/discovery.test.ts 2>&1 | tail -5`
+Expected : `26 pass`, `0 fail`.
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tail -4`
+Expected : `tsc` sans erreur ; `337 pass`, `0 fail`.
+
+- [ ] **Step 5 : commit**
+
+```bash
+cd /Users/recarnot/dev/claudehot-videogame && git add scripts/discovery.ts tests/discovery.test.ts && git commit -m "feat(release): discovery rules for structured data, robots, sitemap, llms.txt and agent catalog"
+```
+
+---
+
+### Task 8c : la fiche du jeu, les fichiers de découverte, le contrôle
+
+Tout ce qu'un robot lit hors des balises de partage : le JSON-LD et les liens dans `index.html`, sept fichiers à adresse fixe dans `public/`, deux icônes, les types de contenu chez Vercel. `check-release.ts` contrôle le tout.
+
+**Files :**
+- Create : `public/robots.txt`, `public/sitemap.xml`, `public/llms.txt`, `public/llms-full.txt`, `public/.well-known/ard.json`, `public/.well-known/ai-catalog.json` (copie), `public/manifest.webmanifest`, `public/icon-192.png`, `public/icon-512.png` (fabriquées), `public/agenthot-hjjp0jh6j53192gxquqxg84k.txt`, `vite.config.ts`
+- Modify : `index.html`, `tsconfig.json`, `scripts/og/icon.html`, `scripts/check-release.ts`, `vercel.json`
+
+**Interfaces :**
+- Consumes : `scripts/discovery.ts` (tâche 8b) ; `src/ui/video/intro.mp4` importé par `src/ui/media.ts` (tâche 2).
+- Produces : `bun scripts/check-release.ts dist` sort les lignes `discovery head`, `structured data`, une ligne par fichier de découverte, `manifest icons exist`, `both agent catalogs are identical`, `IndexNow key file`. En mode adresse : une ligne `<fichier> served` par fichier, avec son type de contenu.
+
+- [ ] **Step 1 : les fichiers à adresse fixe**
+
+`public/robots.txt` :
+
+```txt
+# AGENTHOT : tout le site est ouvert aux moteurs de recherche et aux robots d'IA.
+User-agent: *
+Allow: /
+
+# Recherche et réponses en direct (noms relevés dans la documentation de chaque éditeur, 2026-09-30)
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: MistralAI-Index
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: Amzn-SearchBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# Entraînement des modèles
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: MistralAI-Training
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Moteurs classiques
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://agenthot.erom.cloud/sitemap.xml
+```
+
+`public/sitemap.xml` :
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://agenthot.erom.cloud/</loc>
+    <lastmod>2026-09-30</lastmod>
+  </url>
+</urlset>
+```
+
+`public/llms.txt` :
+
+```txt
+# AGENTHOT
+
+> Un FPS dans le navigateur où le temps n'avance que quand tu bouges. Gratuit, sans compte, sans installation. Une vitrine technique de Claude Opus 5.5, pilotée par eRom (Romain Ecarnot).
+
+AGENTHOT se joue sur ordinateur, au clavier et à la souris, dans Chrome, Safari ou Firefox récents. Une salle, cinq ennemis, quatre balles. Une seule touche et tu meurs. Quand tu t'arrêtes, le temps se fige : tu lis la salle, tu choisis, tu repars. La victoire rejoue ta partie en temps réel.
+
+## Jouer
+
+- [AGENTHOT](https://agenthot.erom.cloud/): le jeu. Il démarre dès la page ouverte.
+
+## Comprendre le jeu
+
+- [Tout le jeu en une page](https://agenthot.erom.cloud/llms-full.txt): règles, commandes, technique, crédits.
+- [Sources](https://github.com/eRom/agenthot-the-game): le code, la spec, les plans et les revues.
+
+## Auteur
+
+- [Romain Ecarnot](https://www.romain-ecarnot.com/): eRom, l'auteur.
+
+## Optional
+
+- [Image de partage](https://agenthot.erom.cloud/og-v1.jpg): une capture du jeu, 1200 x 630.
+```
+
+`public/llms-full.txt` :
+
+```txt
+# AGENTHOT : tout le jeu en une page
+
+> Un FPS dans le navigateur où le temps n'avance que quand tu bouges. Gratuit, sans compte, sans installation.
+> Adresse : https://agenthot.erom.cloud/
+
+## 1. Le jeu
+
+AGENTHOT est un jeu de tir à la première personne qui se joue dans un navigateur, sur ordinateur. Son idée tient en une phrase : le temps n'avance que quand tu bouges ou que tu tires. Immobile, tout se fige : les balles restent en l'air, les ennemis s'arrêtent au milieu d'un pas.
+
+Ce n'est donc pas un jeu de réflexes. C'est un jeu de lecture : tu regardes où sont les ennemis, où vont les balles, et tu choisis ton prochain geste.
+
+- **Une salle :** une salle de serveurs blanche, avec des baies, des étagères et une passerelle.
+- **Cinq ennemis :** trois au départ, deux qui sortent des baies quand il n'en reste que deux. Ils sont orange, faits de facettes, et volent en éclats.
+- **Quatre balles :** une arme vide se lance. Une arme tombée se ramasse. Mains vides, tu frappes.
+- **Une seule touche et tu meurs.** La relance est immédiate.
+- **Aucun ennemi ne tire sans avoir visé :** un trait orange prévient toujours.
+- **La victoire rejoue ta partie en temps réel,** sans les pauses.
+
+Une deuxième salle est annoncée dans le menu. Elle n'est pas encore jouable.
+
+## 2. Commandes
+
+| Touche | Action |
+| :--- | :--- |
+| ZQSD ou WASD | Se déplacer |
+| Souris | Viser |
+| Espace | Sauter |
+| C | S'accroupir |
+| Clic gauche | Tirer. Mains vides : coup de poing |
+| Clic droit | Lancer l'arme |
+| E | Ramasser une arme |
+| Échap | Pause |
+| R | Recommencer |
+
+Les touches suivent leur position sur le clavier : ZQSD sur un clavier français, WASD sur un clavier américain.
+
+## 3. Pour jouer
+
+- **Prix :** gratuit. Pas de compte, pas de publicité, rien à installer.
+- **Appareil :** un ordinateur, avec un clavier et une souris. Sur téléphone ou tablette, le site montre la cinématique et invite à revenir sur ordinateur.
+- **Navigateur :** Chrome, Safari ou Firefox récents. Le jeu utilise WebGPU, avec un repli sur WebGL2.
+- **Langue :** français.
+- **Son :** mieux au casque.
+
+## 4. Comment c'est fait
+
+AGENTHOT est une vitrine technique de Claude Opus 5.5. Le code, les plans et les revues ont été écrits par Claude, pilotés par eRom.
+
+- **Rendu :** Three.js r186, WebGPU avec repli WebGL2, matériaux et post-traitement en TSL.
+- **Simulation :** physique, ennemis et replay écrits à la main en TypeScript, sans moteur externe.
+- **Son :** Web Audio. Les bruitages sont synthétisés en code. Les musiques viennent de Lyria 3.5.
+- **Cinématique :** montée avec Hyperframes, à partir de séquences filmées par le jeu lui-même.
+- **Outils :** Vite, TypeScript, bun.
+
+## 5. Crédits
+
+- **Auteur :** eRom (Romain Ecarnot), https://www.romain-ecarnot.com/
+- **Fait avec :** Claude Opus 5.5
+- **Sources :** https://github.com/eRom/agenthot-the-game
+- **Polices :** Big Shoulders Display, Chakra Petch et Martian Mono, sous licence SIL Open Font License 1.1 (https://agenthot.erom.cloud/fonts/LICENSES.txt)
+
+Le nombre de tokens et le coût API estimé du chantier se lisent dans le jeu : menu, puis Crédits.
+
+## 6. Pour les robots et les agents
+
+- **Résumé :** https://agenthot.erom.cloud/llms.txt
+- **Catalogue pour agents :** https://agenthot.erom.cloud/.well-known/ard.json (et https://agenthot.erom.cloud/.well-known/ai-catalog.json, l'ancien chemin)
+- **Plan du site :** https://agenthot.erom.cloud/sitemap.xml
+- **Outils WebMCP :** la page expose trois outils en lecture seule aux agents du navigateur : `get_game_info`, `get_controls`, `get_credits`.
+```
+
+`public/.well-known/ard.json` :
+
+```json
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "AGENTHOT",
+    "identifier": "did:web:agenthot.erom.cloud",
+    "documentationUrl": "https://agenthot.erom.cloud/llms.txt"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:agenthot.erom.cloud:game:play",
+      "displayName": "AGENTHOT, le jeu",
+      "type": "text/html",
+      "description": "Un FPS dans le navigateur où le temps n'avance que quand tu bouges. Gratuit, sans compte, sur ordinateur, au clavier et à la souris.",
+      "url": "https://agenthot.erom.cloud/",
+      "tags": ["game", "fps", "browser-game", "webgpu", "free"],
+      "representativeQueries": [
+        "jeu FPS gratuit jouable dans le navigateur",
+        "jeu où le temps n'avance que quand on bouge",
+        "jeu WebGPU fait avec Claude",
+        "browser FPS where time only moves when you move"
+      ]
+    },
+    {
+      "identifier": "urn:air:agenthot.erom.cloud:docs:llms",
+      "displayName": "AGENTHOT, résumé pour les modèles",
+      "type": "text/markdown",
+      "description": "Ce qu'est le jeu, comment y jouer et où sont ses sources, en quelques lignes.",
+      "url": "https://agenthot.erom.cloud/llms.txt",
+      "tags": ["summary", "llms-txt"],
+      "representativeQueries": ["c'est quoi AGENTHOT", "qui a fait AGENTHOT"]
+    },
+    {
+      "identifier": "urn:air:agenthot.erom.cloud:docs:full",
+      "displayName": "AGENTHOT, tout le jeu en une page",
+      "type": "text/markdown",
+      "description": "Règles, commandes, configuration requise, technique et crédits.",
+      "url": "https://agenthot.erom.cloud/llms-full.txt",
+      "tags": ["rules", "controls", "credits"],
+      "representativeQueries": ["les commandes d'AGENTHOT", "comment AGENTHOT a été fait", "AGENTHOT marche sur quel navigateur"]
+    },
+    {
+      "identifier": "urn:air:agenthot.erom.cloud:code:github",
+      "displayName": "Sources d'AGENTHOT",
+      "type": "text/html",
+      "description": "Le code du jeu, sa spec, ses plans et ses revues.",
+      "url": "https://github.com/eRom/agenthot-the-game",
+      "tags": ["source-code", "github", "typescript", "threejs"],
+      "representativeQueries": ["code source d'AGENTHOT", "un jeu entier écrit par Claude Opus 5.5"]
+    }
+  ]
+}
+```
+
+`public/manifest.webmanifest` :
+
+```json
+{
+  "name": "AGENTHOT",
+  "short_name": "AGENTHOT",
+  "description": "Un FPS où le temps n'avance que quand tu bouges. Jouable dans ton navigateur.",
+  "lang": "fr",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0d111b",
+  "theme_color": "#0d111b",
+  "categories": ["games"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
+```
+
+Puis la copie du catalogue sous son ancien chemin, et le fichier de la clé IndexNow (la clé seule, sans retour à la ligne ; elle est publique) :
+
+```bash
+cd /Users/recarnot/dev/claudehot-videogame && cp public/.well-known/ard.json public/.well-known/ai-catalog.json
+cd /Users/recarnot/dev/claudehot-videogame && printf 'agenthot-hjjp0jh6j53192gxquqxg84k' > public/agenthot-hjjp0jh6j53192gxquqxg84k.txt
+```
+
+- [ ] **Step 2 : le greffon qui écrit l'adresse de la cinématique**
+
+`vite.config.ts` :
+
+```ts
+import { type Plugin, defineConfig } from "vite";
+
+// Adresse écrite dans le JSON-LD d'index.html à la place du MP4 de la cinématique. Le fichier réel porte un hash
+// (assets/intro-<hash>.mp4), connu seulement au build : ce greffon met la vraie adresse dans la page construite.
+const INTRO_PLACEHOLDER = "/assets/intro.mp4";
+
+function introVideoUrl(): Plugin {
+  return {
+    name: "agenthot-intro-video-url",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(html, context) {
+        const file = Object.keys(context.bundle ?? {}).find((name) => /^assets\/intro-[\w-]+\.mp4$/.test(name));
+        // Un build sans la cinématique livrerait une adresse morte aux moteurs : on échoue plutôt.
+        if (!file) throw new Error("intro video not found in the bundle: the JSON-LD contentUrl cannot be resolved");
+        if (!html.includes(INTRO_PLACEHOLDER)) throw new Error(`index.html no longer contains ${INTRO_PLACEHOLDER}`);
+        return html.replaceAll(INTRO_PLACEHOLDER, `/${file}`);
+      },
+    },
+  };
+}
+
+export default defineConfig({ plugins: [introVideoUrl()] });
+```
+
+```diff
+diff --git a/tsconfig.json b/tsconfig.json
+index 2f81efd..aff57f3 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -15,5 +15,5 @@
+     "skipLibCheck": true,
+     "noEmit": true
+   },
+-  "include": ["src", "tests", "scripts"]
++  "include": ["src", "tests", "scripts", "vite.config.ts"]
+ }
+```
+
+- [ ] **Step 3 : la page**
+
+```diff
+diff --git a/index.html b/index.html
+index 0d9306c..52bf842 100644
+--- a/index.html
++++ b/index.html
+@@ -4,11 +4,20 @@
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <meta name="theme-color" content="#0d111b" />
+-    <title>AGENTHOT</title>
++    <title>AGENTHOT - Le FPS où le temps n'avance que quand tu bouges</title>
+     <meta name="description" content="Un FPS où le temps n'avance que quand tu bouges. Jouable dans ton navigateur." />
+     <link rel="canonical" href="https://agenthot.erom.cloud/" />
+     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
++    <link rel="manifest" href="/manifest.webmanifest" />
++    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
++    <meta name="author" content="Romain Ecarnot (eRom)" />
++    <!-- Découverte par les agents IA : catalogue (ARD, et son ancien chemin ai-catalog) et résumés en Markdown.
++         Contrôle : bun scripts/check-release.ts dist -->
++    <link rel="ard" href="/.well-known/ard.json" type="application/json" />
++    <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
++    <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM Context" />
++    <link rel="alternate" type="text/markdown" href="/llms-full.txt" title="LLM Context Full" />
+     <!-- Aperçu du lien partagé (spec 4.7). Les robots ne lancent aucun script : tout est écrit ici, en URL absolues.
+          Une nouvelle image change de nom (og-v2.jpg) : les plateformes gardent l'ancienne en cache par URL.
+          Contrôle : bun scripts/check-release.ts dist -->
+@@ -23,6 +32,67 @@
+     <meta property="og:image:height" content="630" />
+     <meta property="og:image:alt" content="AGENTHOT : un ennemi orange vole en éclats dans une salle de serveurs blanche, vu à la première personne." />
+     <meta name="twitter:card" content="summary_large_image" />
++    <!-- Fiche du jeu pour les moteurs (Schema.org). « /assets/intro.mp4 » est remplacé au build par le nom haché
++         de la cinématique (vite.config.ts). Les mêmes faits sont dans public/llms.txt et src/app/game-facts.ts. -->
++    <script type="application/ld+json">
++      {
++        "@context": "https://schema.org",
++        "@graph": [
++          {
++            "@type": "WebSite",
++            "@id": "https://agenthot.erom.cloud/#website",
++            "url": "https://agenthot.erom.cloud/",
++            "name": "AGENTHOT",
++            "inLanguage": "fr-FR",
++            "publisher": { "@id": "https://www.romain-ecarnot.com/#person" }
++          },
++          {
++            "@type": ["VideoGame", "WebApplication"],
++            "@id": "https://agenthot.erom.cloud/#game",
++            "url": "https://agenthot.erom.cloud/",
++            "name": "AGENTHOT",
++            "description": "Un FPS dans le navigateur où le temps n'avance que quand tu bouges. Une salle, cinq ennemis, quatre balles. Gratuit, sans compte, sur ordinateur.",
++            "image": "https://agenthot.erom.cloud/og-v1.jpg",
++            "inLanguage": "fr-FR",
++            "genre": ["Jeu de tir à la première personne", "FPS", "Action"],
++            "gamePlatform": "Navigateur web",
++            "playMode": "https://schema.org/SinglePlayer",
++            "applicationCategory": "GameApplication",
++            "operatingSystem": "Tout système avec un navigateur récent (WebGPU ou WebGL2)",
++            "isAccessibleForFree": true,
++            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
++            "datePublished": "2026-09-30",
++            "author": { "@id": "https://www.romain-ecarnot.com/#person" },
++            "trailer": { "@id": "https://agenthot.erom.cloud/#intro" },
++            "isPartOf": { "@id": "https://agenthot.erom.cloud/#website" }
++          },
++          {
++            "@type": "Person",
++            "@id": "https://www.romain-ecarnot.com/#person",
++            "name": "Romain Ecarnot",
++            "alternateName": "eRom",
++            "url": "https://www.romain-ecarnot.com/",
++            "sameAs": [
++              "https://www.linkedin.com/in/romainecarnot/",
++              "https://github.com/eRom",
++              "https://fr.tipeee.com/rebondir-apres-lavc-ma-carriere-dans-la-tech/"
++            ]
++          },
++          {
++            "@type": "VideoObject",
++            "@id": "https://agenthot.erom.cloud/#intro",
++            "name": "AGENTHOT, la cinématique",
++            "description": "26 secondes filmées dans le jeu : la salle de serveurs, le temps qui se fige, les ennemis orange qui volent en éclats.",
++            "thumbnailUrl": "https://agenthot.erom.cloud/og-v1.jpg",
++            "uploadDate": "2026-09-30T17:47:56+02:00",
++            "duration": "PT26S",
++            "contentUrl": "https://agenthot.erom.cloud/assets/intro.mp4",
++            "encodingFormat": "video/mp4",
++            "inLanguage": "fr-FR"
++          }
++        ]
++      }
++    </script>
+     <!-- Polices du logo et des petits textes, préchargées : le chargeur les affiche dès la première seconde. -->
+     <link rel="preload" href="/src/ui/fonts/big-shoulders-display-900.woff2" as="font" type="font/woff2" crossorigin />
+     <link rel="preload" href="/src/ui/fonts/martian-mono-300-400.woff2" as="font" type="font/woff2" crossorigin />
+```
+
+Le titre fait 58 caractères. `datePublished` et `lastmod` (`sitemap.xml`) portent la date du jour de l'écriture : le contrôleur les met à la date de la mise en ligne à la tâche 12.
+
+- [ ] **Step 4 : les icônes de 192 et 512 px**
+
+Le gabarit prend la taille dans l'adresse :
+
+```diff
+diff --git a/scripts/og/icon.html b/scripts/og/icon.html
+index 1cd504a..3d4ee5a 100644
+--- a/scripts/og/icon.html
++++ b/scripts/og/icon.html
+@@ -1,6 +1,6 @@
+ <!doctype html>
+-<!-- Icône du site en PNG (apple-touch-icon, 180 × 180) : public/favicon.svg capturé par Chrome sans écran.
+-     Commande dans le plan 3c, tâche des balises de partage. -->
++<!-- Icônes du site en PNG : public/favicon.svg capturé par Chrome sans écran. Sans paramètre : 180 px
++     (apple-touch-icon). Avec ?size=192 ou ?size=512 : les icônes du manifeste. Commandes dans le plan 3c. -->
+ <html lang="fr">
+   <head>
+     <meta charset="UTF-8" />
+@@ -10,19 +10,24 @@
+       }
+       html,
+       body {
+-        width: 180px;
+-        height: 180px;
++        width: var(--size, 180px);
++        height: var(--size, 180px);
+         overflow: hidden;
+         background: #0d111b;
+       }
+       img {
+         display: block;
+-        width: 180px;
+-        height: 180px;
++        width: var(--size, 180px);
++        height: var(--size, 180px);
+       }
+     </style>
+   </head>
+   <body>
+     <img src="../../public/favicon.svg" alt="" />
++    <script>
++      // Taille demandée dans l'adresse ; une fenêtre sans écran ne descend pas sous 500 px, d'où une taille fixe.
++      const size = Number(new URLSearchParams(location.search).get("size"));
++      if (size > 0) document.documentElement.style.setProperty("--size", `${size}px`);
++    </script>
+   </body>
+ </html>
+```
+
+```bash
+cd /Users/recarnot/dev/claudehot-videogame && "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=192,192 --virtual-time-budget=2000 --screenshot=public/icon-192.png "file:///Users/recarnot/dev/claudehot-videogame/scripts/og/icon.html?size=192" 2>/dev/null
+cd /Users/recarnot/dev/claudehot-videogame && "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=512,512 --virtual-time-budget=2000 --screenshot=public/icon-512.png "file:///Users/recarnot/dev/claudehot-videogame/scripts/og/icon.html?size=512" 2>/dev/null
+```
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && ffprobe -v error -show_entries stream=width,height -of csv=p=0 public/icon-192.png && ffprobe -v error -show_entries stream=width,height -of csv=p=0 public/icon-512.png && ls -l public/icon-192.png public/icon-512.png`
+Expected : `192,192`, `512,512`, environ 1,4 Ko et 4,0 Ko. Ouvrir les deux PNG (outil Read) : un losange orange à quatre facettes, **centré**, sur fond bleu nuit. Un losange coupé ou collé à un bord : le paramètre `?size=` n'a pas été lu, refaire.
+
+Le gabarit modifié ne change pas l'icône de 180 px :
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=180,180 --virtual-time-budget=2000 --screenshot=.superpowers/icon-180-check.png "file:///Users/recarnot/dev/claudehot-videogame/scripts/og/icon.html" 2>/dev/null ; cmp .superpowers/icon-180-check.png public/apple-touch-icon.png && echo same`
+Expected : `same`.
+
+- [ ] **Step 5 : les types de contenu chez Vercel**
+
+```diff
+diff --git a/vercel.json b/vercel.json
+index 98b03d5..4c19fb4 100644
+--- a/vercel.json
++++ b/vercel.json
+@@ -12,6 +12,38 @@
+           "value": "public, max-age=31536000, immutable"
+         }
+       ]
++    },
++    {
++      "source": "/llms.txt",
++      "headers": [
++        { "key": "Content-Type", "value": "text/markdown; charset=utf-8" },
++        { "key": "Access-Control-Allow-Origin", "value": "*" }
++      ]
++    },
++    {
++      "source": "/llms-full.txt",
++      "headers": [
++        { "key": "Content-Type", "value": "text/markdown; charset=utf-8" },
++        { "key": "Access-Control-Allow-Origin", "value": "*" }
++      ]
++    },
++    {
++      "source": "/.well-known/ai-catalog.json",
++      "headers": [
++        { "key": "Content-Type", "value": "application/ai-catalog+json; charset=utf-8" },
++        { "key": "Access-Control-Allow-Origin", "value": "*" }
++      ]
++    },
++    {
++      "source": "/.well-known/ard.json",
++      "headers": [
++        { "key": "Content-Type", "value": "application/json; charset=utf-8" },
++        { "key": "Access-Control-Allow-Origin", "value": "*" }
++      ]
++    },
++    {
++      "source": "/manifest.webmanifest",
++      "headers": [{ "key": "Content-Type", "value": "application/manifest+json; charset=utf-8" }]
+     }
+   ]
+ }
+```
+
+- [ ] **Step 6 : brancher le contrôle**
+
+```diff
+diff --git a/scripts/check-release.ts b/scripts/check-release.ts
+index 92c1e5c..faece50 100644
+--- a/scripts/check-release.ts
++++ b/scripts/check-release.ts
+@@ -1,12 +1,23 @@
+ // Contrôle de mise en ligne (spec 4.7 et 9.2). Usage :
+ //   bun scripts/check-release.ts dist
+-//       le site construit, avant tout envoi : balises de partage, image, icônes, noms hachés
++//       le site construit, avant tout envoi : balises de partage, image, icônes, noms hachés, fiche JSON-LD,
++//       fichiers de découverte (robots.txt, sitemap.xml, llms.txt, catalogue pour agents, manifeste)
+ //   bun scripts/check-release.ts https://agenthot.erom.cloud/
+-//       le site en ligne, vu par un robot de partage : les mêmes contrôles, plus les en-têtes de cache,
+-//       la lecture partielle de la vidéo (206) et la réponse à un fichier absent (404)
++//       le site en ligne, vu par un robot de partage : les mêmes contrôles, plus les en-têtes de cache, les types
++//       de contenu, la lecture partielle de la vidéo (206) et la réponse à un fichier absent (404)
+ // Code 0 si tout passe, 1 sinon. Chaque ligne dit ce qui a été vérifié.
+ import { readdir, stat } from "node:fs/promises";
+ import { join } from "node:path";
++import {
++  DISCOVERY_CONTENT_TYPES,
++  DISCOVERY_FILES,
++  INDEXNOW_KEY,
++  discoveryFileProblems,
++  headProblems,
++  jsonLdProblems,
++  jsonLdSitePaths,
++  manifestProblems,
++} from "./discovery";
+ import { type BuiltFile, SITE_URL, assetPaths, cacheProblems, imageProblems, isLongCache, readShareTags, shareProblems } from "./release";
+ 
+ const USAGE = "usage: bun scripts/check-release.ts <dist directory | https://site/>";
+@@ -64,6 +75,30 @@ async function checkDirectory(root: string): Promise<void> {
+   else report(false, "share image", `file not found: ${sitePath(imageUrl)}`);
+   for (const [rel, href] of Object.entries(tags.icons)) report(await Bun.file(join(root, sitePath(href))).exists(), `icon ${rel}`, href);
+   const files = await listFiles(root);
++  const has = (path: string): boolean => files.some((file) => file.path === path);
++  reportProblems("discovery head", headProblems(html));
++  reportProblems("structured data", jsonLdProblems(html, SITE_URL));
++  const linked = jsonLdSitePaths(html, SITE_URL);
++  const dead = linked.filter((path) => !has(path));
++  report(dead.length === 0, `${linked.length} files cited by the structured data exist`, dead.join(", "));
++  const catalogs: string[] = [];
++  for (const path of DISCOVERY_FILES) {
++    if (!has(path)) {
++      report(false, path, "file not found");
++      continue;
++    }
++    const text = await Bun.file(join(root, path)).text();
++    reportProblems(path, discoveryFileProblems(path, text, SITE_URL));
++    if (path.startsWith(".well-known/")) catalogs.push(text);
++    if (path === "manifest.webmanifest") {
++      const missingIcons = manifestProblems(text).icons.filter((icon) => !has(icon));
++      report(missingIcons.length === 0, "manifest icons exist", missingIcons.join(", "));
++    }
++  }
++  // Le catalogue est servi sous ses deux chemins (ARD, et l'ancien ai-catalog) : une seule version.
++  report(catalogs.length === 2 && catalogs[0] === catalogs[1], "both agent catalogs are identical");
++  const keyFile = Bun.file(join(root, `${INDEXNOW_KEY}.txt`));
++  report((await keyFile.exists()) && (await keyFile.text()) === INDEXNOW_KEY, "IndexNow key file");
+   reportProblems("long cache", cacheProblems(files));
+   // Tout fichier cité par la page ou par un script existe dans le site construit.
+   const scripts = files.filter((file) => file.path.endsWith(".js"));
+@@ -95,7 +130,31 @@ async function checkSite(base: string): Promise<void> {
+     const icon = await get(sitePath(href));
+     report(icon.status === 200 && (icon.headers.get("content-type") ?? "").startsWith("image/"), `icon ${rel}`, `${icon.status} ${icon.headers.get("content-type")}`);
+   }
+-  // Fichiers cités par la page, puis par ses scripts (musiques, vidéos, vignettes).
++  reportProblems("discovery head", headProblems(html));
++  reportProblems("structured data", jsonLdProblems(html, SITE_URL));
++  const catalogs: string[] = [];
++  for (const path of DISCOVERY_FILES) {
++    const response = await get(path);
++    const type = response.headers.get("content-type") ?? "";
++    const text = await response.text();
++    const served = response.status === 200 && type.includes(DISCOVERY_CONTENT_TYPES[path]);
++    report(served, `${path} served`, `${response.status} ${type}`);
++    // Une page d'erreur ou le repli vers index.html n'est pas le fichier : inutile d'en lire le contenu.
++    if (!served) continue;
++    reportProblems(path, discoveryFileProblems(path, text, SITE_URL));
++    if (path.startsWith(".well-known/")) catalogs.push(text);
++    if (path === "manifest.webmanifest") {
++      for (const icon of manifestProblems(text).icons) {
++        const image = await get(icon);
++        report(image.status === 200 && (image.headers.get("content-type") ?? "").startsWith("image/"), `manifest icon ${icon}`, String(image.status));
++        await image.arrayBuffer();
++      }
++    }
++  }
++  report(catalogs.length === 2 && catalogs[0] === catalogs[1], "both agent catalogs are identical");
++  const key = await get(`${INDEXNOW_KEY}.txt`);
++  report(key.status === 200 && (await key.text()) === INDEXNOW_KEY, "IndexNow key file", String(key.status));
++  // Fichiers cités par la page (JSON-LD compris), puis par ses scripts (musiques, vidéos, vignettes).
+   const cited = new Set(assetPaths(html));
+   for (const path of [...cited].filter((path) => path.endsWith(".js"))) for (const found of assetPaths(await (await get(path)).text())) cited.add(found);
+   for (const path of cited) {
+```
+
+- [ ] **Step 7 : le contrôle passe**
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tail -4 && RTK_DISABLED=1 bun run build && bun scripts/check-release.ts dist`
+Expected : `tsc` sans erreur ; `337 pass`, `0 fail` ; puis, code 0 :
+
+```
+ok   share tags
+ok   share image
+ok   icon icon (/favicon.svg)
+ok   icon apple-touch-icon (/apple-touch-icon.png)
+ok   discovery head
+ok   structured data
+ok   2 files cited by the structured data exist
+ok   robots.txt
+ok   sitemap.xml
+ok   llms.txt
+ok   llms-full.txt
+ok   .well-known/ai-catalog.json
+ok   .well-known/ard.json
+ok   manifest.webmanifest
+ok   manifest icons exist
+ok   both agent catalogs are identical
+ok   IndexNow key file
+ok   long cache
+ok   12 cited assets exist
+     30 files, 18.1 MB
+release check: all good
+```
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && grep -o '"contentUrl": "[^"]*"' dist/index.html && grep -c "/assets/intro.mp4" dist/index.html`
+Expected : `"contentUrl": "https://agenthot.erom.cloud/assets/intro-<hash>.mp4"` (un vrai nom haché), puis `0` (`grep -c` à 0 sort en code 1, c'est normal).
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && grep -c $'\u2014' public/robots.txt public/llms.txt public/llms-full.txt public/.well-known/ard.json public/manifest.webmanifest index.html`
+Expected : `0` sur chaque ligne.
+
+- [ ] **Step 8 : commit**
+
+```bash
+cd /Users/recarnot/dev/claudehot-videogame && git add public/robots.txt public/sitemap.xml public/llms.txt public/llms-full.txt public/.well-known/ard.json public/.well-known/ai-catalog.json public/manifest.webmanifest public/icon-192.png public/icon-512.png public/agenthot-hjjp0jh6j53192gxquqxg84k.txt vite.config.ts tsconfig.json index.html scripts/og/icon.html scripts/check-release.ts vercel.json && git commit -m "feat(seo): structured data, robots, sitemap, llms.txt, agent catalog and manifest, all checked by the release check"
+```
+
+---
+
+### Task 8d : trois outils WebMCP en lecture seule
+
+Un agent IA du navigateur peut demander au jeu ce qu'il est, comment on y joue, et ses crédits. Sans l'API (tout navigateur sans jeton ni drapeau), rien n'est chargé.
+
+**Files :**
+- Create : `src/app/game-facts.ts`, `src/app/webmcp.ts`
+- Modify : `src/app/main.ts`
+- Test : `tests/webmcp.test.ts`
+
+**Interfaces :**
+- Consumes : `ROOMS` (`src/rooms/registry.ts`), `CREDITS`, `creditsLine`, `usageLine` (`src/ui/credits.ts`).
+- Produces : `gameInfo()`, `CONTROLS`, `creditsInfo()`, `SITE_URL` (`game-facts.ts`) ; `GAME_TOOLS`, `findModelContext(doc, nav)`, `registerGameTools(context): Promise<number>` (`webmcp.ts`). Dans la page : trois outils enregistrés sur `document.modelContext` quand il existe.
+
+- [ ] **Step 1 : écrire les tests**
+
+`tests/webmcp.test.ts` :
+
+```ts
+import { describe, expect, test } from "bun:test";
+import { CONTROLS, SITE_URL, creditsInfo, gameInfo } from "../src/app/game-facts";
+import { GAME_TOOLS, type ModelContext, type ModelContextTool, findModelContext, registerGameTools } from "../src/app/webmcp";
+import { CREDITS } from "../src/ui/credits";
+
+// Ce qu'un agent reçoit en appelant un outil : le texte JSON du premier bloc.
+async function call(name: string): Promise<unknown> {
+  const tool = GAME_TOOLS.find((candidate) => candidate.name === name)!;
+  const result = await tool.execute();
+  expect(result.content).toHaveLength(1);
+  return JSON.parse(result.content[0]!.text);
+}
+
+// Un navigateur qui garde les outils reçus ; `refuse` fait échouer l'enregistrement d'un nom.
+function fakeContext(refuse?: string): { context: ModelContext; names: string[] } {
+  const names: string[] = [];
+  const context: ModelContext = {
+    registerTool(tool: ModelContextTool) {
+      if (tool.name === refuse) throw new Error("duplicate tool");
+      names.push(tool.name);
+    },
+  };
+  return { context, names };
+}
+
+describe("outils WebMCP (lecture seule)", () => {
+  test("chaque outil a un nom valide et unique, une description, un schéma sans entrée, et se dit en lecture seule", () => {
+    const names = GAME_TOOLS.map((tool) => tool.name);
+    expect(new Set(names).size).toBe(names.length);
+    for (const tool of GAME_TOOLS) {
+      // Spec WebMCP : nom de 1 à 128 caractères, lettres, chiffres, tiret bas.
+      expect(tool.name).toMatch(/^[a-z0-9_]{1,128}$/);
+      expect(tool.description.length).toBeGreaterThan(20);
+      expect(tool.inputSchema).toEqual({ type: "object", properties: {}, additionalProperties: false });
+      expect(tool.annotations.readOnlyHint).toBe(true);
+    }
+  });
+
+  test("get_game_info dit où jouer, que c'est gratuit, et où sont les sources", async () => {
+    expect(await call("get_game_info")).toEqual(gameInfo());
+    const info = gameInfo();
+    expect(info.url).toBe(SITE_URL);
+    expect(info.sources).toBe(CREDITS.repoUrl);
+    expect(info.rooms[0]).toEqual({ title: "Salle serveurs", status: "jouable" });
+    expect(info.rooms.some((room) => room.status === "à venir")).toBe(true);
+  });
+
+  test("get_controls rend chaque commande avec sa touche et son effet", async () => {
+    const controls = (await call("get_controls")) as { input: string; action: string }[];
+    expect(controls).toEqual([...CONTROLS]);
+    expect(controls.find((control) => control.input === "Clic droit")?.action).toBe("Lancer l'arme");
+    for (const control of controls) expect(control.input.length > 0 && control.action.length > 0).toBe(true);
+  });
+
+  test("get_credits rend la ligne des crédits et le compte affichés dans le jeu", async () => {
+    const credits = (await call("get_credits")) as ReturnType<typeof creditsInfo>;
+    expect(credits).toEqual(creditsInfo());
+    expect(credits.line).toContain("Made with: Claude Opus 5.5");
+    expect(credits.usage).toContain("coût API estimé");
+  });
+
+  test("aucun texte rendu à un agent ne porte de tiret cadratin", async () => {
+    const dash = String.fromCodePoint(0x2014);
+    for (const tool of GAME_TOOLS) {
+      expect(tool.description.includes(dash)).toBe(false);
+      expect((await tool.execute()).content[0]!.text.includes(dash)).toBe(false);
+    }
+  });
+});
+
+describe("branchement WebMCP", () => {
+  test("l'API se trouve sur document, sinon sur navigator (ancien nom), sinon nulle part", () => {
+    const api = { registerTool: () => undefined };
+    expect(findModelContext({ modelContext: api }, {})).toBe(api);
+    expect(findModelContext({}, { modelContext: api })).toBe(api);
+    expect(findModelContext({}, {})).toBeNull();
+    // Un objet sans registerTool n'est pas l'API.
+    expect(findModelContext({ modelContext: {} }, {})).toBeNull();
+  });
+
+  test("tous les outils sont enregistrés, dans l'ordre", async () => {
+    const { context, names } = fakeContext();
+    expect(await registerGameTools(context)).toBe(GAME_TOOLS.length);
+    expect(names).toEqual(GAME_TOOLS.map((tool) => tool.name));
+  });
+
+  test("un outil refusé par le navigateur n'empêche pas les autres", async () => {
+    const warn = console.warn;
+    const warnings: unknown[] = [];
+    console.warn = (...args: unknown[]) => void warnings.push(args[0]);
+    try {
+      const { context, names } = fakeContext("get_controls");
+      expect(await registerGameTools(context)).toBe(GAME_TOOLS.length - 1);
+      expect(names).toEqual(["get_game_info", "get_credits"]);
+      expect(warnings).toEqual(["[agenthot] webmcp: registration failed for get_controls"]);
+    } finally {
+      console.warn = warn;
+    }
+  });
+
+  test("une API qui rend une promesse rejetée est traitée comme un refus", async () => {
+    const warn = console.warn;
+    console.warn = () => undefined;
+    try {
+      const context: ModelContext = { registerTool: () => Promise.reject(new Error("not allowed")) };
+      expect(await registerGameTools(context)).toBe(0);
+    } finally {
+      console.warn = warn;
+    }
+  });
+});
+```
+
+- [ ] **Step 2 : ils échouent**
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun test tests/webmcp.test.ts 2>&1 | tail -8`
+Expected : FAIL, `Cannot find module '../src/app/game-facts'`.
+
+- [ ] **Step 3 : les faits du jeu**
+
+`src/app/game-facts.ts` :
+
+```ts
+// Ce que le jeu dit de lui-même à un agent IA (outils WebMCP, src/app/webmcp.ts). Données pures, en lecture seule.
+// Les mêmes faits sont écrits pour les robots dans public/llms.txt et dans le JSON-LD d'index.html : un changement
+// ici se reporte là-bas.
+import { ROOMS } from "../rooms/registry";
+import { CREDITS, creditsLine, usageLine } from "../ui/credits";
+
+export const SITE_URL = "https://agenthot.erom.cloud/";
+
+export interface GameInfo {
+  name: string;
+  url: string;
+  pitch: string;
+  genre: string;
+  price: string;
+  language: string;
+  platform: string;
+  rules: string[];
+  rooms: { title: string; status: string }[];
+  madeWith: string;
+  sources: string;
+}
+
+export function gameInfo(): GameInfo {
+  return {
+    name: "AGENTHOT",
+    url: SITE_URL,
+    pitch: "Un FPS dans le navigateur où le temps n'avance que quand tu bouges.",
+    genre: "Jeu de tir à la première personne",
+    price: "Gratuit",
+    language: "fr",
+    platform: "Navigateur sur ordinateur (WebGPU, repli WebGL2), clavier et souris. Pas de version mobile.",
+    rules: [
+      "Le temps n'avance que quand tu bouges ou que tu tires.",
+      "Une seule touche et tu meurs.",
+      "Aucun ennemi ne tire sans avoir visé : un trait orange prévient toujours.",
+      "Une salle, cinq ennemis, quatre balles. Une arme vide se lance, une arme au sol se ramasse.",
+      "La victoire rejoue la partie en temps réel.",
+    ],
+    rooms: ROOMS.map((room) => ({ title: room.title, status: room.status === "playable" ? "jouable" : "à venir" })),
+    madeWith: "Claude Opus 5.5, piloté par eRom. Three.js, TypeScript, Vite.",
+    sources: CREDITS.repoUrl,
+  };
+}
+
+export interface Control {
+  input: string;
+  action: string;
+}
+
+// Les touches suivent la position physique (KeyboardEvent.code) : ZQSD sur AZERTY, WASD sur QWERTY.
+export const CONTROLS: readonly Control[] = [
+  { input: "ZQSD ou WASD", action: "Se déplacer" },
+  { input: "Souris", action: "Viser" },
+  { input: "Espace", action: "Sauter" },
+  { input: "C", action: "S'accroupir" },
+  { input: "Clic gauche", action: "Tirer. Mains vides : coup de poing" },
+  { input: "Clic droit", action: "Lancer l'arme" },
+  { input: "E", action: "Ramasser une arme" },
+  { input: "Échap", action: "Pause" },
+  { input: "R", action: "Recommencer" },
+];
+
+export interface CreditsInfo {
+  line: string;
+  usage: string;
+  author: string;
+  sources: string;
+}
+
+export function creditsInfo(): CreditsInfo {
+  return { line: creditsLine(CREDITS), usage: usageLine(CREDITS), author: "eRom (Romain Ecarnot)", sources: CREDITS.repoUrl };
+}
+```
+
+- [ ] **Step 4 : les outils**
+
+`src/app/webmcp.ts` :
+
+```ts
+// WebMCP : trois outils en lecture seule pour les agents IA du navigateur (document.modelContext).
+// Spec : webmachinelearning.github.io/webmcp (brouillon du 2026-09-29). Dans Chrome, l'API n'existe qu'avec un
+// jeton d'origin trial ou le drapeau chrome://flags/#enable-webmcp-testing. Sans elle, ce module n'est même pas
+// chargé (voir main.ts) : le jeu ne paie rien.
+import { CONTROLS, creditsInfo, gameInfo } from "./game-facts";
+
+export interface ToolResult {
+  content: { type: "text"; text: string }[];
+}
+
+export interface ModelContextTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  annotations: { readOnlyHint: boolean };
+  execute: () => Promise<ToolResult>;
+}
+
+export interface ModelContext {
+  registerTool: (tool: ModelContextTool) => unknown;
+}
+
+const NO_INPUT = { type: "object", properties: {}, additionalProperties: false } as const;
+
+function asText(data: unknown): ToolResult {
+  return { content: [{ type: "text", text: JSON.stringify(data) }] };
+}
+
+export const GAME_TOOLS: readonly ModelContextTool[] = [
+  {
+    name: "get_game_info",
+    description: "AGENTHOT : ce qu'est le jeu, ses règles, ses salles, sa plateforme, son prix et l'adresse de ses sources.",
+    inputSchema: NO_INPUT,
+    annotations: { readOnlyHint: true },
+    execute: async () => asText(gameInfo()),
+  },
+  {
+    name: "get_controls",
+    description: "Commandes d'AGENTHOT au clavier et à la souris : chaque touche et ce qu'elle fait.",
+    inputSchema: NO_INPUT,
+    annotations: { readOnlyHint: true },
+    execute: async () => asText(CONTROLS),
+  },
+  {
+    name: "get_credits",
+    description: "Crédits d'AGENTHOT : auteur, modèle utilisé, dépôt des sources, nombre de tokens et coût API estimé.",
+    inputSchema: NO_INPUT,
+    annotations: { readOnlyHint: true },
+    execute: async () => asText(creditsInfo()),
+  },
+];
+
+// L'API telle que le navigateur l'expose, ou null. `navigator.modelContext` est l'ancien nom (avant Chrome 150).
+export function findModelContext(doc: object, nav: object): ModelContext | null {
+  for (const host of [doc, nav]) {
+    const candidate = (host as { modelContext?: Partial<ModelContext> }).modelContext;
+    if (typeof candidate?.registerTool === "function") return candidate as ModelContext;
+  }
+  return null;
+}
+
+// Enregistre les outils ; rend le nombre d'outils acceptés. Un refus du navigateur (nom en double, API qui a
+// changé) est écrit dans la console et n'arrête ni les autres outils, ni le jeu. Les outils vivent autant que la
+// page : pas de signal d'arrêt.
+export async function registerGameTools(context: ModelContext): Promise<number> {
+  let registered = 0;
+  for (const tool of GAME_TOOLS) {
+    try {
+      // registerTool est synchrone ou rend une promesse, selon la version de Chrome.
+      await context.registerTool(tool);
+      registered++;
+    } catch (error) {
+      console.warn(`[agenthot] webmcp: registration failed for ${tool.name}`, error);
+    }
+  }
+  return registered;
+}
+```
+
+- [ ] **Step 5 : le branchement**
+
+```diff
+diff --git a/src/app/main.ts b/src/app/main.ts
+index 76d5bf1..bf88ecb 100644
+--- a/src/app/main.ts
++++ b/src/app/main.ts
+@@ -33,6 +33,15 @@ if (playOnDesktopOnly(browserEnvironment())) {
+   void boot();
+ }
+ 
++// WebMCP : trois outils en lecture seule pour les agents IA du navigateur. Sans l'API (tout navigateur sans jeton
++// d'origin trial ni drapeau), rien n'est chargé : le jeu ne paie rien.
++if ("modelContext" in document || "modelContext" in navigator) {
++  void import("./webmcp").then(({ findModelContext, registerGameTools }) => {
++    const context = findModelContext(document, navigator);
++    if (context) void registerGameTools(context);
++  });
++}
++
+ // Le chargeur d'abord ; toute erreur du démarrage s'y affiche au lieu de laisser « Chargement » à l'infini.
+ async function boot(): Promise<void> {
+   const loader = new LoaderScreen(screens);
+```
+
+L'import est dynamique : Vite en fait un fichier à part, demandé seulement si l'API existe.
+
+- [ ] **Step 6 : tout passe**
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun test tests/webmcp.test.ts 2>&1 | tail -5`
+Expected : `9 pass`, `0 fail`.
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tail -4 && RTK_DISABLED=1 bun run build && bun scripts/check-release.ts dist | tail -2`
+Expected : `tsc` sans erreur ; `346 pass`, `0 fail` ; le build liste un fichier `dist/assets/webmcp-<hash>.js` d'environ 2,4 Ko, à part du point d'entrée (vers 40,5 Ko) ; `31 files`, `release check: all good`.
+
+- [ ] **Step 7 : commit**
+
+```bash
+cd /Users/recarnot/dev/claudehot-videogame && git add src/app/game-facts.ts src/app/webmcp.ts src/app/main.ts tests/webmcp.test.ts && git commit -m "feat(webmcp): three read-only tools for browser agents, loaded only when the API exists"
+```
+
+---
+
+### Task 8e : le script IndexNow
+
+Il prépare l'envoi, et ne l'envoie pas : sans `--send`, il montre seulement ce qui partirait. L'envoi réel est un geste d'après-domaine, sur le go de Romain (tâche 13b).
+
+**Files :**
+- Create : `scripts/submit-indexnow.ts`
+
+**Interfaces :**
+- Consumes : `INDEXNOW_KEY`, `indexNowPayload` (`scripts/discovery.ts`, déjà testés à la tâche 8b) ; `SITE_URL` (`scripts/release.ts`).
+- Produces : `bun scripts/submit-indexnow.ts` (à blanc), `bun scripts/submit-indexnow.ts --send` (envoi).
+
+- [ ] **Step 1 : le script**
+
+`scripts/submit-indexnow.ts` :
+
+```ts
+// IndexNow : prévient Bing, Yandex, Naver, Seznam et Yep que la page du jeu a changé (Google n'y participe pas).
+// Usage :
+//   bun scripts/submit-indexnow.ts          montre ce qui serait envoyé, n'envoie rien
+//   bun scripts/submit-indexnow.ts --send   envoie (geste visible du dehors : sur le go de Romain seulement)
+// La clé est publique : le moteur la relit à /<clé>.txt pour vérifier que l'envoi vient bien du site.
+import { INDEXNOW_KEY, indexNowPayload } from "./discovery";
+import { SITE_URL } from "./release";
+
+// Un envoi à ce point d'entrée est partagé avec tous les moteurs participants (indexnow.org/faq).
+const ENDPOINT = "https://api.indexnow.org/indexnow";
+
+const payload = indexNowPayload(SITE_URL, INDEXNOW_KEY);
+console.info(JSON.stringify(payload, null, 2));
+if (!process.argv.includes("--send")) {
+  console.info("dry run: nothing sent (add --send)");
+  process.exit(0);
+}
+// La clé doit être lisible en ligne avant l'envoi, sinon le moteur refuse la requête.
+const keyFile = await fetch(payload.keyLocation);
+if (keyFile.status !== 200 || (await keyFile.text()).trim() !== INDEXNOW_KEY) {
+  console.error(`key file not served at ${payload.keyLocation} (${keyFile.status}): nothing sent`);
+  process.exit(1);
+}
+const response = await fetch(ENDPOINT, {
+  method: "POST",
+  headers: { "Content-Type": "application/json; charset=utf-8" },
+  body: JSON.stringify(payload),
+});
+// 200 : adresse reçue. 202 : reçue, clé en cours de vérification. Tout autre code est un refus.
+console.info(`${ENDPOINT}: ${response.status} ${response.statusText}`);
+process.exit(response.status === 200 || response.status === 202 ? 0 : 1);
+```
+
+- [ ] **Step 2 : à blanc**
+
+**Ne jamais lancer ce script avec `--send` dans cette tâche.**
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && bun scripts/submit-indexnow.ts ; echo "exit $?"`
+Expected : le JSON avec `"host": "agenthot.erom.cloud"`, la clé, `keyLocation` en `https://agenthot.erom.cloud/agenthot-hjjp0jh6j53192gxquqxg84k.txt`, `urlList` à une adresse ; puis `dry run: nothing sent (add --send)` et `exit 0`.
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tail -4`
+Expected : `tsc` sans erreur ; `346 pass`, `0 fail`.
+
+- [ ] **Step 3 : commit**
+
+```bash
+cd /Users/recarnot/dev/claudehot-videogame && git add scripts/submit-indexnow.ts && git commit -m "feat(seo): IndexNow submission script, dry run by default"
+```
+
+---
+
+### Task 8f : le dépôt public, « mode making-of »
+
+Décision de Romain du 2026-09-30 à 18 h 20, relayée par la session venus : « 2 - mode making-of !!! ». Le dépôt deviendra public avec tout son historique. Cette tâche prépare ce qui se commite. Elle ne pousse rien.
+
+**Files :**
+- Modify : `README.md`, `.gitignore`
+
+**Interfaces :**
+- Consumes : le README de la tâche 8.
+- Produces : une section « Making-of » dans le README ; six lignes dans `.gitignore`.
+
+- [ ] **Step 1 : la section du README**
+
+```diff
+diff --git a/README.md b/README.md
+index 44642ab..412a20f 100644
+--- a/README.md
++++ b/README.md
+@@ -33,6 +33,20 @@ AGENTHOT est une vitrine technique de Claude Opus 5.5. Le code, les plans et les
+ - **Images :** l'image de partage et la vignette de la salle 1 sont des captures du jeu. La vignette de la salle 2 vient de Nano Banana 2. La cinématique est montée avec Hyperframes, à partir de séquences filmées par le jeu lui-même.
+ - **Outils :** Vite, TypeScript, bun.
+ 
++## Making-of
++
++Ce dépôt montre tout le chantier, pas seulement le résultat.
++
++| Dossier | Ce qu'on y lit |
++| :--- | :--- |
++| `docs/superpowers/specs/` | La spec : ce que le jeu doit faire, et pourquoi |
++| `docs/superpowers/plans/` | Les plans, tâche par tâche, avec le code essayé avant d'être écrit |
++| `docs/superpowers/reports/` | Les revues de code et les décisions prises en route |
++| `.claude/notes/` | Les notes de reprise et les pièges rencontrés |
++| `assets/ledger.jsonl` | Chaque génération payante (musiques, images), avec son prix |
++
++Le code, les plans et les revues ont été écrits par Claude, dans Claude Code : Opus 5.5 au pilotage, Sonnet 5.5 à l'exécution. eRom a donné la direction, joué chaque version et tranché.
++
+ ## Lancer en local
+ 
+ ```bash
+```
+
+- [ ] **Step 2 : ce qui ne doit jamais partir**
+
+`.gitignore` porte toujours les deux lignes non commitées de Romain, à la fin. Même marche qu'à la tâche 7 : enregistrer le diff ci-dessous tel quel dans `.superpowers/gitignore-public.patch` (outil Write, une ligne vide à la fin), puis `cd /Users/recarnot/dev/claudehot-videogame && git apply .superpowers/gitignore-public.patch`.
+
+```diff
+diff --git a/.gitignore b/.gitignore
+index a30ef4c..c7ec99c 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -10,6 +10,14 @@ dist/
+ # Lien vers le projet Vercel et site construit par `vercel build` (identifiants locaux, jamais commités)
+ .vercel/
+ 
++# Réglages locaux de Claude Code et fichiers d'outils (propres à la machine, jamais publiés)
++.claude/helpers/
++.claude/skills/
++.claude/settings.json
++.claude/settings.local.json
++.mcp.json
++.ignore
++
+ # Cinématique : prises du jeu, rendus et master (lourds, refaisables)
+ videos/agenthot-intro/renders/
+ videos/agenthot-intro/public/
+```
+
+Les fichiers d'idéation non suivis de `docs/superpowers/idea/` ne sont ni commités ni ignorés : Romain n'a pas tranché. `screenshots/` contient des captures d'un autre jeu, `Lyria-prompt-guide.md` et `Seedream-5.0-Pro.md` sont des documents de fournisseurs : ils ne se publient pas.
+
+- [ ] **Step 3 : contrôles**
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && grep -c $'\u2014' README.md ; git status --short`
+Expected : `0` ; `git status` ne montre plus `.claude/helpers/`, `.claude/skills/`, `.claude/settings.json`, `.mcp.json`, `.ignore`. Il montre encore `.gitignore`, `README.md`, `OVERVIEW.md` modifiés et les fichiers non suivis de `docs/superpowers/idea/`.
+
+- [ ] **Step 4 : commit**
+
+```bash
+cd /Users/recarnot/dev/claudehot-videogame && git add README.md && git apply --cached .superpowers/gitignore-public.patch && git commit -m "docs: making-of section in the README, local tool files ignored"
+```
+
+Jamais `git add .gitignore`.
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && git show --stat HEAD | tail -3 && git diff .gitignore | grep -c "^+[.a-z]"`
+Expected : `.gitignore | 8 ++++++++` et `README.md | 14 ++++++++++++++` ; puis `2` (les deux lignes de Romain, toujours non commitées).
+
+---
+
 ### Task 9 : recette locale, puis Romain regarde et joue (contrôleur)
 
 Tout ce qui se vérifie sans rien mettre en ligne, sur le site construit. Chaque résultat est noté dans le journal d'exécution avec sa sortie réelle. La tâche se termine par un **arrêt** : Romain regarde et joue.
@@ -1831,7 +3660,7 @@ Tout ce qui se vérifie sans rien mettre en ligne, sur le site construit. Chaque
 - [ ] **Step 1 : construire et contrôler**
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tee .superpowers/plan-3c-test.log | tail -4 && RTK_DISABLED=1 bun run build && bun scripts/check-release.ts dist`
-Expected : `311 pass`, `0 fail` ; build : point d'entrée vers 40 Ko (14,4 Ko gzip), moteur vers 1 010 Ko (282 Ko gzip) ; `release check: all good`.
+Expected : `346 pass`, `0 fail` ; build : point d'entrée vers 40,5 Ko (14,5 Ko gzip), moteur vers 1 010 Ko (282 Ko gzip), outils WebMCP à part (2,4 Ko) ; `release check: all good`.
 
 - [ ] **Step 2 : servir le site construit**
 
@@ -1918,6 +3747,38 @@ Expected : le même écran. Fermer cette page (`close_page`) : les étapes suiva
 Run : `cd /Users/recarnot/dev/claudehot-videogame && bun scripts/spend.ts summary ; echo "exit $?" ; git diff --stat main -- assets/ledger.jsonl`
 Expected : Lyria 0,320 $, Nano Banana 0,134 $, Seedream 0,045 $, chacun `ok`, `exit 0` ; aucune ligne de diff (ce plan n'a rien dépensé).
 
+- [ ] **Step 6b : AC-3c-14 et AC-3c-15, les outils WebMCP et leur coût**
+
+Sans API (le cas de tout joueur) : `new_page` sur `http://localhost:4319/` avec `isolatedContext: "plain"`, puis `evaluate_script` :
+
+```js
+async () => {
+  await new Promise((r) => setTimeout(r, 3000));
+  const names = performance.getEntriesByType("resource").map((e) => e.name);
+  return { hasApi: "modelContext" in document || "modelContext" in navigator, webmcpRequested: names.some((n) => /webmcp/.test(n)) };
+}
+```
+
+Expected : `hasApi: false`, `webmcpRequested: false`.
+
+Avec une API simulée : `navigate_page` vers `http://localhost:4319/` avec `initScript: "window.__tools = []; document.modelContext = { registerTool: (tool) => { window.__tools.push(tool); } };"`, puis :
+
+```js
+async () => {
+  await new Promise((r) => setTimeout(r, 3000));
+  const out = {};
+  for (const tool of window.__tools) out[tool.name] = JSON.parse((await tool.execute()).content[0].text);
+  return { names: window.__tools.map((t) => t.name), readOnly: window.__tools.every((t) => t.annotations.readOnlyHint === true), credits: out.get_credits, rooms: out.get_game_info?.rooms, controls: out.get_controls?.length };
+}
+```
+
+Expected (prototype) : `names` vaut `["get_game_info", "get_controls", "get_credits"]` ; `readOnly: true` ; `credits.line` est la ligne des crédits, `credits.usage` porte les nombres de la tâche 6 ; `rooms` : « Salle serveurs », jouable, et « Salle 2 », à venir ; `controls: 9`. Fermer la page.
+
+Puis le contrôle en mode adresse contre le serveur local, pour voir qu'il lit bien un site (il doit échouer là où un serveur local diffère de Vercel, et nulle part ailleurs) :
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && bun scripts/check-release.ts http://localhost:4319/ 2>&1 | tee .superpowers/plan-3c-preview-check.log | grep -c "^FAIL"`
+Expected : des `FAIL` seulement sur : les fichiers de `/assets/` (pas de cache long en local), `missing file answers 404` (en local : 200), et les lignes `served` dont le type de contenu vient de `vercel.json` (`llms.txt`, `llms-full.txt`, `.well-known/ai-catalog.json`). Tout autre `FAIL` est un défaut : arrêt.
+
 - [ ] **Step 7 : ARRÊT. Romain regarde et joue**
 
 Le serveur de l'étape 2 tourne toujours. Envoyer à Romain ce message, tel quel, avec les mesures des étapes 3 à 6 au-dessus :
@@ -1926,7 +3787,8 @@ Le serveur de l'étape 2 tourne toujours. Envoyer à Romain ce message, tel quel
 > 1. **Safari.** Ouvre `http://localhost:4319/` dans Safari, dans une fenêtre privée. Appuie sur une touche. La cinématique doit jouer, avec le son.
 > 2. **Chrome, une partie.** Ouvre `http://localhost:4319/?debug`, ouvre la console (Cmd+Option+J), joue jusqu'à la victoire. Copie-moi la ligne qui commence par `[agenthot] frames`.
 > 3. **Chrome, le mode de secours.** Ouvre `http://localhost:4319/?debug&renderer=webgl`, gagne une partie. En bas, le panneau doit dire `WebGL2`. Dis-moi si l'image est la même : ombres dans les coins, lueur orange.
-> 4. **Regarde trois choses :** l'icône dans l'onglet (un losange orange) ; la phrase de la carte de partage : « Un FPS où le temps n'avance que quand tu bouges. Jouable dans ton navigateur. » ; le fichier `README.md`.
+> 4. **Regarde trois choses :** l'icône dans l'onglet (un losange orange) ; la phrase de la carte de partage : « Un FPS où le temps n'avance que quand tu bouges. Jouable dans ton navigateur. » ; le fichier `README.md` (il a une section « Making-of »).
+> 5. **Le référencement, quatre textes :** le titre de l'onglet, « AGENTHOT - Le FPS où le temps n'avance que quand tu bouges » ; le fichier `public/llms.txt` (ce que lira une IA) ; les trois outils pour agents : infos du jeu, commandes, crédits ; et ceci : la fiche du jeu dit aux moteurs que l'auteur est « Romain Ecarnot (eRom) », avec les liens de ton site. Oui ou non ?
 >
 > Les crédits affichent maintenant le vrai total : environ 955 millions de tokens, environ 374 $ de coût API estimé (mettre ici les nombres de la tâche 6).
 
@@ -1934,7 +3796,7 @@ Attendu de Romain :
 - Safari : la cinématique joue (AC-3c-3, en local).
 - La ligne `[agenthot] frames {"frames":…,"p95Ms":…,"worstWindowP95Ms":…,"maxMs":…,"maxDrawCalls":…}` : `worstWindowP95Ms` ≤ 20 et `maxDrawCalls` < 80 (AC-3c-5). Une ligne sort aussi à chaque mort : seule celle de la victoire compte.
 - WebGL2 : victoire, rendu identique (AC-3c-7).
-- Un oui ou un retour sur l'icône, la phrase, le README.
+- Un oui ou un retour sur l'icône, la phrase, le README, le titre, `llms.txt`, les outils, et son nom dans la fiche (décision 15).
 
 **Si un critère échoue :** arrêt. Pas de correctif improvisé : compétence superpowers:systematic-debugging, et la correction repasse par Romain. Pistes pour AC-3c-5 : la qualité auto (plan 3a, `src/render/quality.ts`) doit baisser la résolution quand l'image dépasse 18 ms pendant 2 s ; vérifier `res` dans le panneau debug au moment lent. Pour Safari : ouvrir directement l'adresse du MP4 (`/assets/intro-….mp4`) dans Safari pour séparer un fichier illisible d'un défaut du lecteur.
 
@@ -1994,6 +3856,20 @@ Expected : `git status` ne montre que les fichiers de Romain (non commités, ils
 Run : `cd /Users/recarnot/dev/claudehot-videogame && git log -p --all | grep -cE 'AIza[0-9A-Za-z_-]{35}|sk-or-v1-[0-9a-f]{20,}|sk-ant-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}'`
 Expected : `0` (mesure du prototype : 0). **Autre chose que 0 : arrêt.** Ne pas afficher la ligne trouvée ; dire à Romain qu'une clé est dans l'historique, il la révoque avant tout push.
 
+Dépôt public : le contrôle des clés se refait avec un vrai outil, sur tout l'historique.
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && gitleaks git --no-banner --redact . 2>&1 | tail -3`
+Expected : `no leaks found` (mesure du 2026-09-30 à 18 h 23 : 145 commits, 0 fuite). **Une fuite : arrêt**, sans afficher la valeur.
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && git ls-files | grep -E "^\.claude/(helpers|skills|settings)|^\.mcp\.json|^\.ignore|\.env" ; git grep -I -l -E "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}" | head`
+Expected : rien sur la première commande (aucun fichier local suivi) ; sur la seconde, seulement des fichiers où l'adresse est celle d'un exemple ou d'une licence. Une adresse de Romain : le lui dire.
+
+À dire à Romain avec la porte, relevé le 2026-09-30 :
+- Les 124 commits portent son adresse Gmail comme auteur. Elle devient publique. La garder, ou passer à l'adresse `noreply` de GitHub, ce qui réécrit tout l'historique : son choix, rien n'est réécrit sans son go.
+- Quatre fichiers suivis citent le chemin `/Users/recarnot` (notes et plans). Sans danger.
+- Les réponses brutes des API (`assets/*-response.json`, `.claude/notes/agenthot-probes/*.json`) ne portent ni clé ni identifiant de compte : seulement un identifiant de requête Lyria, des compteurs de tokens et des prix.
+- Les messages de commit portent des liens de session `claude.ai/code/session_…`. Ils ne s'ouvrent que pour lui.
+
 Run : `gh repo view eRom/agenthot-the-game --json visibility,isEmpty`
 Expected : `{"isEmpty":true,"visibility":"PRIVATE"}`.
 
@@ -2002,11 +3878,10 @@ Expected : `{"isEmpty":true,"visibility":"PRIVATE"}`.
 Lui écrire :
 
 > Porte 1, le push. J'envoie `main` sur `github.com/eRom/agenthot-the-game`. Aucune clé dans l'historique.
-> Une décision : le dépôt est privé. Le lien « Sources » des crédits mène dessus.
-> - **Public (mon conseil) :** le lien marche pour tout le monde. Tout devient lisible : le code, les plans, les notes, les revues.
-> - **Privé :** rien n'est exposé, mais le lien des crédits donne une page 404 aux visiteurs.
+> Tu as choisi le 30/09 : dépôt public, « mode making-of ». Tout devient lisible : le code, les plans, les notes, les revues.
+> Une chose à trancher avant : ton adresse Gmail est l'auteur des commits, elle sera visible. Je la garde (le plus simple), ou je passe tout l'historique à ton adresse `noreply` de GitHub ?
 >
-> Réponds « go push public » ou « go push privé ».
+> Réponds « go push public » (adresse gardée) ou « go push public, noreply ».
 
 - [ ] **Step 3 : pousser**
 
@@ -2088,6 +3963,10 @@ Lectures possibles d'un échec :
 - un fichier de `/assets/` en `max-age=0` : la règle `headers` ne s'applique pas. Arrêt, relire `.vercel/output/config.json`.
 - une vidéo en `200` au lieu de `206` : Vercel ne sert pas cette vidéo par morceaux, Safari la lira mal. Arrêt, le dire à Romain (repli connu : servir la cinématique depuis Vercel Blob).
 - un type de contenu inattendu sur `.woff2`, `.webm`, `.mp4`, `.mp3`, `.webp` : le noter avec la valeur reçue.
+- une ligne `llms.txt served`, `llms-full.txt served`, `.well-known/ai-catalog.json served`, `.well-known/ard.json served` ou `manifest.webmanifest served` en `FAIL` avec un code 200 : le type de contenu n'est pas celui de `vercel.json`. La règle `headers` de ce fichier ne s'applique pas (forme de `source` à relire dans la documentation de Vercel). Arrêt, correction dans un commit nommé, nouveau déploiement sur le go de Romain.
+- une ligne `… served` en `404` sur un fichier de `.well-known/` : le dossier caché n'est pas parti dans le site construit. Lire `ls -a .vercel/output/static/.well-known`.
+
+Avant `vercel build` (étape 4), mettre la date du jour dans `datePublished` (`index.html`) et `lastmod` (`public/sitemap.xml`), dans un commit nommé : c'est la date de mise en ligne.
 
 - [ ] **Step 7 : dire à Romain où c'est**
 
@@ -2165,6 +4044,60 @@ Expected : un JSON avec `"title":"AGENTHOT"`, la description et une adresse d'im
 
 ---
 
+### Task 13b : après le domaine, trois gestes de Romain (contrôleur)
+
+Chacun attend ses mots. Aucun n'empêche le jeu de marcher : s'il en remet un à plus tard, on le note et on continue.
+
+- [ ] **Step 1 : AC-3c-12, la fiche relue par un outil du dehors**
+
+MCP Chrome DevTools : `new_page` sur `https://validator.schema.org/#url=https%3A%2F%2Fagenthot.erom.cloud%2F`, attendre le résultat, `take_snapshot`.
+Expected : quatre éléments détectés (`WebSite`, `VideoGame`, `Person`, `VideoObject`), 0 erreur. Un avertissement sur un champ recommandé se note, sans bloquer.
+
+- [ ] **Step 2 : ARRÊT. Le jeton d'origin trial WebMCP**
+
+Sans jeton, Chrome n'expose pas `document.modelContext` sur le site : les outils existent mais aucun agent ne les voit. Le jeton de linktree ne sert pas ici, il est lié à `www.romain-ecarnot.com`. L'essai se termine vers le 17/11/2026 : le jeton sera à renouveler, ou l'API sera sortie de l'essai.
+
+Lui écrire :
+
+> WebMCP : pour que les agents de Chrome voient les outils du jeu, il faut un jeton, comme sur ton site.
+> 1. Va sur `https://developer.chrome.com/origintrials/` et connecte-toi.
+> 2. Cherche l'essai « WebMCP », clique sur « Register ».
+> 3. Origine : `https://agenthot.erom.cloud`. Ne coche pas « sous-domaines ».
+> 4. Copie le jeton (une longue chaîne) et colle-le-moi ici. Il est public, il finira dans la page.
+> Ou réponds « plus tard ».
+
+Sur son jeton : l'ajouter en premier enfant du `<head>` d'`index.html`, `<meta http-equiv="origin-trial" content="<jeton>" />`, avec un commentaire qui dit l'origine et la date d'expiration lue dans le jeton (`echo '<jeton>' | base64 -d | tail -c 120`). Commit nommé, `bun scripts/check-release.ts dist`, puis un nouveau déploiement par la tâche 12, étapes 4 à 6, **sur un nouveau go de Romain**.
+
+- [ ] **Step 3 : AC-3c-14 sur le site réel**
+
+Après ce déploiement, dans le Chrome de Romain (l'essai dépend de la version de Chrome) : ouvrir `https://agenthot.erom.cloud/`, console, `"modelContext" in document`.
+Expected : `true`. `false` : lire `chrome://version` (Chrome 149 ou plus) et l'onglet Application, section « Origin trials », de DevTools, qui dit si le jeton est accepté.
+
+- [ ] **Step 4 : ARRÊT. Déclarer le site aux moteurs**
+
+Lui écrire :
+
+> Deux déclarations, cinq minutes, comme pour ton site :
+> 1. **Google Search Console** (`https://search.google.com/search-console`) : ajoute la propriété `https://agenthot.erom.cloud/`. Si `erom.cloud` y est déjà en propriété de domaine, rien à prouver. Sinon Google te donne une balise ou un enregistrement DNS : donne-moi la balise, je la pose. Puis « Sitemaps », ajoute `sitemap.xml`.
+> 2. **Bing Webmaster Tools** (`https://www.bing.com/webmasters`) : « Import from Google Search Console », ou ajoute le site et son `sitemap.xml`.
+> Écris-moi « fait », ou « plus tard ».
+
+Une balise de vérification donnée par Romain (`<meta name="google-site-verification" …>`) se pose dans `index.html`, commit nommé, nouveau déploiement sur son go.
+
+- [ ] **Step 5 : ARRÊT. IndexNow**
+
+Run : `cd /Users/recarnot/dev/claudehot-videogame && bun scripts/submit-indexnow.ts`
+Expected : le JSON, puis `dry run: nothing sent`.
+
+Lui écrire :
+
+> IndexNow : je préviens Bing et quatre autres moteurs que le jeu existe. Un seul envoi, gratuit. Réponds « go indexnow ».
+
+Sur son go : `cd /Users/recarnot/dev/claudehot-videogame && bun scripts/submit-indexnow.ts --send 2>&1 | tee .superpowers/plan-3c-indexnow.log`
+Expected : `https://api.indexnow.org/indexnow: 200` ou `202`. `403` : la clé n'est pas lue en ligne, relire `https://agenthot.erom.cloud/agenthot-hjjp0jh6j53192gxquqxg84k.txt`. `422` : l'adresse n'appartient pas à l'hôte.
+
+---
+
 ### Task 14 : recette en ligne et passation (contrôleur)
 
 - [ ] **Step 1 : le jeu, sur la vraie adresse**
@@ -2210,7 +4143,7 @@ Expected : `transferSize` à `0` pour chaque fichier de `/assets/` (servi par le
 
 - [ ] **Step 6 : le tableau des critères**
 
-Écrire dans le journal, puis dans le rapport de fin, une ligne par critère, avec la commande ou le geste réellement fait et sa sortie : AC-3c-1 à AC-3c-11. Un critère non vérifié est écrit « non vérifié », jamais arrondi.
+Écrire dans le journal, puis dans le rapport de fin, une ligne par critère, avec la commande ou le geste réellement fait et sa sortie : AC-3c-1 à AC-3c-16. Un critère non vérifié est écrit « non vérifié », jamais arrondi.
 
 Puis les 19 critères de la spec, en une table : où chacun a été tranché (plans 1, 2, 3a, 3b, ou ce plan : AC-8 → AC-3c-5, AC-9 → AC-3c-7, AC-10 → AC-3c-6, AC-12 → AC-3c-8, AC-15 → AC-3c-4, AC-17 → AC-3c-9). **AC-18 (trois testeurs, moins de 5 essais en moyenne) reste ouvert** : il demande deux joueurs de plus que Romain, maintenant que le lien existe.
 
