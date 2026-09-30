@@ -4069,7 +4069,7 @@ Expected : quatre éléments détectés (`WebSite`, `VideoGame`, `Person`, `Vide
 
 - [ ] **Step 2 : ARRÊT. Le jeton d'origin trial WebMCP**
 
-Sans jeton, Chrome n'expose pas `document.modelContext` sur le site : les outils existent mais aucun agent ne les voit. Le jeton de linktree ne sert pas ici, il est lié à `www.romain-ecarnot.com`. L'essai se termine vers le 17/11/2026 : le jeton sera à renouveler, ou l'API sera sortie de l'essai.
+Sans jeton, Chrome n'expose pas `document.modelContext` sur le site : les outils existent mais aucun agent ne les voit. Le jeton de linktree ne sert pas ici, il est lié à `www.romain-ecarnot.com`. L'essai se termine vers le 17/11/2026 : le jeton sera à renouveler, ou l'API sera sortie de l'essai. L'essai couvre Chrome 149 à 156 (chromestatus.com/feature/5117755740913664, mis à jour le 2026-09-28) ; Chrome 157 sort le 2026-11-03 ; sans prolongation, un jeton demandé maintenant vit environ cinq semaines.
 
 Lui écrire :
 

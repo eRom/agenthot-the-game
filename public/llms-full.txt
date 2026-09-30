@@ -66,4 +66,4 @@ Le nombre de tokens et le coût API estimé du chantier se lisent dans le jeu : 
 - **Résumé :** https://agenthot.erom.cloud/llms.txt
 - **Catalogue pour agents :** https://agenthot.erom.cloud/.well-known/ard.json (et https://agenthot.erom.cloud/.well-known/ai-catalog.json, l'ancien chemin)
 - **Plan du site :** https://agenthot.erom.cloud/sitemap.xml
-- **Outils WebMCP :** la page expose trois outils en lecture seule aux agents du navigateur : `get_game_info`, `get_controls`, `get_credits`.
+- **Outils WebMCP :** la page déclare trois outils en lecture seule pour les agents du navigateur (`get_game_info`, `get_controls`, `get_credits`). Ils ne sont visibles que dans Chrome, quand l'essai WebMCP est actif sur le site.
