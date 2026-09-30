@@ -1,5 +1,17 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
+## Mise à jour du 2026-09-30 à 18:45 (prime sur le reste de la note)
+- **Plan 3c en cours d'exécution**, branche `feat/agenthot-plan-3c` (pas fusionnée, rien poussé). Tâches 1 à 8f faites et relues. `bun test` : 354 verts. `bun scripts/check-release.ts dist` : all good.
+- **Arrêt en cours : tâche 9, étape 7.** Romain joue et relit (Safari, une partie en `?debug`, le repli WebGL, l'icône, les textes). Serveur : `bun run preview --port 4319 --strictPort`.
+- **Deux ajouts de Romain du 30/09, entrés dans le plan :**
+  - SEO et GEO « comme linktree » : fiche JSON-LD, `robots.txt`, `sitemap.xml`, `llms.txt`, catalogue pour agents (`ard.json` et `ai-catalog.json`), manifeste, 3 outils WebMCP en lecture seule, script IndexNow à blanc. Tâche 13b après le domaine : jeton d'origin trial WebMCP, Search Console et Bing, envoi IndexNow. Trois gestes de Romain.
+  - Dépôt public, « mode making-of » (ses mots, 18:20 : « 2 - mode making-of !!! »). Ce n'est pas le go du push. Section Making-of au README, fichiers locaux ignorés. `gitleaks git` sur 145 commits : 0 fuite.
+- **À trancher par Romain à la porte du push :** son adresse Gmail est l'auteur de tous les commits. La garder, ou passer à l'adresse `noreply` de GitHub (réécrit l'historique).
+- **Mesure à surveiller (AC-3c-5) :** au menu, dans le Chrome piloté, Mac très chargé (charge 11,7) : `worstWindowP95Ms` 25,3 à 25,7, 62 appels de dessin, la qualité auto oscille entre `res 1` (46 i/s) et `res 0.85` (60 i/s). Le seuil du plan est 20. La mesure qui compte est celle de Romain en jeu. Si elle dépasse 20 : arrêt, sa décision, pas de correctif improvisé (le rendu est figé).
+- `.gitignore` porte 6 lignes non commitées qui ne sont pas du plan (`.impeccable/`, `rendu-simule/`, et 4 chemins de `docs/superpowers/idea/`). Elles restent hors des commits.
+- Journal d'exécution local : `.superpowers/sdd/2026-09-29-agenthot-plan-3c-perf-share-launch/progress.md` (rulings, mineurs reportés pour la revue finale).
+- **Ensuite :** tâche 10 (dernier compte des crédits, revue finale par une autre session, fusion sur son go), puis ses portes : push, Vercel, DNS, tâche 13b.
+
 ## Mise à jour du 2026-09-30 à 17:55 (prime sur le reste de la note)
 - **Tout le jeu est à jour avec le nouveau rendu, dans `main`.** Rien poussé. `bun test` : 282 verts.
 - Cinématique refaite avec des prises du nouveau décor (montage inchangé), validée par Romain dans le jeu et dans Safari, fusionnée (`af9bf26`). `intro.mp4` est en H.264 niveau 4.1 : le point 6 de la revue du 3b est fait, le point 7 (Safari) vu par Romain sur le serveur de dev.

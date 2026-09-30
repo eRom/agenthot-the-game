@@ -30,6 +30,11 @@
 - **Dépôt public, « mode making-of » :** tâche 8f (README, `.gitignore`), contrôles d'avant push à la tâche 11. La porte du push reste fermée jusqu'aux mots de Romain.
 - Trouvé à l'exécution : tâche 2b (les scripts de musique écrivaient encore dans `public/audio`), faite (`aae5573`).
 
+**Corrections après relecture (le code du dépôt fait foi, pas les blocs ci-dessous) :**
+- Tâche 8b, `d7dc74b` : les deux liens `alternate` exigés, titre absent signalé, adresse illisible ignorée sans exception, `uploadDate` en `Z`, icône sans `src`.
+- Tâche 8d, `ae6f2b5` : les outils WebMCP rendent leurs données directement (brouillon du W3C : `Promise<any>`, mis en JSON par le navigateur), et non `{ content: [...] }` ; un test lie « 5 ennemis, 4 balles » aux constantes du jeu ; « Ton arme se lance, même vide ».
+- Suite après ces corrections : 354 tests.
+
 **Place de ce plan :** plan 3c sur 3, le dernier.
 - **3a** (fait, fusionné à `54a6288`) : finitions du jeu et écrans.
 - **3b** (fait, fusionné à `fd71576`) : assets générés, `?record`, cinématique.
@@ -3660,7 +3665,7 @@ Tout ce qui se vérifie sans rien mettre en ligne, sur le site construit. Chaque
 - [ ] **Step 1 : construire et contrôler**
 
 Run : `cd /Users/recarnot/dev/claudehot-videogame && RTK_DISABLED=1 bun run typecheck && RTK_DISABLED=1 bun test 2>&1 | tee .superpowers/plan-3c-test.log | tail -4 && RTK_DISABLED=1 bun run build && bun scripts/check-release.ts dist`
-Expected : `346 pass`, `0 fail` ; build : point d'entrée vers 40,5 Ko (14,5 Ko gzip), moteur vers 1 010 Ko (282 Ko gzip), outils WebMCP à part (2,4 Ko) ; `release check: all good`.
+Expected : `354 pass`, `0 fail` ; build : point d'entrée vers 40,5 Ko (14,5 Ko gzip), moteur vers 1 010 Ko (282 Ko gzip), outils WebMCP à part (2,4 Ko) ; `release check: all good`.
 
 - [ ] **Step 2 : servir le site construit**
 
@@ -3767,7 +3772,7 @@ Avec une API simulée : `navigate_page` vers `http://localhost:4319/` avec `init
 async () => {
   await new Promise((r) => setTimeout(r, 3000));
   const out = {};
-  for (const tool of window.__tools) out[tool.name] = JSON.parse((await tool.execute()).content[0].text);
+  for (const tool of window.__tools) out[tool.name] = await tool.execute();
   return { names: window.__tools.map((t) => t.name), readOnly: window.__tools.every((t) => t.annotations.readOnlyHint === true), credits: out.get_credits, rooms: out.get_game_info?.rooms, controls: out.get_controls?.length };
 }
 ```
