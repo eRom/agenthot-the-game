@@ -36,7 +36,7 @@
 - Suite après ces corrections : 354 tests.
 - Revue finale (`docs/superpowers/reports/2026-09-30-agenthot-plan-3c-final-review.md`, 0 critique) puis corrections sur le go de Romain (19 h 39, « go pour les 4 corrections ») : `471ba09` (type de contenu de repli = `warn`, pas `FAIL`), `96835ea` (`llms-full.txt` : les outils WebMCP demandent l'essai de Chrome), `acbbe07` (catalogue identifié par son domaine, plus par `did:web`), `3657e34` (`rel="describedby"` pour `llms.txt`), `5c170f4` (`.env*` ignoré), `963ba1e` (critères et spec d'accord avec la ligne des crédits). Les blocs de code des tâches 8b à 8e gardent les anciennes formes : le dépôt fait foi. Suite : 358 tests.
 - Firefox : joué par Romain sur `http://localhost:4319/?debug` le 2026-09-30 à 19 h 39, « ça marche nickel !!! » (point I1 de la revue). Rendu (WebGPU ou WebGL2) non relevé.
-- Crédits, dernier compte (tâche 10, étape 1) : 2026-09-30 à 19 h 44, 1 120 605 292 tokens, 441,05 $ (`05a1648`). Aucun message en mode rapide.
+- Crédits, dernier compte (tâche 10, étape 1) : 2026-09-30 à 19 h 44, 1 120 605 292 tokens, 441,05 $ (`05a1648`). Aucun message en mode rapide. Puis, pour les crédits honnêtes demandés par Romain à 19 h 49 : 1 129 844 422 tokens, 443,80 $, dont 1 097 034 905 relus en cache (219,41 $) et 4 947 744 produits par les modèles (`33fd82e`).
 
 **Retours de Romain à la recette (2026-09-30, 18 h 57) :**
 - Ligne des crédits sans « AGENTHOT ‧ » en tête : `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`. AC-3c-4 et la spec (4.3, AC-15) se lisent avec cette ligne. Police de la ligne à 12 px : l'adresse du dépôt tient entière sur la deuxième ligne.
@@ -89,7 +89,7 @@ Cinq situations qu'un visiteur rencontrera et qu'aucun test de tâche ne couvre 
 - **Vérifié par :** `ffprobe` de `src/ui/video/intro.mp4` : `h264`, `High`, `level=41` (tâche 3) ; Romain dans Safari, en local (tâche 9, étape 7) puis en ligne (tâche 14, étape 2).
 
 **AC-3c-4 : crédits vrais (spec AC-15)**
-- **Comportement :** quand on ouvre Crédits, alors on lit exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`, puis le nombre de tokens et le coût API estimé, mesurés sur les sessions du projet, puis la précision sur le cache : `dont <relus en cache> tokens relus en cache (<coût des relectures> $)`, puis le nombre de tokens écrits par les modèles (décision de Romain du 2026-09-30 à 19 h 49 : « On va préciser le coup du cache svp, pour ne pas se la jouer. C'est une vitrine opus, autant être honnête ! sur les tokens et coûts »).
+- **Comportement :** quand on ouvre Crédits, alors on lit exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`, puis le nombre de tokens et le coût API estimé, mesurés sur les sessions du projet, puis la précision sur le cache : `dont <relus en cache> tokens relus en cache (<coût des relectures> $)`, puis le nombre de tokens produits par les modèles, réflexion comprise (décision de Romain du 2026-09-30 à 19 h 49 : « On va préciser le coup du cache svp, pour ne pas se la jouer. C'est une vitrine opus, autant être honnête ! sur les tokens et coûts »).
 - **Vérifié par :** texte du panneau lu dans Chrome (tâche 9, étape 4), comparé à la chaîne attendue et aux lignes `TOTAL` et `SPLIT` de `zsh scripts/count-tokens.sh` du jour.
 
 **AC-3c-5 : jamais sous 30 images par seconde (spec AC-8, révisé le 2026-09-30)**
@@ -3735,7 +3735,7 @@ async () => {
 }
 ```
 
-Expected : `line` vaut exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game` ; `usage` porte les nombres de la tâche 6, par exemple `955 020 037 tokens ‧ coût API estimé : 373,80 $` ; `cache` est la ligne de `cacheLine` : `dont <relus en cache> tokens relus en cache (<coût des relectures> $)`, puis les tokens écrits par les modèles, avec les nombres de la ligne `SPLIT` du dernier compte.
+Expected : `line` vaut exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game` ; `usage` porte les nombres de la tâche 6, par exemple `955 020 037 tokens ‧ coût API estimé : 373,80 $` ; `cache` est la ligne de `cacheLine` : `dont <relus en cache> tokens relus en cache (<coût des relectures> $)`, puis les tokens produits par les modèles, réflexion comprise, avec les nombres de la ligne `SPLIT` du dernier compte.
 
 - [ ] **Step 5 : AC-3c-8, téléphone et iPad**
 

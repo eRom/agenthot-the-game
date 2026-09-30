@@ -36,11 +36,12 @@ export function usageLine(data: CreditsData): string {
   return `${tokens} tokens ‧ coût API estimé : ${cost} $`;
 }
 
-// « dont 1 097 034 905 tokens relus en cache (219,41 $) ‧ 4 947 744 tokens écrits par les modèles ». La précision
-// honnête sous le total : le même contexte est relu à chaque tour, les modèles n'ont écrit qu'une petite part.
+// « dont 1 097 034 905 tokens relus en cache (219,41 $) ‧ 4 947 744 tokens produits par les modèles, réflexion comprise ». La précision
+// honnête sous le total : le même contexte est relu à chaque tour, les modèles n'ont produit qu'une petite part (la sortie
+// compte la réflexion des modèles, que personne ne peut lire).
 export function cacheLine(data: CreditsData): string {
   const count = new Intl.NumberFormat("fr-FR");
   const cost = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.cacheReadCostUsd);
   const dot = String.fromCodePoint(0x2027);
-  return `dont ${count.format(data.cacheReadTokens)} tokens relus en cache (${cost} $) ${dot} ${count.format(data.outputTokens)} tokens écrits par les modèles`;
+  return `dont ${count.format(data.cacheReadTokens)} tokens relus en cache (${cost} $) ${dot} ${count.format(data.outputTokens)} tokens produits par les modèles, réflexion comprise`;
 }

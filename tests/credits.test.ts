@@ -33,7 +33,7 @@ describe("crédits (spec 4.3, AC-15)", () => {
     expect(line.replace(THIN_SPACE, " ")).toBe(`118 795 538 tokens ${DOT} coût API estimé : 50,31 $`);
   });
 
-  test("la précision sur le cache se lit à la française : relectures, leur coût, tokens écrits par les modèles", () => {
+  test("la précision sur le cache se lit à la française : relectures, leur coût, tokens produits par les modèles (réflexion comprise)", () => {
     const line = cacheLine({
       repoUrl: "",
       tokens: 118795538,
@@ -43,7 +43,7 @@ describe("crédits (spec 4.3, AC-15)", () => {
       outputTokens: 480123,
     });
     expect(line.replace(THIN_SPACE, " ")).toBe(
-      `dont 115 000 000 tokens relus en cache (23,00 $) ${DOT} 480 123 tokens écrits par les modèles`,
+      `dont 115 000 000 tokens relus en cache (23,00 $) ${DOT} 480 123 tokens produits par les modèles, réflexion comprise`,
     );
   });
 
@@ -68,9 +68,8 @@ describe("crédits (spec 4.3, AC-15)", () => {
       const text = readFileSync(file, "utf8");
       expect(text).toContain(`${plainInt(CREDITS.tokens)} tokens`);
       expect(text).toContain(`${plainUsd(CREDITS.apiCostUsd)} $`);
-      expect(text).toContain(`${plainInt(CREDITS.cacheReadTokens)} `);
-      expect(text).toContain(`(${plainUsd(CREDITS.cacheReadCostUsd)} $)`);
-      expect(text).toContain(`${plainInt(CREDITS.outputTokens)} tokens`);
+      expect(text).toContain(`dont ${plainInt(CREDITS.cacheReadTokens)} tokens relus en cache (${plainUsd(CREDITS.cacheReadCostUsd)} $)`);
+      expect(text).toContain(`${plainInt(CREDITS.outputTokens)} tokens produits par les modèles, réflexion comprise`);
       // Aucun tiret cadratin (U+2014) dans un texte lu par un tiers.
       expect(text.includes(String.fromCodePoint(0x2014))).toBe(false);
     });

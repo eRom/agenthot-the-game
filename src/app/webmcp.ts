@@ -37,7 +37,7 @@ export const GAME_TOOLS: readonly ModelContextTool[] = [
   },
   {
     name: "get_credits",
-    description: "Crédits d'AGENTHOT : auteur, modèle utilisé, dépôt des sources, nombre de tokens et coût API estimé.",
+    description: "Crédits d'AGENTHOT : auteur, modèle utilisé, dépôt des sources, nombre de tokens, part relue en cache et coût API estimé.",
     inputSchema: NO_INPUT,
     annotations: { readOnlyHint: true },
     execute: async () => creditsInfo(),

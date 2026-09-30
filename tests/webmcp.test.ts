@@ -77,6 +77,8 @@ describe("outils WebMCP (lecture seule)", () => {
     expect(credits.usage).toContain("coût API estimé");
     expect(credits.cache).toBe(cacheLine(CREDITS));
     expect(credits.cache).toContain("relus en cache");
+    const tool = GAME_TOOLS.find((candidate) => candidate.name === "get_credits");
+    expect(tool?.description).toContain("part relue en cache et coût API estimé");
   });
 
   test("chaque résultat se met en JSON et en revient identique, comme le fera le navigateur", async () => {

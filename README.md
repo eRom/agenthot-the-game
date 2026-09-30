@@ -60,6 +60,6 @@ Puis ouvrir http://localhost:5173/. Les tests : `bun test`.
 
 Author: eRom. Made with: Claude Opus 5.5.
 
-Le chantier a consommé 1 129 844 422 tokens, pour un coût API estimé à 443,80 $ (tarif public, Romain paie un abonnement). Dont 1 097 034 905 tokens relus en cache (219,41 $) : le même contexte relu à chaque tour. Les modèles ont écrit 4 947 744 tokens.
+Le chantier a consommé 1 129 844 422 tokens, pour un coût API estimé à 443,80 $ (tarif public ; Romain paie un abonnement), dont 1 097 034 905 tokens relus en cache (219,41 $) : le contexte de la conversation, relu à chaque appel d'un modèle. Le reste : 27 852 275 tokens écrits en cache, 9 498 tokens d'entrée, et 4 947 744 tokens produits par les modèles, réflexion comprise.
 
 Polices : Big Shoulders Display, Chakra Petch et Martian Mono, sous licence SIL Open Font License 1.1 (`public/fonts/LICENSES.txt`).
