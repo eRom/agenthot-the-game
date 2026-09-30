@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx --yes hyperframes@0.8.81 preview",
-    "check": "npx --yes hyperframes@0.8.81 check",
-    "render": "npx --yes hyperframes@0.8.81 render",
-    "publish": "npx --yes hyperframes@0.8.81 publish"
+    "dev": "node $HOME/.claude/plugins/cache/hyperframes/hyperframes/0.8.81/skills/hyperframes/scripts/plugin-cli.mjs preview",
+    "check": "node $HOME/.claude/plugins/cache/hyperframes/hyperframes/0.8.81/skills/hyperframes/scripts/plugin-cli.mjs check",
+    "render": "node $HOME/.claude/plugins/cache/hyperframes/hyperframes/0.8.81/skills/hyperframes/scripts/plugin-cli.mjs render",
+    "publish": "node $HOME/.claude/plugins/cache/hyperframes/hyperframes/0.8.81/skills/hyperframes/scripts/plugin-cli.mjs publish"
   }
 }

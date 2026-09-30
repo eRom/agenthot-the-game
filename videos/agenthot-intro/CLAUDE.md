@@ -1,5 +1,23 @@
 # HyperFrames Composition Project
 
+## Règles de ce dépôt (elles priment sur la suite)
+
+Ici Hyperframes est un plugin Claude Code installé (version 0.8.81), pas un paquet à télécharger. Le répertoire du plugin est en lecture seule : `PLUGIN_ROOT = ~/.claude/plugins/cache/hyperframes/hyperframes/0.8.81`.
+
+- Jamais `npx` (ni `npm`, `pnpx`, `pip`) : ils sont interdits dans ce dépôt. Le gestionnaire de paquets est `bun`, et Python passe uniquement par `uv run --with ...`.
+- Jamais `hyperframes skills update`, `skills check` ni `npx skills add` : le gestionnaire de plugins de l'agent possède l'installation et les mises à jour. Un skill manquant se signale, il ne se télécharge pas.
+- Toute commande `hyperframes <cmd>` (notée `<lanceur> <cmd>` plus bas) se lance avec le lanceur du plugin, depuis ce dossier de projet, jamais depuis le dossier du plugin :
+
+  ```bash
+  node ~/.claude/plugins/cache/hyperframes/hyperframes/0.8.81/skills/hyperframes/scripts/plugin-cli.mjs <cmd> <args...>
+  ```
+
+  Les scripts `bun run dev|check|render|publish` de `package.json` appellent déjà ce lanceur.
+- Un helper `.mjs` embarqué se lance avec le même lanceur : `... plugin-cli.mjs --script <chemin absolu> <args...>`.
+- `analyze-beatgrid.py` se lance avec : `uv run --with librosa --with numpy --with soundfile python3 <PLUGIN_ROOT>/skills/music-to-video/scripts/analyze-beatgrid.py ...`
+- Ne rien écrire dans le dossier du plugin : sorties et fichiers temporaires vont dans ce projet ou dans un dossier temporaire.
+- `<lanceur>` désigne la commande `node ... plugin-cli.mjs` ci-dessus. Toute ligne plus bas qui dirait encore `npx hyperframes ...`, `npm run ...` ou `skills update` se lit à travers ces règles : lanceur à la place de `npx hyperframes`, `bun run` à la place de `npm run`, et aucune mise à jour de skill.
+
 ## Skills — USE THESE FIRST
 
 **Always invoke the relevant skill before writing or modifying compositions.** Skills encode framework-specific patterns (e.g., `window.__timelines` registration, `data-*` attribute semantics, shader-compatible CSS rules) that are NOT in generic web docs. Skipping them produces broken compositions.
@@ -24,41 +42,37 @@ The domain skills (`/hyperframes-core`, `/hyperframes-animation`, `/hyperframes-
 
 > **Tailwind v4 projects** (`hyperframes init --tailwind`): see `/hyperframes-core` → `references/tailwind.md`.
 
-> **Skill missing or stale?** Run `npx hyperframes skills update <name>` to install/refresh
-> the specific skill you need (the `/hyperframes` router does this automatically before
-> entering a workflow), or bare `npx hyperframes skills update` to refresh the core set plus
-> everything already installed — neither pulls the full set. Restart the agent session so
-> newly installed skills load.
+> **Skill missing or stale?** Ne rien installer ni rafraîchir : voir « Règles de ce dépôt » en tête de fichier. Signaler le skill manquant à Romain ; le plugin se met à jour par son propre flux, puis on recharge la session.
 
 ## Commands
 
 ```bash
-npm run dev          # human-operated foreground preview (blocks until stopped)
-npx hyperframes preview --background  # agent-safe persistent Studio preview
-npx hyperframes preview --status      # verify the persistent preview is listening
-npx hyperframes preview --stop        # stop it when review is finished
-npm run check        # lint + runtime + layout + motion + contrast (one command)
-npm run render       # render to MP4
-npm run publish      # publish and get a shareable link
-npx hyperframes lint --verbose  # include info-level findings
-npx hyperframes lint --json     # machine-readable output for CI
-npx hyperframes docs <topic> # reference docs in terminal
+bun run dev          # human-operated foreground preview (blocks until stopped)
+<lanceur> preview --background  # agent-safe persistent Studio preview
+<lanceur> preview --status      # verify the persistent preview is listening
+<lanceur> preview --stop        # stop it when review is finished
+bun run check        # lint + runtime + layout + motion + contrast (one command)
+bun run render       # render to MP4
+bun run publish      # publish and get a shareable link
+<lanceur> lint --verbose  # include info-level findings
+<lanceur> lint --json     # machine-readable output for CI
+<lanceur> docs <topic> # reference docs in terminal
 ```
 
-> **Agents must use `npx hyperframes preview --background` for Studio handoff.** Do not rely
-> on a shell/tool `run_in_background` wrapper around `npm run dev`: that foreground process
+> **Agents must use `<lanceur> preview --background` for Studio handoff.** Do not rely
+> on a shell/tool `run_in_background` wrapper around `bun run dev`: that foreground process
 > remains owned by the invoking session and can disappear while the browser stays open,
 > leaving refreshes at `ERR_CONNECTION_TIMED_OUT`. Verify with `preview --status`, keep it
 > alive through review, and stop it explicitly with `preview --stop` afterward.
 
-> **Pinned CLI version.** These scripts pin an exact `hyperframes@X.Y.Z` so this project re-renders identically over time. Weeks later that pin lags fixes shipped since. To move up: `npx hyperframes@latest upgrade --project . --check` (shows the delta), then `npx hyperframes@latest upgrade --project .` to rewrite the pins. Always unpinned — the pinned script re-runs the old version against itself.
+> **Pinned CLI version.** La version du CLI est celle du plugin (0.8.81), sélectionnée par le lanceur. Aucune montée de version en cours de tâche : elle passe par la mise à jour du plugin, pas par `upgrade`.
 
 ## Documentation
 
 **For quick reference**, use the local CLI docs command (no network required):
 
 ```bash
-npx hyperframes docs <topic>
+<lanceur> docs <topic>
 ```
 
 Topics: `data-attributes`, `gsap`, `compositions`, `rendering`, `examples`, `troubleshooting`
@@ -81,7 +95,7 @@ https://hyperframes.heygen.com/llms.txt
 After creating or editing any `.html` composition, **always** run the full check before considering the task complete:
 
 ```bash
-npm run check
+bun run check
 ```
 
 Fix all errors before presenting the result. Warnings should be reviewed before rendering.
