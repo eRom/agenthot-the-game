@@ -49,6 +49,7 @@ function page(jsonLd = graph(), head = ""): string {
     <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
     <link rel="ard" href="/.well-known/ard.json" type="application/json" />
     <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM Context" />
+    <link rel="alternate" type="text/markdown" href="/llms-full.txt" title="LLM Context Full" />
     ${head}<script type="application/ld+json">${jsonLd}</script></head><body></body></html>`;
 }
 
@@ -89,6 +90,14 @@ describe("fiche du jeu en JSON-LD", () => {
     ]);
   });
 
+  test("uploadDate : le fuseau Z et la fraction de seconde passent, une date impossible est refusée", () => {
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.video!.uploadDate = "2026-09-30T17:47:00Z"))), SITE)).toEqual([]);
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.video!.uploadDate = "2026-09-30T17:47:00.250+02:00"))), SITE)).toEqual([]);
+    expect(jsonLdProblems(page(graph((nodes) => (nodes.video!.uploadDate = "2026-99-99T99:99:99+02:00"))), SITE)).toEqual([
+      "VideoObject uploadDate is not an ISO 8601 date with a time zone: 2026-99-99T99:99:99+02:00",
+    ]);
+  });
+
   test("une adresse relative est refusée : un robot ne la résout pas", () => {
     expect(jsonLdProblems(page(graph((nodes) => (nodes.game!.image = "/og-v1.jpg"))), SITE)).toEqual([
       "JSON-LD image is not an absolute https URL: /og-v1.jpg",
@@ -111,6 +120,17 @@ describe("titre et liens de découverte", () => {
     expect(headProblems(page())).toEqual([]);
     expect(headProblems(page().replace(/<link rel="ard"[^>]*>/, ""))).toEqual(['missing link: rel="ard" href="/.well-known/ard.json"']);
     expect(headProblems(page().replace(/<link rel="manifest"[^>]*>/, ""))).toEqual(['missing link: rel="manifest" href="/manifest.webmanifest"']);
+  });
+
+  test("le second lien alternate, celui de llms-full.txt, est réclamé lui aussi", () => {
+    expect(headProblems(page().replace(/<link rel="alternate"[^>]*llms-full\.txt[^>]*>/, ""))).toEqual(['missing link: rel="alternate" href="/llms-full.txt"']);
+    expect(headProblems(page().replace(/<link rel="alternate"[^>]*href="\/llms\.txt"[^>]*>/, ""))).toEqual(['missing link: rel="alternate" href="/llms.txt"']);
+  });
+
+  test("une page sans titre, ou au titre vide, est refusée ; un attribut sur la balise est toléré", () => {
+    expect(headProblems(page().replace(/<title>[^<]*<\/title>/, ""))).toEqual(["missing <title>"]);
+    expect(headProblems(page().replace(/<title>[^<]*<\/title>/, "<title>  </title>"))).toEqual(["missing <title>"]);
+    expect(headProblems(page().replace(/<title>[^<]*<\/title>/, '<title data-x="1">AGENTHOT</title>'))).toEqual([]);
   });
 
   test("un titre trop long pour les moteurs est refusé, la limite passe", () => {
@@ -178,6 +198,10 @@ describe("llms.txt", () => {
     expect(llmsProblems(`${llms}Bouge ${DASH} tire.\n`, SITE, "llms.txt")).toEqual(["llms.txt contains an em dash"]);
   });
 
+  test("une adresse illisible dans le texte est ignorée, sans exception", () => {
+    expect(llmsProblems(`${llms}Exemple : https://<host>/x et https://localhost:PORT/a\n`, SITE, "llms.txt")).toEqual([]);
+  });
+
   test("une adresse du site en http, ou sans la barre du domaine, est refusée", () => {
     expect(llmsProblems(`${llms}- http://agenthot.erom.cloud/llms.txt\n`, SITE, "llms.txt")).toEqual([
       "llms.txt has a wrong address for the site: http://agenthot.erom.cloud/llms.txt",
@@ -241,6 +265,14 @@ describe("manifeste", () => {
     expect(manifestProblems(JSON.stringify({ ...manifest, icons: manifest.icons.slice(0, 1) })).problems).toEqual([
       "manifest.webmanifest has no 512x512 icon",
     ]);
+  });
+
+  test("une icône sans src est signalée et n'est pas rendue en chemin", () => {
+    const icons = [manifest.icons[0], { sizes: "512x512", type: "image/png" }];
+    expect(manifestProblems(JSON.stringify({ ...manifest, icons }))).toEqual({
+      problems: ["manifest.webmanifest has an icon without src"],
+      icons: ["icon-192.png"],
+    });
   });
 });
 

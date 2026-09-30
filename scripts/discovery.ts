@@ -50,13 +50,14 @@ export function indexNowPayload(siteUrl: string, key: string): IndexNowPayload {
   return { host: new URL(siteUrl).host, key, keyLocation: `${siteUrl}${key}.txt`, urlList: [siteUrl] };
 }
 
-// Liens de découverte attendus dans le <head> : `rel` → adresse.
-export const DISCOVERY_LINKS: Readonly<Record<string, string>> = {
-  manifest: "/manifest.webmanifest",
-  "ai-catalog": "/.well-known/ai-catalog.json",
-  ard: "/.well-known/ard.json",
-  alternate: "/llms.txt",
-};
+// Liens de découverte attendus dans le <head>. Une liste, pas un dictionnaire : `alternate` y figure deux fois.
+export const DISCOVERY_LINKS: readonly { rel: string; href: string }[] = [
+  { rel: "manifest", href: "/manifest.webmanifest" },
+  { rel: "ai-catalog", href: "/.well-known/ai-catalog.json" },
+  { rel: "ard", href: "/.well-known/ard.json" },
+  { rel: "alternate", href: "/llms.txt" },
+  { rel: "alternate", href: "/llms-full.txt" },
+];
 
 function attributes(tag: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -143,10 +144,13 @@ export function jsonLdProblems(html: string, siteUrl: string): string[] {
   }
   const video = find("VideoObject");
   if (video) {
-    // Google exige name, thumbnailUrl et uploadDate (structured-data/video, 2026-09-24).
+    // Google exige name, thumbnailUrl et uploadDate (structured-data/video, 2026-09-24). contentUrl, c'est nous qui
+    // l'exigeons : le MP4 est servi par le site, et sans lui la fiche ne mène à aucune vidéo.
     for (const key of ["name", "thumbnailUrl", "uploadDate", "contentUrl"]) if (!video[key]) problems.push(`VideoObject has no ${key}`);
     const uploaded = typeof video.uploadDate === "string" ? video.uploadDate : "";
-    if (uploaded && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/.test(uploaded)) {
+    // Fuseau Z ou ±hh:mm, fraction de seconde permise, et une date qui existe.
+    const isoWithZone = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(uploaded) && !Number.isNaN(Date.parse(uploaded));
+    if (uploaded && !isoWithZone) {
       problems.push(`VideoObject uploadDate is not an ISO 8601 date with a time zone: ${uploaded}`);
     }
   }
@@ -162,11 +166,12 @@ export function jsonLdProblems(html: string, siteUrl: string): string[] {
 // Titre et liens de découverte du <head>.
 export function headProblems(html: string): string[] {
   const problems: string[] = [];
-  const title = /<title>([^<]*)<\/title>/i.exec(html)?.[1]?.trim() ?? "";
+  const title = /<title\b[^>]*>([^<]*)<\/title>/i.exec(html)?.[1]?.trim() ?? "";
+  if (title === "") problems.push("missing <title>");
   if (title.length > DISCOVERY_LIMITS.pageTitleChars) problems.push(`<title> has ${title.length} characters (max ${DISCOVERY_LIMITS.pageTitleChars})`);
   if (title.includes(EM_DASH)) problems.push("<title> contains an em dash");
   const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((match) => attributes(match[0]));
-  for (const [rel, href] of Object.entries(DISCOVERY_LINKS)) {
+  for (const { rel, href } of DISCOVERY_LINKS) {
     if (!links.some((link) => link.rel === rel && link.href === href)) problems.push(`missing link: rel="${rel}" href="${href}"`);
   }
   return problems;
@@ -208,6 +213,8 @@ export function llmsProblems(text: string, siteUrl: string, name: string): strin
   if (!text.includes(siteUrl)) problems.push(`${name} never gives the address of the game`);
   const host = new URL(siteUrl).host;
   for (const match of text.matchAll(/https?:\/\/[^\s)>`]+/g)) {
+    // Une adresse que `new URL` refuse (« https://<host>/x », « https://localhost:PORT/a ») n'est pas une adresse du site.
+    if (!URL.canParse(match[0])) continue;
     if (new URL(match[0]).host === host && !match[0].startsWith(siteUrl)) problems.push(`${name} has a wrong address for the site: ${match[0]}`);
   }
   return problems;
@@ -247,8 +254,9 @@ export function manifestProblems(text: string): { problems: string[]; icons: str
   for (const size of ["192x192", "512x512"]) {
     if (!icons.some((icon) => icon.sizes === size)) problems.push(`manifest.webmanifest has no ${size} icon`);
   }
+  const paths = icons.map((icon) => (typeof icon.src === "string" ? icon.src.replace(/^\//, "") : "")).filter((path) => path !== "");
+  if (paths.length < icons.length) problems.push("manifest.webmanifest has an icon without src");
   if (strings(manifest).some(({ text: value }) => value.includes(EM_DASH))) problems.push("manifest.webmanifest contains an em dash");
-  const paths = icons.map((icon) => String(icon.src ?? "").replace(/^\//, "")).filter((path) => path !== "");
   return { problems, icons: paths };
 }
 
