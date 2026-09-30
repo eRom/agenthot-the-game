@@ -35,6 +35,8 @@ export function musicPlayback(name: TrackName, bufferDuration: number): MusicPla
 export class MusicTrack {
   private buffer: AudioBuffer | null = null;
   private source: AudioBufferSourceNode | null = null;
+  // Lecture demandée avant la fin du décodage : elle démarre dès que le morceau est prêt.
+  private pending = false;
   private readonly ctx: BaseAudioContext;
   private readonly out: AudioNode;
   private readonly url: string;
@@ -53,6 +55,7 @@ export class MusicTrack {
       const response = await fetch(this.url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       this.buffer = await this.ctx.decodeAudioData(await response.arrayBuffer());
+      if (this.pending) this.play();
     } catch (error) {
       console.warn(`[agenthot] music ${this.url} unavailable`, error);
     }
@@ -65,7 +68,10 @@ export class MusicTrack {
   // Repart du début du son (après le silence de tête), en boucle sur la fenêtre sans silence.
   play(): void {
     this.stop();
-    if (!this.buffer) return;
+    if (!this.buffer) {
+      this.pending = true;
+      return;
+    }
     const { offset, loopStart, loopEnd } = musicPlayback(this.name, this.buffer.duration);
     this.source = new AudioBufferSourceNode(this.ctx, { buffer: this.buffer, loop: true, loopStart, loopEnd });
     this.source.connect(this.out);
@@ -73,6 +79,7 @@ export class MusicTrack {
   }
 
   stop(): void {
+    this.pending = false;
     if (!this.source) return;
     this.source.stop();
     this.source.disconnect();

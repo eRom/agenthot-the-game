@@ -7,6 +7,9 @@ export interface RendererHandle {
 }
 
 export async function createRenderer(container: HTMLElement, forceWebGL: boolean): Promise<RendererHandle> {
+  // Sans WebGPU ni WebGL2, l'initialisation de Three.js ne rend jamais la main (mesuré le 2026-09-29 : bloquée plus
+  // de 20 s) : on le vérifie avant, pour que le chargeur affiche un message au lieu d'attendre sans fin.
+  if (!hasRendering(forceWebGL)) throw new Error("neither WebGPU nor WebGL2 is available");
   const renderer = new THREE.WebGPURenderer({ antialias: true, forceWebGL });
   renderer.setPixelRatio(basePixelRatio(true));
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -26,4 +29,10 @@ export async function createRenderer(container: HTMLElement, forceWebGL: boolean
 // on plafonne à 1,5 hors WebGPU (spec 9.2).
 export function basePixelRatio(isWebGPU: boolean): number {
   return Math.min(window.devicePixelRatio, isWebGPU ? 2 : 1.5);
+}
+
+// WebGPU (sauf repli forcé) ou, à défaut, un contexte WebGL2.
+function hasRendering(forceWebGL: boolean): boolean {
+  if (!forceWebGL && "gpu" in navigator && navigator.gpu) return true;
+  return document.createElement("canvas").getContext("webgl2") !== null;
 }

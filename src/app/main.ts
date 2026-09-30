@@ -1,229 +1,69 @@
-// Point d'entrée de la phase « gris » : une salle, sans menu. Machine d'états réduite.
+// Point d'entrée : léger, sans Three.js. Il affiche le chargeur (ou l'écran mobile) tout de suite, pendant que
+// le moteur se charge à part (engine.ts, import dynamique). Parcours : chargement → salle (spec 4).
 import "../ui/tokens.css";
+import "../ui/screens.css";
 import "./style.css";
 import { GameAudio } from "../audio/game-audio";
-import { ReplayPlayer } from "../replay/player";
-import { ReplayRecorder } from "../replay/recorder";
-import { basePixelRatio, createRenderer } from "../render/create-renderer";
-import { PostPipeline } from "../render/post";
-import { FrameLimiter, QualityGovernor } from "../render/quality";
-import { WorldRenderer } from "../render/world-renderer";
-import { type Settings, browserStorage, loadSettings, saveSettings } from "../settings/settings";
-import { room01 } from "../rooms/room-01-datacenter";
-import { Game, type PlayerInput, emptyInput } from "../sim/game";
+import { browserStorage, loadSettings, saveSettings } from "../settings/settings";
 import { TIME } from "../sim/time";
-import { createWorldView, writeGameView } from "../sim/view";
-import { Hud } from "./hud";
-import { InputController } from "./input";
-
-type Mode = "start" | "playing" | "paused" | "dead" | "replay" | "won";
-
-// Après la mort, on ignore R et le clic pendant 0,3 s réelle : un clic de tir en rafale ne doit pas sauter l'écran.
-const DEAD_INPUT_GUARD_MS = 300;
+import { LoaderScreen } from "../ui/loader";
+import { MobileScreen } from "../ui/mobile";
+import { browserEnvironment, playOnDesktopOnly } from "./device";
 
 const params = new URLSearchParams(window.location.search);
-const debug = params.has("debug");
+const screens = document.querySelector<HTMLElement>("#screens")!;
 
-const app = document.querySelector<HTMLElement>("#app")!;
-const { renderer, isWebGPU } = await createRenderer(app, params.get("renderer") === "webgl");
-const world = new WorldRenderer(room01, window.innerWidth / window.innerHeight);
-const post = new PostPipeline(renderer, world.scene, world.camera);
-const game = new Game(room01);
-const view = createWorldView(room01.boxes.length, game.shatter.shards);
-const recorder = new ReplayRecorder();
-const replay = new ReplayPlayer(recorder, room01);
-const input = new InputController(renderer.domElement);
-const hud = new Hud(document.querySelector<HTMLElement>("#hud")!, debug);
-// Contexte audio créé tout de suite, suspendu jusqu'au premier geste (clic ou touche).
-const audio = new GameAudio();
-void audio.loadMusic();
-// Qualité auto (spec 9.2) : 60 images par seconde au plus, résolution adaptative, selon le réglage Qualité.
-const quality = new QualityGovernor("auto");
-const limiter = new FrameLimiter();
-const storage = browserStorage();
-let settings = loadSettings(storage);
-
-// Applique les paramètres à chaud (spec 4.5) : souris, champ de vision, volumes, qualité.
-function applySettings(next: Settings): void {
-  settings = next;
-  input.sensitivity = next.sensitivity;
-  input.invertY = next.invertY;
-  world.setFov(next.fov);
-  audio.engine.setVolumes(next.musicVolume / 100, next.sfxVolume / 100);
-  if (quality.mode !== next.quality) {
-    quality.setMode(next.quality);
-    renderer.setPixelRatio(basePixelRatio(isWebGPU) * quality.scale);
-  }
-}
-applySettings(settings);
-
-let mode: Mode = "start";
-let last = performance.now();
-let restartPending = false;
-let deadSince = 0;
-let fpsFrames = 0;
-let fpsTime = 0;
-let fps = 0;
-
-function startRun(): void {
-  game.reset();
-  recorder.reset();
-  writeGameView(game, view);
-  recorder.capture(game.simTime, view, true);
-  input.clear();
-  hud.resetCrosshair();
-  audio.playGameMusic();
+if (playOnDesktopOnly(browserEnvironment())) {
+  // Téléphone, tablette, iPad sans Pointer Lock : aucun moteur, aucune musique (spec 4.6).
+  new MobileScreen(screens);
+} else {
+  void boot();
 }
 
-function setMode(next: Mode): void {
-  mode = next;
-  if (next === "dead") deadSince = performance.now();
-  // Écrans de fin : on oublie les appuis du jeu (saut, R, clic de tir) pour ne pas sauter l'écran.
-  if (next === "dead" || next === "replay" || next === "won") input.clear();
-  hud.show(next === "playing" ? "none" : next);
-  // Aberration chromatique : seulement pendant l'écran de mort (spec 6.2).
-  post.setDeath(next === "dead" ? 1 : 0);
+async function boot(): Promise<void> {
+  const loader = new LoaderScreen(screens);
+  void loader.play();
+  const storage = browserStorage();
+  const settings = loadSettings(storage);
+  // Contexte audio créé tout de suite, suspendu jusqu'au premier geste : les musiques se décodent pendant ce temps.
+  const audio = new GameAudio();
+  audio.engine.setVolumes(settings.musicVolume / 100, settings.sfxVolume / 100);
+  // Musiques du jeu et du replay : décodées en arrière-plan, sans retenir le chargeur (0,1 à 1,5 s par morceau,
+  // mesuré le 2026-09-29). Une musique demandée avant la fin de son décodage démarre dès qu'elle est prête.
+  void audio.loadMusic();
+  // Onglet en arrière-plan : la boucle d'animation s'arrête et avec elle le gel du son, qui vit dans cette
+  // boucle. On fige les filtres (freeze) puis on suspend tout le contexte, sinon la musique du replay et le
+  // bourdon continueraient pendant que l'image est figée. Au retour, le contexte reprend s'il tournait.
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) audio.freeze(TIME.min);
+    audio.setHidden(document.hidden);
+  });
+  // Tout geste peut débloquer le son (le navigateur ne l'autorise que dans un clic ou une touche).
+  window.addEventListener("keydown", () => audio.unlock());
+  window.addEventListener("pointerdown", () => audio.unlock());
+
+  await loader.waitReady([document.fonts.ready]);
+  // Le moteur (Three.js, 90 % du code, puis l'initialisation du rendu) se charge une fois l'invite affichée,
+  // pendant que le joueur la lit : il ne dispute pas le fil principal au chargeur (AC-10).
+  const engine = import("./engine").then(({ createEngine }) =>
+    createEngine({
+      audio,
+      settings,
+      debug: params.has("debug"),
+      forceWebGL: params.get("renderer") === "webgl",
+      onSettingsChange: (next) => saveSettings(storage, next),
+    }),
+  );
+  // Rejet traité plus bas, après le geste : on le marque comme attendu dès maintenant.
+  engine.catch(() => undefined);
+  await loader.waitForGesture(() => audio.unlock());
+  try {
+    const ready = await engine;
+    await loader.hide();
+    ready.enterRoom();
+  } catch (error) {
+    // Ni WebGPU ni WebGL2 : on le dit au lieu d'un écran noir.
+    console.error("[agenthot] engine failed", error);
+    loader.fail("Ton navigateur ne peut pas afficher le jeu : WebGL2 est nécessaire.");
+  }
 }
-
-// Un clic reprend le verrou du pointeur sur tous les écrans (Échap ou alt-tab l'ont peut-être perdu).
-// Sans verrou, les clics de tir ne sont jamais enregistrés : ce clic ne relance donc pas une partie.
-renderer.domElement.addEventListener("click", () => {
-  audio.unlock();
-  if (mode !== "playing" && !input.locked) input.lock();
-});
-window.addEventListener("keydown", () => audio.unlock());
-document.addEventListener("pointerlockchange", () => {
-  if (input.locked && (mode === "start" || mode === "paused")) {
-    if (mode === "start") startRun();
-    input.clear();
-    setMode("playing");
-  } else if (!input.locked && mode === "playing") {
-    setMode("paused");
-  }
-});
-// Onglet en arrière-plan : la boucle d'animation s'arrête et avec elle le gel du son, qui vit dans cette
-// boucle. On fige les filtres (freeze) puis on suspend tout le contexte, sinon la musique du replay et le
-// bourdon continueraient pendant que l'image est figée. Au retour, le contexte reprend s'il tournait.
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) audio.freeze(TIME.min);
-  audio.setHidden(document.hidden);
-});
-window.addEventListener("resize", () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  world.resize(window.innerWidth / window.innerHeight);
-});
-
-writeGameView(game, view);
-world.update(view);
-setMode("start");
-
-// Sonde de vérification, en debug seulement : fait avancer la partie sans pointer lock (captures, AC-8).
-if (debug) {
-  (window as unknown as { agenthot: unknown }).agenthot = {
-    renderer,
-    game,
-    post,
-    world,
-    input,
-    // Change des réglages comme le fera le panneau Paramètres : appliqués et enregistrés.
-    settings(patch: Partial<Settings>): Settings {
-      applySettings({ ...settings, ...patch });
-      saveSettings(storage, settings);
-      return settings;
-    },
-    advance(seconds: number, overrides: Partial<PlayerInput> = {}): void {
-      const frameInput = { ...emptyInput(), ...overrides };
-      for (let t = 0; t < seconds; t += 1 / 60) {
-        game.step(1 / 60, frameInput);
-        frameInput.fire = false;
-        frameInput.throw = false;
-      }
-      writeGameView(game, view);
-      world.update(view);
-      // Le rendu reste celui de la boucle : ses appels de dessin se lisent dans le panneau debug.
-    },
-  };
-}
-
-renderer.setAnimationLoop(() => {
-  const now = performance.now();
-  // Écran plus rapide que la limite : on saute cette image de l'écran, rien n'avance.
-  if (!limiter.shouldRender(now, quality.fpsCap)) return;
-  if (quality.sample(now - last)) renderer.setPixelRatio(basePixelRatio(isWebGPU) * quality.scale);
-  // Plafond de 0,1 s : un onglet en arrière-plan ne doit pas faire un bond dans le temps.
-  const dt = Math.min(0.1, (now - last) / 1000);
-  last = now;
-
-  // Sonde AC-6 : mesurée de l'appui (R ou clic) à l'image qui suit la relance, quand la précédente est rendue.
-  if (restartPending) {
-    if (debug) console.info(`[agenthot] restart ${(performance.now() - input.lastRestartInputTime).toFixed(1)} ms`);
-    restartPending = false;
-  }
-
-  if (mode === "playing") {
-    const simDt = game.step(dt, input.sample());
-    writeGameView(game, view);
-    for (let i = 0; i < game.events.count; i++) if (game.events.items[i]!.type === "punch") world.viewModel.punch();
-    recorder.recordEvents(game.events);
-    recorder.capture(game.simTime, view, game.status !== "playing");
-    audio.frame(view, game.events);
-    hud.updateCrosshair(view.playerCooldown, view.playerAmmo);
-    world.update(view, simDt);
-    if (game.status === "dead") setMode("dead");
-    if (game.status === "won") {
-      // Preuve AC-7 : la durée rejouée doit coller au temps de simulation écoulé.
-      if (debug) console.info(`[agenthot] replay sim ${game.simTime.toFixed(2)} s vs duration ${replay.duration.toFixed(2)} s`);
-      replay.restart();
-      audio.playReplayMusic();
-      setMode("replay");
-    }
-  } else if (mode === "dead" || mode === "won") {
-    // Temps figé : le son reste grave et étouffé.
-    audio.freeze(TIME.min);
-    // Mort : R ou un clic relance (spec 4.4). Victoire : R seulement, le clic est trop facile à faire par erreur.
-    const clicked = input.consumeFire() && mode === "dead";
-    const pressedR = input.consumePress("KeyR");
-    // Pendant la garde, R et le clic sont écartés (consommés ci-dessus), pas mis en attente.
-    const guarded = mode === "dead" && now - deadSince < DEAD_INPUT_GUARD_MS;
-    if (!guarded && (pressedR || clicked)) {
-      restartPending = true;
-      startRun();
-      // Sans verrou (Échap sur l'écran de fin), on le redemande et on attend qu'il revienne.
-      if (input.locked) setMode("playing");
-      else {
-        input.lock();
-        setMode("paused");
-      }
-      world.update(view);
-    } else if (mode === "won" && input.consumePress("Space")) {
-      replay.restart();
-      audio.playReplayMusic();
-      setMode("replay");
-    }
-  } else if (mode === "replay") {
-    replay.update(dt);
-    world.update(replay.view, dt);
-    audio.frame(replay.view, replay.events);
-    hud.chant(replay.playhead);
-    if (replay.finished) setMode("won");
-  } else {
-    // Départ et pause : la partie est figée, le son aussi.
-    audio.freeze(TIME.min);
-  }
-
-  post.render();
-
-  fpsFrames++;
-  fpsTime += dt;
-  if (fpsTime >= 0.5) {
-    fps = fpsFrames / fpsTime;
-    fpsFrames = 0;
-    fpsTime = 0;
-    if (debug) {
-      hud.setDebug(
-        `${isWebGPU ? "WebGPU" : "WebGL2"} ‧ ${fps.toFixed(0)} fps ‧ res ${quality.scale} ‧ ${renderer.info.render.drawCalls} draws ‧ ` +
-          `time ${view.timeScale.toFixed(2)} ‧ sim ${game.simTime.toFixed(2)} s`,
-      );
-    }
-  }
-});

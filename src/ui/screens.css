@@ -1,0 +1,165 @@
+/* Écrans de l'interface (spec 4) : couche au-dessus du canvas et du HUD. */
+
+#screens {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+}
+
+/* ---------- Logo Monolithe ---------- */
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  font-size: clamp(72px, 13vw, 190px);
+}
+
+.logo-word {
+  display: block;
+  white-space: nowrap;
+}
+
+.logo-letter {
+  display: inline-block;
+}
+
+/* ---------- Chargement (spec 4.1) ---------- */
+
+.loader {
+  display: grid;
+  place-items: center;
+  background: var(--void);
+}
+
+.loader-stage {
+  display: grid;
+  justify-items: center;
+  gap: 28px;
+}
+
+.loader-logo {
+  position: relative;
+  font-size: clamp(72px, 13vw, 190px);
+}
+
+.loader-facets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.loader-facets i {
+  position: absolute;
+  display: block;
+  background: var(--threat);
+  box-shadow: 0 0 18px rgb(217 119 87 / 0.5);
+}
+
+.loader-facets i.hot {
+  background: var(--threat-hot);
+}
+
+.loader-bar {
+  width: min(280px, 60vw);
+  height: 1px;
+  background: rgb(201 203 208 / 0.18);
+}
+
+.loader-bar i {
+  display: block;
+  height: 100%;
+  background: var(--world-2);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--t-slow) var(--ease);
+}
+
+.loader-prompt {
+  font-family: var(--font-ink);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--world);
+  animation:
+    prompt-in var(--t-slow) var(--ease) both,
+    prompt-breathe 1.6s ease-in-out 250ms infinite alternate;
+}
+
+.loader-prompt.is-error {
+  max-width: min(520px, 90vw);
+  text-align: center;
+  line-height: 1.6;
+  letter-spacing: 0.12em;
+  animation: none;
+}
+
+@keyframes prompt-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    letter-spacing: 0.5em;
+  }
+}
+
+@keyframes prompt-breathe {
+  to {
+    opacity: 0.5;
+  }
+}
+
+/* ---------- Mobile (spec 4.6) ---------- */
+
+.mobile {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--void);
+  overflow: auto;
+}
+
+.mobile-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+}
+
+.mobile-stack {
+  position: relative;
+  display: grid;
+  gap: 28px;
+  justify-items: center;
+  width: min(420px, 100%);
+}
+
+.mobile .logo {
+  font-size: clamp(64px, 24vw, 120px);
+  text-align: center;
+}
+
+.mobile-panel {
+  width: 100%;
+}
+
+.mobile-text {
+  font-size: 15px;
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+
+.mobile-feedback {
+  margin-top: 12px;
+  min-height: 1.4em;
+  color: #5b6170;
+  word-break: break-all;
+}
