@@ -39,3 +39,13 @@ Et une vingtaine de petits points : touche maintenue qui répète une action, Cm
 
 ## Petits points laissés de côté
 Notés dans le journal local (`.superpowers/sdd/2026-09-29-agenthot-plan-3a-screens/progress.md`) pour la revue finale : environ 30 points mineurs (tests absents faute de DOM, contrastes, cas limites très étroits, 10,6 Mo réservés pour une démo de 53 images, etc.). Aucun ne bloque la tâche 12.
+
+## Tâche 12 faite avec Romain (2026-09-30, 07:05 à 07:42)
+- **Mesures :** WebGPU, 60 i/s, `res 1` en auto (plus de chute à 0,85 au chargement), 42 appels de dessin. Souris prise 6 ms après le clic sur Jouer (AC-10, attendu ≤ 1 000). Relance par R en 25,6 ms (AC-6, attendu < 50).
+- **Parcours :** Échap puis Reprendre, et Rejouer depuis la victoire : OK.
+- **Build sans les fichiers du 3b :** menu, panneaux et salle sans exception. Le plan supposait que `vite preview` renvoie un vrai 404 : faux, il renvoie aussi `200 text/html` (seul `favicon.ico` est en 404). Le code le gère (échec de décodage, image retirée).
+- **Stockage abîmé :** réglages par défaut, aucune exception.
+- **Verdicts de Romain :** chargeur, menu et cadrage, panneaux Encre, pistolet et mains, orange dans l'ombre : OK.
+- **Réglages faits à sa demande :** pontet agrandi à 22 mm (`af99b34`) ; son d'éclatement refait en verre pulvérisé (`322ee31`) ; voile de mort assombri d'encre pour lire `R ‧ RECOMMENCER` (`6ee0ff6`). Validés par Romain.
+- **Laissé tel quel sur sa décision :** le poing n'est pas enregistré au replay.
+- **Pour la revue finale :** le journal `[agenthot] restart … ms` affiche un temps faux (5 à 35 s) quand on relance par un clic de panneau au lieu de R : il part de la dernière touche R.
