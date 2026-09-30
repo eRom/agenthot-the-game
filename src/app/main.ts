@@ -15,6 +15,7 @@ import { MobileScreen } from "../ui/mobile";
 import { type PanelHandle, creditsBody, openPanel, roomsBody, settingsBody } from "../ui/panels";
 import { RoomPanels } from "../ui/room-panels";
 import { BootError, ENGINE_TIMEOUT_MS, TimeoutError, bootFailureMessage, withTimeout } from "./boot-failure";
+import { captureTarget } from "./capture";
 import { browserEnvironment, playOnDesktopOnly } from "./device";
 import type { Engine, EngineMode, EngineOptions } from "./engine";
 
@@ -97,6 +98,7 @@ async function runBoot(loader: LoaderScreen): Promise<void> {
     forceWebGL: params.get("renderer") === "webgl",
     onSettingsChange: (next) => saveSettings(storage, next),
     onModeChange: (mode) => onModeChange(mode),
+    record: captureTarget(params),
   });
   // Panneaux de la salle, branchés une fois le menu construit (plus bas).
   let onModeChange: (mode: EngineMode) => void = () => undefined;

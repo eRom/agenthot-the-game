@@ -13,6 +13,7 @@ import type { Settings } from "../settings/settings";
 import { Game, type PlayerInput, emptyInput } from "../sim/game";
 import { TIME } from "../sim/time";
 import { createWorldView, writeGameView } from "../sim/view";
+import { CAPTURE, CanvasCapture, type CaptureTarget, captureDisplaySize } from "./capture";
 import { Hud } from "./hud";
 import { InputController } from "./input";
 
@@ -31,6 +32,8 @@ export interface EngineOptions {
   onSettingsChange(settings: Settings): void;
   // Chaque changement d'écran de la salle : le point d'entrée y accroche ses panneaux (pause, victoire).
   onModeChange(mode: EngineMode): void;
+  // `?record=1` / `?record=menu` : enregistrer le replay de victoire, ou une boucle du menu (plan 3b).
+  record: CaptureTarget | null;
 }
 
 export interface Engine {
@@ -69,6 +72,23 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
   const quality = new QualityGovernor(options.settings.quality);
   const limiter = new FrameLimiter();
   let settings = options.settings;
+  // Enregistrement (plan 3b) : canvas en 1920 × 1080 quelle que soit la fenêtre, résolution fixe, 60 images par
+  // seconde et pas de temps fixe (1/60 s par image) : une image lente ne fait pas sauter la séquence filmée.
+  const capture = options.record ? new CanvasCapture(renderer.domElement, audio.engine.ctx, audio.engine.master) : null;
+  function fitCanvas(): void {
+    if (capture) {
+      renderer.setPixelRatio(1);
+      renderer.setSize(CAPTURE.width, CAPTURE.height, false);
+      const shown = captureDisplaySize(window.innerWidth, window.innerHeight);
+      renderer.domElement.style.width = `${shown.width}px`;
+      renderer.domElement.style.height = `${shown.height}px`;
+      world.resize(CAPTURE.width / CAPTURE.height);
+      return;
+    }
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    world.resize(window.innerWidth / window.innerHeight);
+  }
+  if (capture) fitCanvas();
 
   // Applique les paramètres à chaud (spec 4.5) : souris, champ de vision, volumes, qualité.
   function applySettings(next: Settings): void {
@@ -78,6 +98,8 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     world.setFov(next.fov);
     audio.engine.setVolumes(next.musicVolume / 100, next.sfxVolume / 100);
     if (quality.mode !== next.quality) quality.setMode(next.quality);
+    // Pendant un enregistrement, la résolution reste celle de la capture (fitCanvas).
+    if (capture) return;
     // Chaque cran d'un curseur appelle cette fonction : le pixel ratio (coûteux : cibles de rendu recréées) ne
     // bouge que s'il change vraiment.
     const ratio = basePixelRatio(isWebGPU) * quality.scale;
@@ -114,6 +136,8 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     replay.restart();
     audio.playReplayMusic();
     setMode("replay");
+    // `?record=1` : chaque replay (la victoire, puis chaque « Revoir le replay ») est une prise.
+    if (options.record === "replay") capture?.start();
   }
 
   function startRun(): void {
@@ -161,10 +185,7 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
       setMode("paused");
     }
   });
-  window.addEventListener("resize", () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    world.resize(window.innerWidth / window.innerHeight);
-  });
+  window.addEventListener("resize", fitCanvas);
 
   writeGameView(game, view);
   world.update(view);
@@ -209,10 +230,10 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     if (mode === "idle") return;
     const now = performance.now();
     // Écran plus rapide que la limite : on saute cette image de l'écran, rien n'avance.
-    if (!limiter.shouldRender(now, quality.fpsCap)) return;
-    if (quality.sample(now - last)) renderer.setPixelRatio(basePixelRatio(isWebGPU) * quality.scale);
+    if (!limiter.shouldRender(now, capture ? CAPTURE.fps : quality.fpsCap)) return;
+    if (!capture && quality.sample(now - last)) renderer.setPixelRatio(basePixelRatio(isWebGPU) * quality.scale);
     // Plafond de 0,1 s : un onglet en arrière-plan ne doit pas faire un bond dans le temps.
-    const dt = Math.min(0.1, (now - last) / 1000);
+    const dt = capture ? 1 / CAPTURE.fps : Math.min(0.1, (now - last) / 1000);
     last = now;
 
     // Sonde AC-6 : mesurée de l'appui (R ou clic) à l'image qui suit la relance, quand la précédente est rendue.
@@ -224,7 +245,11 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     if (mode === "menu") {
       menuTime += dt;
       // Boucle de la démo : au bout de la fenêtre, on repart du début (les éclats et les baies sont rejoués).
-      if (menuReplay.finished) menuReplay.restart();
+      // `?record=menu` : une boucle entière est filmée, du fondu d'entrée au fondu de sortie.
+      if (menuReplay.finished) {
+        if (options.record === "menu" && capture?.recording) void capture.stop("menu");
+        menuReplay.restart();
+      }
       menuReplay.update(dt * MENU_DEMO.playbackRate);
       menuCamera(menuTime, menuPose);
       post.setFade(menuFade(menuReplay.playhead, menuReplay.duration));
@@ -258,7 +283,10 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
       world.update(replay.view, dt);
       audio.frame(replay.view, replay.events);
       hud.chant(replay.playhead);
-      if (replay.finished) setMode("won");
+      if (replay.finished) {
+        if (capture?.recording) void capture.stop("replay");
+        setMode("won");
+      }
     } else {
       // Départ, pause et fin de victoire : la partie est figée, le son aussi.
       audio.freeze(TIME.min);
@@ -291,6 +319,8 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
       menuTime = 0;
       setMode("menu");
       audio.playMenuMusic();
+      // `?record=menu` : la prise part du début de la démo (le fondu depuis le noir).
+      if (options.record === "menu") capture?.start();
     },
     enterRoom(): void {
       last = performance.now();
