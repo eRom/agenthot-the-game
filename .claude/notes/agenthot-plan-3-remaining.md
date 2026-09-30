@@ -59,4 +59,4 @@ Tout est dans `.superpowers/plan-3-proto/` (ignoré par git) :
 2. **Qualité « auto » limitée à 60 images par seconde** (ventilateur), « haute » sans limite. Recommandation : garder.
 3. **La cinématique garde son propre son** (volume musique), hors du graphe Web Audio. Recommandation : garder.
 4. **Nom du dépôt GitHub : `eRom/agenthot-the-game`** (tranché par Romain le 30/09). Nécessaire au 3c (crédits, balises de partage).
-5. **Domaine : `erom.cloud`** (tranché par Romain le 30/09 ; chez Hostinger, jamais utilisé ; racine ou sous-domaine à préciser). Nécessaire au 3c (URL absolue de l'image de partage).
+5. **Domaine : `agenthot.erom.cloud`** (tranché par Romain le 30/09 ; sous-domaine de `erom.cloud`, chez Hostinger, jamais utilisé ; la racine reste libre). Nécessaire au 3c (URL absolue de l'image de partage).
