@@ -7,3 +7,9 @@ _memory_/ONBOARD.md
 /graft/
 node_modules/
 dist/
+
+# Cinématique : prises du jeu, rendus et master (lourds, refaisables)
+videos/agenthot-intro/renders/
+videos/agenthot-intro/public/
+videos/agenthot-intro/assets/captures/
+videos/agenthot-intro/snapshots/

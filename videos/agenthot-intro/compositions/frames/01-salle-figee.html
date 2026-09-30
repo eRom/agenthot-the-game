@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- La head est ignorée par le runtime : tout ce qui doit vivre est dans le template. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face {
+          font-family: "Chakra Petch";
+          font-weight: 600;
+          font-style: normal;
+          src: url("assets/fonts/chakra-petch-600.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Martian Mono";
+          font-weight: 300 400;
+          font-style: normal;
+          src: url("assets/fonts/martian-mono-300-400.woff2") format("woff2");
+        }
+
+        #stage {
+          position: absolute;
+          inset: 0;
+          width: 1920px;
+          height: 1080px;
+          overflow: hidden;
+          background: #0d111b; /* void */
+        }
+
+        /* Prises : muettes, enfants directs de #stage, plein cadre. */
+        #stage .frame-video {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1920px;
+          height: 1080px;
+          object-fit: cover;
+          will-change: transform, opacity;
+        }
+        #g1_video {
+          transform-origin: 96% 80%; /* l'ennemi orange pris en l'air, au bord droit */
+          opacity: 0; /* état initial en CSS : la première image est le vide */
+        }
+        #g2_video {
+          transform-origin: 62% 51%; /* l'ennemi lointain */
+          opacity: 0;
+        }
+
+        /* Voile du menu du jeu (frame.md menu-veil) : le vide monte de la gauche. */
+        #veil {
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(
+              90deg,
+              rgba(13, 17, 27, 0.92) 0%,
+              rgba(13, 17, 27, 0.7) 38%,
+              rgba(13, 17, 27, 0.15) 70%,
+              transparent 100%
+            ),
+            linear-gradient(0deg, rgba(13, 17, 27, 0.55), transparent 30%);
+          z-index: 1;
+          opacity: 0.4; /* la salle reste bien visible : environ 35 % au bord gauche, presque rien à droite */
+          pointer-events: none;
+        }
+
+        /* Libellé de vitesse du temps (frame.md time-readout), coin bas gauche. */
+        #g1_readout {
+          position: absolute;
+          left: 72px;
+          bottom: 64px;
+          z-index: 4; /* au-dessus de toute prise et de tout voile */
+          display: inline-block;
+          padding: 8px 14px;
+          background: rgba(13, 17, 27, 0.78); /* void */
+          font-family: "Martian Mono", monospace;
+          font-weight: 400;
+          font-size: 18px;
+          line-height: 1.2;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #c9cbd0; /* world-2 */
+          white-space: pre;
+          opacity: 0;
+        }
+
+        /* Plaque Encre (frame.md ink-plate) : quatre couches, coins coupés à 45 degrés. */
+        #g1_plate {
+          position: absolute;
+          left: 160px;
+          top: 730px;
+          z-index: 3; /* la plaque Encre passe au-dessus de tout voile */
+          width: max-content;
+          height: 114px; /* une ligne : 30 + 54 + 30 */
+          opacity: 0;
+        }
+        #g1_plate .pl-fx {
+          position: absolute;
+          inset: 0;
+          filter: drop-shadow(10px 10px 0 #141a28); /* void-2, porté par un filtre : un clip-path coupe box-shadow ; le texte reste hors filtre */
+        }
+        #g1_plate .pl-layer {
+          position: absolute;
+        }
+        #g1_plate .pl-ink {
+          inset: 0;
+          background: #0a0c10;
+          clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+        }
+        #g1_plate .pl-face {
+          inset: 2px;
+          background: #ecebe7; /* world */
+          clip-path: polygon(0 0, calc(100% - 16.83px) 0, 100% 16.83px, 100% 100%, 16.83px 100%, 0 calc(100% - 16.83px));
+        }
+        /* Filet intérieur : 6,5 px à l'intérieur du trait, 1,5 px d'épaisseur. */
+        #g1_plate .pl-rule {
+          inset: 8.5px;
+          background: rgba(10, 12, 16, 0.25);
+          clip-path: polygon(0 0, calc(100% - 13.02px) 0, 100% 13.02px, 100% 100%, 13.02px 100%, 0 calc(100% - 13.02px));
+        }
+        #g1_plate .pl-core {
+          inset: 10px;
+          background: #ecebe7;
+          clip-path: polygon(0 0, calc(100% - 12.14px) 0, 100% 12.14px, 100% 100%, 12.14px 100%, 0 calc(100% - 12.14px));
+        }
+        #g1_plate .pl-text {
+          position: relative;
+          padding: 30px 38px 30px 44px;
+          font-family: "Chakra Petch", sans-serif;
+          font-weight: 600;
+          font-size: 46px;
+          line-height: 54px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #0a0c10; /* ink */
+          white-space: nowrap;
+        }
+        #g1_plate .pl-line {
+          display: block;
+          height: 54px;
+        }
+        #g1_l1 {
+          opacity: 0;
+        }
+        #g1_plate .ch {
+          opacity: 0;
+          white-space: pre;
+        }
+      </style>
+
+      <div
+        id="stage"
+        data-composition-id="01-salle-figee"
+        data-start="0"
+        data-duration="7.333"
+        data-width="1920"
+        data-height="1080"
+      >
+        <!-- g1 : la salle figée sort du vide (menu.mp4, source 0.0 vers 6.085, la fin sert au fondu croisé) -->
+        <video
+          id="g1_video"
+          class="clip frame-video"
+          src="assets/captures/menu.mp4"
+          muted
+          playsinline
+          preload="auto"
+          data-start="0"
+          data-duration="6.085"
+          data-media-start="0"
+          data-track-index="0"
+        ></video>
+
+        <!-- g2 : les ennemis qui visent (menu.mp4, source 16.0 vers 18.248, entre sur la grosse caisse à 5.085) -->
+        <video
+          id="g2_video"
+          class="clip frame-video"
+          src="assets/captures/menu.mp4"
+          muted
+          playsinline
+          preload="auto"
+          data-start="5.085"
+          data-duration="2.248"
+          data-media-start="16"
+          data-track-index="1"
+        ></video>
+
+        <div id="veil"></div>
+
+        <div id="g1_readout">TEMPS 3 %</div>
+
+        <div id="g1_plate">
+          <div class="pl-fx">
+            <div class="pl-layer pl-ink"></div>
+            <div class="pl-layer pl-face"></div>
+            <div class="pl-layer pl-rule" id="g1_rule"></div>
+            <div class="pl-layer pl-core"></div>
+          </div>
+          <div class="pl-text">
+            <span class="pl-line" id="g1_l1">LE TEMPS</span>
+            <span class="pl-line" id="g1_l2"
+              ><span class="ch">N</span><span class="ch">’</span><span class="ch">A</span><span class="ch">V</span
+              ><span class="ch">A</span><span class="ch">N</span><span class="ch">C</span><span class="ch">E</span
+              ><span class="ch"> </span><span class="ch">Q</span><span class="ch">U</span><span class="ch">E</span></span
+            >
+          </div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          var tl = gsap.timeline({ paused: true });
+          var ease = "power3.out"; /* approche cubic-bezier(0.2, 0.9, 0.2, 1), sans dépassement */
+
+          /* g1 : la salle sort du vide, pleine à la première mesure (1.138), une seule poussée lente vers l'ennemi. */
+          tl.set("#g1_video", { opacity: 0, scale: 1 }, 0); /* état de repos à t=0 : un seek n'importe où redonne la même image */
+          tl.set("#g2_video", { opacity: 0, scale: 1 }, 0);
+          tl.to("#g1_video", { opacity: 1, duration: 1.138, ease: "none" }, 0);
+          tl.to("#g1_video", { scale: 1.06, duration: 6.085, ease: "power1.inOut" }, 0);
+
+          /* Libellé : apparaît à 0 ms sur le premier charleston. */
+          tl.set("#g1_readout", { opacity: 1 }, 0.093);
+
+          /* La plaque atterrit sur la première mesure. */
+          tl.fromTo("#g1_plate", { opacity: 0, x: -36 }, { opacity: 1, x: 0, duration: 0.22, ease: ease }, 1.138);
+          tl.fromTo("#g1_l1", { opacity: 0 }, { opacity: 1, duration: 0.18, ease: ease }, 1.218);
+
+          /* g2 : fondu croisé lent sur la grosse caisse (5.085), poussée un cran plus vive vers l'ennemi lointain. */
+          tl.to("#g2_video", { opacity: 1, duration: 1.0, ease: "power1.inOut" }, 5.085);
+          tl.to("#g2_video", { scale: 1.1, duration: 2.248, ease: "power1.inOut" }, 5.085);
+
+          /* Seconde ligne : la plaque grandit vers le bas, puis la ligne se tape lettre à lettre (cascade Encre). */
+          tl.to("#g1_plate", { height: 168, duration: 0.2, ease: ease }, 5.085);
+          var chars = document.querySelectorAll("#g1_l2 .ch");
+          for (var i = 0; i < chars.length; i++) {
+            tl.set(chars[i], { opacity: 1 }, 5.085 + 0.16 + i * 0.032);
+          }
+
+          /* Le filet intérieur flashe en encre une fois sur la caisse claire (7.036), tension avant la coupe. */
+          tl.set("#g1_rule", { backgroundColor: "#0a0c10" }, 7.036);
+          tl.set("#g1_rule", { backgroundColor: "rgba(10, 12, 16, 0.25)" }, 7.136);
+
+          window.__timelines["01-salle-figee"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

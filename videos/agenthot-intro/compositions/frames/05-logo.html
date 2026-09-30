@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- La tête n'est que métadonnée : le runtime ne clone que le contenu du <template>. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        /* Polices locales de la charte (frame.md), aucune police distante. */
+        @font-face {
+          font-family: "Big Shoulders Display";
+          font-weight: 900;
+          src: url("assets/fonts/big-shoulders-display-900.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Big Shoulders Display";
+          font-weight: 800;
+          src: url("assets/fonts/big-shoulders-display-800.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Martian Mono";
+          font-weight: 300 400;
+          src: url("assets/fonts/martian-mono-300-400.woff2") format("woff2");
+        }
+
+        #stage {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1920px;
+          height: 1080px;
+          overflow: hidden;
+          background: #0d111b;
+        }
+
+        /* Prise du menu : salle figée à 3 %, muette, plein cadre. */
+        #g1_bg {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1920px;
+          height: 1080px;
+          object-fit: cover;
+          transform-origin: 0% 50%;
+        }
+
+        #g1 {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1920px;
+          height: 1080px;
+        }
+
+        /* Voile du menu (frame.md menu-veil) : le vide monte de la gauche. */
+        #g1_veil {
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(
+              90deg,
+              rgba(13, 17, 27, 0.92) 0%,
+              rgba(13, 17, 27, 0.7) 38%,
+              rgba(13, 17, 27, 0.15) 70%,
+              transparent 100%
+            ),
+            linear-gradient(0deg, rgba(13, 17, 27, 0.55), transparent 30%);
+        }
+
+        /* Cran de voile de l'accent : plus de vide à gauche, retombe avant le hold final. */
+        #g1_notch {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          background: linear-gradient(
+            90deg,
+            rgba(13, 17, 27, 0.5) 0%,
+            rgba(13, 17, 27, 0.36) 45%,
+            rgba(13, 17, 27, 0) 85%
+          );
+        }
+
+        /* Colonne de marque : alignée à gauche, centrée en hauteur, comme au menu du jeu. */
+        #g1_brand {
+          position: absolute;
+          left: 160px;
+          top: 0;
+          bottom: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 22px;
+        }
+
+        #g1_logo_block {
+          position: relative;
+          width: fit-content;
+        }
+
+        #g1_logo {
+          display: flex;
+          flex-direction: column;
+          font-family: "Big Shoulders Display", sans-serif;
+          font-weight: 900;
+          font-size: 190px;
+          line-height: 0.8;
+          letter-spacing: -0.01em;
+          text-transform: uppercase;
+          color: #ecebe7;
+        }
+
+        #g1_logo .g1_word {
+          display: block;
+          white-space: nowrap;
+        }
+
+        #g1_logo .g1_char {
+          display: inline-block;
+        }
+
+        /* HOT : invisible jusqu'à sa frappe, puis orange avec sa lueur (seule lueur de la vidéo). */
+        #g1_hot {
+          opacity: 0;
+          transform-origin: 0% 60%;
+          color: #d97757;
+          text-shadow: 0 0 28px rgba(217, 119, 87, 0.45);
+        }
+
+        #g1_shards {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+
+        #g1_shards i {
+          position: absolute;
+          display: block;
+          background: #d97757;
+          opacity: 0;
+          box-shadow: 0 0 16px rgba(217, 119, 87, 0.6);
+        }
+
+        #g1_credit {
+          font-family: "Martian Mono", monospace;
+          font-weight: 400;
+          font-size: 26px;
+          line-height: 1.2;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #c9cbd0;
+          white-space: nowrap;
+          /* Sous la boîte de police de HOT (descente de 40 px sous la ligne de base, hors de la boîte de ligne 0,8) + 28 px.
+             La marge négative du bas garde le logo à sa place : seule la position du crédit change. */
+          margin-top: 44px;
+          margin-bottom: -44px;
+        }
+
+        #g1_credit span {
+          display: inline-block;
+          opacity: 0;
+        }
+      </style>
+
+      <div
+        id="stage"
+        data-composition-id="05-logo"
+        data-start="0"
+        data-duration="4.241"
+        data-width="1920"
+        data-height="1080"
+      >
+        <video
+          id="g1_bg"
+          class="clip"
+          src="assets/captures/menu.mp4"
+          data-start="0"
+          data-duration="4.241"
+          data-media-start="22"
+          data-track-index="0"
+          muted
+          playsinline
+        ></video>
+
+        <div id="g1" data-track-index="1">
+          <div id="g1_veil"></div>
+          <div id="g1_notch"></div>
+
+          <div id="g1_brand">
+            <div id="g1_logo_block">
+              <h1 id="g1_logo" aria-label="AGENTHOT">
+                <span class="g1_word" id="g1_agent"
+                  ><span class="g1_char">A</span><span class="g1_char">G</span
+                  ><span class="g1_char">E</span><span class="g1_char">N</span
+                  ><span class="g1_char">T</span></span
+                >
+                <span class="g1_word" id="g1_hot"
+                  ><span class="g1_char">H</span><span class="g1_char">O</span
+                  ><span class="g1_char">T</span></span
+                >
+              </h1>
+              <div id="g1_shards" aria-hidden="true">
+                <i style="left: 96%; top: 8%; width: 16px; height: 16px; clip-path: polygon(50% 0, 100% 100%, 0 70%)"></i>
+                <i style="left: 104%; top: 30%; width: 9px; height: 9px; clip-path: polygon(0 0, 100% 40%, 30% 100%)"></i>
+                <i style="left: -8%; top: 62%; width: 12px; height: 12px; clip-path: polygon(40% 0, 100% 80%, 0 100%)"></i>
+                <i style="left: 88%; top: 92%; width: 22px; height: 22px; clip-path: polygon(50% 0, 100% 80%, 0 100%)"></i>
+                <i style="left: 58%; top: -10%; width: 7px; height: 7px; clip-path: polygon(0 20%, 100% 0, 60% 100%)"></i>
+                <i style="left: 18%; top: 104%; width: 10px; height: 10px; clip-path: polygon(30% 0, 100% 60%, 0 100%)"></i>
+              </div>
+            </div>
+            <p id="g1_credit"><span>Made</span> <span>with</span> <span>Claude</span> <span>Opus</span> <span>5.5</span></p>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          var END = 4.241; // durée du cadre : 22.059 → 26.3
+          var tl = gsap.timeline({ paused: true });
+
+          // Groupe unique : visible sur tout le cadre (le cadre s'ouvre sur la salle et le voile).
+          tl.set("#g1", { autoAlpha: 1 }, 0);
+
+          // AGENT (22.059, frappe SURGE) : les lettres tombent en cascade serrée, la dernière se pose ~0,2 s après la frappe.
+          tl.fromTo(
+            "#g1_agent .g1_char",
+            { y: -66, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.12, ease: "power3.out", stagger: 0.02 },
+            0,
+          );
+
+          // Accent (23.591 → 1.532) : le voile prend un cran, coupe nette ; il retombe doucement avant le DROP final
+          // pour que le hold soit exactement le menu du jeu.
+          tl.set("#g1_notch", { opacity: 1 }, 1.532);
+          tl.to("#g1_notch", { opacity: 0, duration: 0.94, ease: "none" }, 3.0);
+
+          // HOT (24.079 → 2.02) : une frappe à 0 ms, pas de rebond ; la lueur flashe puis retombe à sa valeur du menu.
+          tl.set("#g1_hot", { opacity: 1, scale: 1.12, textShadow: "0 0 64px rgba(217,119,87,0.95)" }, 2.02);
+          tl.to(
+            "#g1_hot",
+            { scale: 1, textShadow: "0 0 28px rgba(217,119,87,0.45)", duration: 0.22, ease: "power4.out" },
+            2.02,
+          );
+          // Secousse de la salle, trois images, sur la même frappe.
+          tl.fromTo(
+            "#g1_bg",
+            { scale: 1.014 },
+            { scale: 1, duration: 0.1, ease: "power3.out", immediateRender: false },
+            2.02,
+          );
+
+          // Éclats : un par coup de la roulée (5), le sixième sur le DROP final (26.0 → 3.941), comme les six du menu.
+          // Chaque éclat dérive comme au menu (14 px, -22 px, 150° sur sa durée) ; la phase finale est celle où le menu
+          // prend le relais (|delay| / durée), la dérive en amont est extrapolée à rebours pour un raccord sans saut.
+          var shards = [
+            { el: 0, at: 2.136, dur: 17, delay: 3 },
+            { el: 3, at: 2.299, dur: 23, delay: 12 },
+            { el: 2, at: 2.415, dur: 19, delay: 1 },
+            { el: 1, at: 2.624, dur: 13, delay: 8 },
+            { el: 5, at: 2.786, dur: 15, delay: 9 },
+            { el: 4, at: 3.941, dur: 11, delay: 5 },
+          ];
+          var shardEls = document.querySelectorAll("#g1_shards i");
+          shards.forEach(function (s) {
+            var el = shardEls[s.el];
+            var pEnd = s.delay / s.dur;
+            var pStart = pEnd - (END - s.at) / s.dur;
+            tl.fromTo(
+              el,
+              { x: 14 * pStart, y: -22 * pStart, rotation: 150 * pStart },
+              { x: 14 * pEnd, y: -22 * pEnd, rotation: 150 * pEnd, duration: END - s.at, ease: "none" },
+              s.at,
+            );
+            tl.fromTo(
+              el,
+              { scale: 0.3, opacity: 0 },
+              { scale: 1, opacity: 0.85, duration: 0.12, ease: "power3.out" },
+              s.at,
+            );
+          });
+
+          // Crédit (25.124 → 3.065) : cascade Encre, mot par mot, glissant depuis la gauche comme les entrées du menu.
+          tl.fromTo(
+            "#g1_credit span",
+            { x: -28, opacity: 0 },
+            { x: 0, opacity: 1, duration: 0.24, ease: "power3.out", stagger: 0.06 },
+            3.065,
+          );
+
+          // Hold (DROP 26.0 → 3.941 jusqu'à 4.241) : plus rien ne bouge d'autre que la dérive des éclats. Pas de fondu au noir.
+          window.__timelines["05-logo"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

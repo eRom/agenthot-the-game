@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Le head est ignoré par le runtime : tout ce qui doit vivre est dans l'élément template. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        /* Polices locales de la charte (frame.md), aucune police distante. */
+        @font-face {
+          font-family: "Chakra Petch";
+          font-weight: 600;
+          src: url("assets/fonts/chakra-petch-600.woff2") format("woff2");
+        }
+
+        /* Cadre 4 : le souffle. Vide pur, une plaque Encre construite ligne par ligne, tenue, effacée. */
+        #stage {
+          position: relative;
+          width: 1920px;
+          height: 1080px;
+          overflow: hidden;
+          background: #0d111b; /* void */
+        }
+
+        #stage * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        /* La salle figée dérive derrière la plaque : prise muette, voile void 60 % pour que la carte reste le héros. */
+        #g1_room {
+          width: 1920px;
+          height: 1080px;
+          object-fit: cover;
+          transform-origin: 50% 50%;
+        }
+
+        #g1_veil {
+          position: absolute;
+          inset: 0;
+          background: rgba(13, 17, 27, 0.6);
+        }
+
+        /* Colonne du logo à 160 px du bord, comme au menu du jeu ; la plaque garde la place de la carte du cadre 1. */
+        #g1_plate {
+          position: absolute;
+          left: 160px;
+          bottom: 190px;
+          width: 750px;
+          height: 200px;
+          /* Un clip-path coupe box-shadow : l'ombre de la plaque passe par un filtre (frame.md, ink-plate). */
+          filter: drop-shadow(10px 10px 0 #141a28);
+        }
+
+        #g1_reveal {
+          position: absolute;
+          inset: 0;
+          clip-path: inset(0 100% 0 0);
+        }
+
+        #g1_shape {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 750px;
+          height: 200px;
+        }
+
+        #g1_lines {
+          position: absolute;
+          inset: 0;
+          padding-left: 60px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          font-family: "Chakra Petch", sans-serif;
+          font-weight: 600;
+          font-size: 46px;
+          line-height: 1.15;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #0a0c10; /* ink */
+          white-space: nowrap;
+        }
+
+        #g1_lines .g1_line {
+          display: block;
+          height: 53px;
+        }
+
+        #g1_lines .g1_ch {
+          display: inline-block;
+          opacity: 0;
+        }
+
+        #g1_lines .g1_sp {
+          display: inline-block;
+          width: 0.3em;
+        }
+      </style>
+
+      <div id="stage" data-composition-id="04-souffle" data-start="0" data-duration="2.601" data-width="1920" data-height="1080">
+        <!-- g1 : la plaque Encre revient sur la salle qui dérive (19.458 → 22.059) -->
+        <video
+          id="g1_room"
+          class="clip"
+          src="assets/captures/menu.mp4"
+          data-start="0"
+          data-duration="2.601"
+          data-track-index="0"
+          data-media-start="8.0"
+          muted
+          playsinline
+        ></video>
+        <div id="g1_veil"></div>
+        <div id="g1_plate">
+          <div id="g1_reveal">
+            <svg id="g1_shape" viewBox="0 0 750 200" width="750" height="200" aria-hidden="true">
+              <polygon points="0,0 732,0 750,18 750,200 18,200 0,182" fill="#0a0c10" />
+              <polygon points="2,2 731.17,2 748,18.83 748,198 18.83,198 2,181.17" fill="#ecebe7" />
+              <polygon
+                points="8.5,8.5 728.48,8.5 741.5,21.52 741.5,191.5 21.52,191.5 8.5,178.48"
+                fill="none"
+                stroke="#0a0c10"
+                stroke-opacity="0.25"
+                stroke-width="1"
+              />
+            </svg>
+            <div id="g1_lines">
+              <span id="g1_line1" class="g1_line" data-text="UN FPS"></span>
+              <span id="g1_line2" class="g1_line" data-text="DANS TON NAVIGATEUR"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          // Chaque caractère devient un élément pour la cascade Encre ; construit de façon synchrone et déterministe.
+          function split(lineId) {
+            var line = document.getElementById(lineId);
+            var text = line.getAttribute("data-text");
+            for (var i = 0; i < text.length; i++) {
+              var c = document.createElement("span");
+              if (text.charAt(i) === " ") {
+                c.className = "g1_sp";
+              } else {
+                c.className = "g1_ch";
+                c.textContent = text.charAt(i);
+              }
+              line.appendChild(c);
+            }
+            return line.querySelectorAll(".g1_ch");
+          }
+
+          var chars1 = split("g1_line1");
+          var chars2 = split("g1_line2");
+
+          // Temps local du cadre = temps piste - 19.458.
+          // 19.853 -> 0.395 (plaque + ligne 1) ; 20.271 -> 0.813 (ligne 2) ; 21.223 -> 1.765 (début du roulement)
+          // 21.571 -> 2.113 (fin du roulement) ; la sortie finit avant 22.0 (2.542).
+          var tl = gsap.timeline({ paused: true });
+          var IN_EASE = "power4.out"; // approche cubic-bezier(0.2, 0.9, 0.2, 1), sans dépassement
+          var OUT_EASE = "power3.in";
+
+          // Poussée lente et linéaire de la salle, du premier au dernier plan du cadre (transform seul, la visibilité reste au runtime).
+          tl.fromTo("#g1_room", { scale: 1 }, { scale: 1.05, duration: 2.601, ease: "none" }, 0);
+
+          // Construction : la plaque s'ouvre de gauche à droite, puis les lignes tombent en cascade lettre à lettre.
+          tl.fromTo("#g1_reveal", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.22, ease: IN_EASE }, 0.395);
+          tl.fromTo(chars1, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.22, ease: IN_EASE, stagger: 0.03 }, 0.44);
+          tl.fromTo(chars2, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.22, ease: IN_EASE, stagger: 0.02 }, 0.813);
+
+          // Tenue immobile : rien ne bouge de la fin de la cascade (~1.4) jusqu'au roulement (1.765).
+
+          // Effacement en cascade sur le roulement : ligne 2, ligne 1, puis la plaque, dans l'ordre inverse de la construction.
+          tl.to(chars2, { opacity: 0, y: 18, duration: 0.2, ease: OUT_EASE, stagger: 0.008 }, 1.765);
+          tl.to(chars1, { opacity: 0, y: 18, duration: 0.2, ease: OUT_EASE, stagger: 0.008 }, 1.997);
+          tl.to("#g1_reveal", { clipPath: "inset(0 0% 0 100%)", duration: 0.3, ease: OUT_EASE }, 2.113);
+
+          window.__timelines = window.__timelines || {};
+          window.__timelines["04-souffle"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

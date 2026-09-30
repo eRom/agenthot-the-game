@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Le head est ignoré par le runtime : tout ce qui compte vit dans le <template>. -->
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face {
+          font-family: "Big Shoulders Display";
+          font-weight: 900;
+          src: url("assets/fonts/big-shoulders-display-900.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Martian Mono";
+          font-weight: 300 400;
+          src: url("assets/fonts/martian-mono-300-400.woff2") format("woff2");
+        }
+
+        #stage {
+          position: absolute;
+          inset: 0;
+          width: 1920px;
+          height: 1080px;
+          overflow: hidden;
+          background: #0d111b;
+        }
+
+        /* Prises : plein cadre, muettes, cadrées comme le jeu. */
+        #stage .shot {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 1920px;
+          height: 1080px;
+          object-fit: cover;
+        }
+
+        /* Le gel pousse vers la balle (x 55 %, y 50 % de l'image). */
+        #g2_freeze {
+          transform-origin: 55.5% 50%;
+        }
+
+        .g1_layer {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          visibility: hidden;
+        }
+
+        /* Voile de vide 40 % sous « QUAND TU BOUGES » (footage-dim). */
+        #g1_veil_run {
+          background: rgba(13, 17, 27, 0.4);
+        }
+
+        /* Voile du coin haut gauche sous « FIGÉ » : la balle reste à nu. */
+        #g1_veil_freeze {
+          background: linear-gradient(
+            135deg,
+            rgba(13, 17, 27, 0.92) 0%,
+            rgba(13, 17, 27, 0.78) 26%,
+            rgba(13, 17, 27, 0.3) 46%,
+            transparent 62%
+          );
+        }
+
+
+        #g1_slam {
+          position: absolute;
+          left: 0;
+          width: 1920px;
+          top: 690px;
+          z-index: 50;
+          text-align: center;
+          white-space: nowrap;
+          font-family: "Big Shoulders Display", sans-serif;
+          font-weight: 900;
+          font-size: 240px;
+          line-height: 0.8;
+          letter-spacing: -0.01em;
+          text-transform: uppercase;
+          color: #ecebe7;
+          opacity: 0;
+          visibility: hidden;
+          transform-origin: 50% 60%;
+        }
+
+        #g1_fige {
+          position: absolute;
+          left: 96px;
+          top: 128px;
+          z-index: 50;
+          white-space: nowrap;
+          font-family: "Big Shoulders Display", sans-serif;
+          font-weight: 900;
+          font-size: 380px;
+          line-height: 0.8;
+          letter-spacing: -0.01em;
+          text-transform: uppercase;
+          color: #ecebe7;
+          opacity: 0;
+          visibility: hidden;
+        }
+
+        /* Libellé de temps (règle commune des cadres 1 à 3) : petite plaque void, au-dessus de tout sauf du titre. */
+        .g1_readout {
+          position: absolute;
+          left: 72px;
+          bottom: 64px;
+          z-index: 40;
+          display: inline-block;
+          padding: 8px 14px;
+          background: rgba(13, 17, 27, 0.78);
+          white-space: nowrap;
+          font-family: "Martian Mono", monospace;
+          font-weight: 400;
+          font-size: 18px;
+          line-height: 1.2;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #c9cbd0;
+          opacity: 0;
+          visibility: hidden;
+        }
+      </style>
+
+      <div
+        id="stage"
+        data-composition-id="02-bouge-gel"
+        data-start="0"
+        data-duration="4.741"
+        data-width="1920"
+        data-height="1080"
+      >
+        <!-- g1 : coupe sèche sur l'accélération (7.333), coup de grosse caisse (8.545), début du roulement (9.056), fin du roulement (10.077), gel à 11.0 -->
+        <video
+          id="g1_clip_a"
+          class="clip shot"
+          src="assets/captures/replay-3.mp4"
+          muted
+          playsinline
+          data-start="0"
+          data-duration="1.212"
+          data-media-start="0"
+          data-track-index="0"
+        ></video>
+        <video
+          id="g1_clip_b"
+          class="clip shot"
+          src="assets/captures/replay-4.mp4"
+          muted
+          playsinline
+          data-start="1.212"
+          data-duration="0.511"
+          data-media-start="0.7"
+          data-track-index="0"
+        ></video>
+        <video
+          id="g1_clip_c"
+          class="clip shot"
+          src="assets/captures/replay-3.mp4"
+          muted
+          playsinline
+          data-start="1.723"
+          data-duration="1.021"
+          data-media-start="2.414"
+          data-track-index="0"
+        ></video>
+        <video
+          id="g1_clip_d"
+          class="clip shot"
+          src="assets/captures/replay-1.mp4"
+          muted
+          playsinline
+          data-start="2.744"
+          data-duration="0.923"
+          data-media-start="0.927"
+          data-track-index="0"
+        ></video>
+        <!-- Gel : l'image source à 1.85 s, tenue seek-safe (still ffmpeg). -->
+        <img
+          id="g2_freeze"
+          class="clip shot"
+          src="assets/captures/stills/replay-1-1p85.png"
+          alt=""
+          data-start="3.667"
+          data-duration="1.074"
+          data-track-index="0"
+        />
+
+        <div id="g1_veil_run" class="g1_layer"></div>
+        <div id="g1_veil_freeze" class="g1_layer"></div>
+
+        <div id="g1_slam">QUAND TU BOUGES</div>
+        <div id="g1_fige">FIGÉ</div>
+
+        <div id="g1_readout_run" class="g1_readout">TEMPS 100 %</div>
+        <div id="g1_readout_stop" class="g1_readout">TEMPS 0 %</div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        // Temps local du cadre : piste - 7.333.
+        const T_FREEZE = 3.667; // 11.0, le silence tombe
+        const T_SLAM_OUT = 3.567; // 10.9
+        const T_END = 4.741;
+
+        // Voiles : bas du cadre en permanence, voile 40 % pendant la prise animée, voile haut gauche pendant le gel.
+        tl.set("#g1_veil_run", { autoAlpha: 1 }, 0);
+        tl.set("#g1_veil_run", { autoAlpha: 0 }, T_FREEZE);
+        tl.set("#g1_veil_freeze", { autoAlpha: 1 }, T_FREEZE);
+
+        // Libellé de temps : bascules à 0 ms (7.333 puis 11.0).
+        tl.set("#g1_readout_run", { autoAlpha: 1 }, 0);
+        tl.set("#g1_readout_run", { autoAlpha: 0 }, T_FREEZE);
+        tl.set("#g1_readout_stop", { autoAlpha: 1 }, T_FREEZE);
+
+        // QUAND TU BOUGES : claque sur l'accélération (7.333), sans dépassement, sort à 10.9.
+        tl.set("#g1_slam", { autoAlpha: 1 }, 0);
+        tl.fromTo("#g1_slam", { scale: 1.12 }, { scale: 1, duration: 0.12, ease: "power4.out" }, 0);
+        tl.set("#g1_slam", { autoAlpha: 0 }, T_SLAM_OUT);
+
+        // FIGÉ : apparaît immobile, à 0 ms, au début du silence.
+        tl.set("#g1_fige", { autoAlpha: 1 }, T_FREEZE);
+
+        // Pendant le silence, une seule poussée lente vers la balle, rien d'autre ne bouge.
+        tl.fromTo("#g2_freeze", { scale: 1 }, { scale: 1.08, duration: T_END - T_FREEZE, ease: "none" }, T_FREEZE);
+
+        tl.seek(0);
+        window.__timelines["02-bouge-gel"] = tl;
+      </script>
+    </template>
+  </body>
+</html>
