@@ -10,6 +10,14 @@ dist/
 # Lien vers le projet Vercel et site construit par `vercel build` (identifiants locaux, jamais commités)
 .vercel/
 
+# Réglages locaux de Claude Code et fichiers d'outils (propres à la machine, jamais publiés)
+.claude/helpers/
+.claude/skills/
+.claude/settings.json
+.claude/settings.local.json
+.mcp.json
+.ignore
+
 # Cinématique : prises du jeu, rendus et master (lourds, refaisables)
 videos/agenthot-intro/renders/
 videos/agenthot-intro/public/

@@ -33,6 +33,20 @@ AGENTHOT est une vitrine technique de Claude Opus 5.5. Le code, les plans et les
 - **Images :** l'image de partage et la vignette de la salle 1 sont des captures du jeu. La vignette de la salle 2 vient de Nano Banana 2. La cinématique est montée avec Hyperframes, à partir de séquences filmées par le jeu lui-même.
 - **Outils :** Vite, TypeScript, bun.
 
+## Making-of
+
+Ce dépôt montre tout le chantier, pas seulement le résultat.
+
+| Dossier | Ce qu'on y lit |
+| :--- | :--- |
+| `docs/superpowers/specs/` | La spec : ce que le jeu doit faire, et pourquoi |
+| `docs/superpowers/plans/` | Les plans, tâche par tâche, avec le code essayé avant d'être écrit |
+| `docs/superpowers/reports/` | Les revues de code et les décisions prises en route |
+| `.claude/notes/` | Les notes de reprise et les pièges rencontrés |
+| `assets/ledger.jsonl` | Chaque génération payante (musiques, images), avec son prix |
+
+Le code, les plans et les revues ont été écrits par Claude, dans Claude Code : Opus 5.5 au pilotage, Sonnet 5.5 à l'exécution. eRom a donné la direction, joué chaque version et tranché.
+
 ## Lancer en local
 
 ```bash
