@@ -1,11 +1,11 @@
 // Crédits (spec 4.3, AC-15) : la ligne exacte donnée par Romain, puis les tokens et le coût API estimé.
-// Mesure du 2026-09-30 à 18 h 12, toutes sessions du projet, sous-agents compris :
+// Mesure du 2026-09-30 à 19 h 44, toutes sessions du projet, sous-agents compris :
 //   zsh scripts/count-tokens.sh ~/.claude/projects/*claudehot*
 // À relancer juste avant la mise en ligne : chaque session de plus s'ajoute au total.
 export const CREDITS = {
   repoUrl: "https://github.com/eRom/agenthot-the-game",
-  tokens: 979_282_748,
-  apiCostUsd: 384.71,
+  tokens: 1_120_605_292,
+  apiCostUsd: 441.05,
 } as const;
 
 export interface CreditsData {
