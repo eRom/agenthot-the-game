@@ -1,5 +1,12 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
+## Mise à jour du 2026-09-30 à 15:45 (prime sur le reste de la note)
+- **Plan 3c écrit et prouvé, mis de côté par Romain** (« on va le tenir au chaud, j'ai d'autres modifs à faire »). Pas exécuté. `docs/superpowers/plans/2026-09-29-agenthot-plan-3c-perf-share-launch.md`, 14 tâches, 279 → 308 tests au prototype.
+- **Avant de l'exécuter un jour :** il a été prouvé sur `main` à `cbc015c`. Si le code a bougé depuis, ses diffs peuvent ne plus s'appliquer : le rejouer d'abord avec `.claude/notes/agenthot-plan-tools/` (prototype local, ignoré par git : `.superpowers/plan-3c-proto/`), et recompter les tokens des crédits.
+- Dépôt GitHub renommé `eRom/agenthot-the-game` (privé, vide, `origin` à jour). Rien poussé, rien déployé, aucun DNS.
+- À trancher à la porte du push (tâche 11 du 3c) : dépôt public ou privé.
+- **Prochaine étape : les modifications de Romain** (à préciser par lui), puis le 3c.
+
 ## Mise à jour du 2026-09-30 à 13:30 (prime sur le reste de la note)
 - **Plan 3b exécuté, relu et fusionné** dans `main` (`fd71576`, avance rapide, 14:47). Rien poussé. `bun test` : 279 verts. Détail et dépenses : `.claude/notes/agenthot-plan-3-remaining.md` (en-tête du 30/09 13:30).
 - Validé par Romain : boucle du menu, intro, images, plan de la cinématique, cinématique finale (après 3 retours : action calée sur 7,33 s, plus aucune image fixe sauf « FIGÉ »).
