@@ -17,6 +17,8 @@ dist/
 .claude/settings.local.json
 .mcp.json
 .ignore
+# Variables d'environnement locales (clés) : jamais publiées
+.env*
 
 # Cinématique : prises du jeu, rendus et master (lourds, refaisables)
 videos/agenthot-intro/renders/
