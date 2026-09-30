@@ -101,12 +101,16 @@ export class ShatterSystem {
     for (const s of this.shards) {
       if (!s.active || s.resting) continue;
       const r = s.size * 0.5;
-      s.vel.y -= SHATTER.gravity * dt;
+      // Chute exacte (parabole) : la position d'arrivée ne dépend pas de la taille du pas, donc le jeu (petits pas
+      // au ralenti) et le replay (un pas par image) posent les éclats au même endroit.
+      const vy0 = s.vel.y;
+      // Durée parcourue dans ce pas : tout le pas, ou jusqu'au sol s'il est touché en route. Le sol borne ainsi le
+      // trajet avant le balayage (sur un grand pas, la fin du pas passait sous le bas des baies posées au sol).
+      const floorHit = s.pos.y + vy0 * dt - 0.5 * SHATTER.gravity * dt * dt < r;
+      const span = floorHit ? floorContactTime(s.pos.y - r, vy0, dt) : dt;
+      const y = floorHit ? r : s.pos.y + vy0 * dt - 0.5 * SHATTER.gravity * dt * dt;
+      set(next, s.pos.x + s.vel.x * span, y, s.pos.z + s.vel.z * span);
       s.angle += s.angVel * dt;
-      set(next, s.pos.x + s.vel.x * dt, s.pos.y + s.vel.y * dt, s.pos.z + s.vel.z * dt);
-      // Le sol borne le trajet avant le balayage : sur un grand pas (à-coup d'image au replay), la fin du pas
-      // passait sous le sol, donc sous le bas des boîtes posées au sol, et l'éclat se figeait dans une baie.
-      if (next.y < r) next.y = r;
 
       // Premier contact du trajet avec une boîte active (balayage : rien ne traverse un mur mince).
       let bestT = 2;
@@ -134,28 +138,30 @@ export class ShatterSystem {
 
       if (embedded >= 0) {
         // Sorti de force par la face la plus proche : il ne reste jamais dans une boîte.
+        s.vel.y = vy0 - SHATTER.gravity * dt;
         pushOut(s, boxes[embedded]!, r);
         continue;
       }
       if (bestBox < 0) {
         set(s.pos, next.x, next.y, next.z);
+        // Vitesse à l'instant du contact avec le sol (ou en fin de pas) : le rebond ne dépend pas du pas.
+        s.vel.y = vy0 - SHATTER.gravity * span;
       } else if (bestAxis === 1 && bestSign > 0) {
         // Arrivée par le dessus (passerelle, haut d'une baie) : même règle que le sol, à la hauteur de la boîte.
         lerp(s.pos, s.pos, next, bestT);
         s.pos.y = boxes[bestBox]!.max.y + r;
+        s.vel.y = vy0 - SHATTER.gravity * span * bestT;
         land(s);
         continue;
       } else {
         // Face latérale ou dessous : un peu avant le contact, puis la vitesse sur cet axe se renverse, amortie.
         lerp(s.pos, s.pos, next, Math.max(0, bestT - SHATTER.contactBackoff));
+        s.vel.y = vy0 - SHATTER.gravity * span * bestT;
         reflect(s, bestAxis);
         continue;
       }
-      // Sol.
-      if (s.pos.y <= r && s.vel.y < 0) {
-        s.pos.y = r;
-        land(s);
-      }
+      // Sol : touché pendant ce pas (décidé une fois, avant le balayage, sans comparer des flottants arrondis).
+      if (floorHit && s.vel.y <= 0) land(s);
     }
   }
 
@@ -209,6 +215,14 @@ function cappedImpact(impactVel: Vec3): void {
   set(shareVel, shareVel.x * k, shareVel.y * k, shareVel.z * k);
 }
 
+// Instant (s, dans [0, dt]) où un éclat à `height` au-dessus de sa position de repos, de vitesse verticale `vy`,
+// touche le sol en chute libre : racine positive de height + vy·t − g·t²/2 = 0.
+function floorContactTime(height: number, vy: number, dt: number): number {
+  if (height <= 0) return 0;
+  const t = (vy + Math.sqrt(vy * vy + 2 * SHATTER.gravity * height)) / SHATTER.gravity;
+  return Math.min(dt, t);
+}
+
 // Vrai si le centre d'un éclat de rayon `r` est strictement dans la boîte gonflée de `r` (en surface : faux).
 function isStrictlyInside(p: Vec3, box: Aabb, r: number): boolean {
   return (
@@ -250,7 +264,8 @@ function pushOut(s: Shard, box: Aabb, r: number): void {
   const p = s.pos;
   const left = p.x - (box.min.x - r);
   const right = box.max.x + r - p.x;
-  const below = p.y - (box.min.y - r);
+  // Une boîte posée au sol n'a pas de sortie par-dessous : elle mènerait sous le sol (latent en salle 1, plan 2 M3).
+  const below = box.min.y - r >= r ? p.y - (box.min.y - r) : Number.POSITIVE_INFINITY;
   const above = box.max.y + r - p.y;
   const back = p.z - (box.min.z - r);
   const front = box.max.z + r - p.z;
