@@ -1,6 +1,12 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
-## Mise à jour du 2026-09-30 à 20:12 (prime sur le reste de la note)
+## Mise à jour du 2026-09-30 à 20:30 (prime sur le reste de la note)
+- **Recette en ligne validée par Romain** (« 1. ok 2. ok 3. ok 4. ok ») : Safari, une partie, la carte dans iMessage et une autre messagerie, le téléphone. Fiche JSON-LD : 0 erreur au validateur de Schema.org.
+- **Google et Bing : faits par Romain** (« fait et ok ») : sitemap déclaré dans Search Console (propriété `erom.cloud`, déjà vérifiée par un TXT), import dans Bing Webmaster Tools.
+- **IndexNow envoyé** sur son « go indexnow » (20:29) : `https://api.indexnow.org/indexnow: 202 Accepted`.
+- **Jeton WebMCP en ligne** : le premier était un jeton « tiers » (refusé dans un meta d'après la doc de Chrome) ; Romain en a pris un second, sans tiers (origine `https://agenthot.erom.cloud:443`, expire le **2027-03-30**, à renouveler sur developer.chrome.com/origintrials). Posé dans `index.html` (`c131047`), redéployé sur son « go redeploy » (déploiement `dpl_BhePGAMBeiZSv2Nz5ecDrLqc3nKv`). Contrôle en ligne : all good ; CNAME juste sur les deux serveurs de la zone.
+
+## Mise à jour du 2026-09-30 à 20:12
 - **AGENTHOT est en ligne à https://agenthot.erom.cloud/** (porte 3, « go domaine » à 20:05). CNAME `agenthot` → `e7bee4fcc0c8a189.vercel-dns-017.com` chez Hostinger ; certificat Let's Encrypt jusqu'au 2026-12-29 (renouvelé par Vercel) ; http redirige en 308. Contrôle en ligne complet : all good.
 - **Reste :** la tâche 13b (trois gestes de Romain, chacun sur son go : jeton d'origin trial WebMCP, Search Console et Bing, envoi IndexNow) et la tâche 14 (recette en ligne : Safari, une partie, la carte dans iMessage et une autre messagerie, téléphone). Les commits de notes depuis `60c4deb` sont locaux : ils partent au prochain push, sur un go.
 
