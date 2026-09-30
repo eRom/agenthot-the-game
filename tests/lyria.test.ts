@@ -235,4 +235,20 @@ describe("génération musicale : garde-fous avant un appel payant (plan 2, corr
     expect(await generateTrack(OPTIONS, io)).toEqual({ outcome: "no-api-key", exitCode: 1 });
     expect(events).toEqual([]);
   });
+
+  test("un morceau de la cinématique s'écrit dans son dossier, hors de ce que le jeu sert (plan 3b)", async () => {
+    const { io, events, ledger } = fakeIo();
+    const intro = { ...OPTIONS, track: "intro", dir: "assets/audio" };
+    expect(await generateTrack(intro, io)).toEqual({ outcome: "written", exitCode: 0 });
+    expect(events).toContain("write:assets/audio/intro.mp3");
+    expect(events.some((e) => e.startsWith("write:public/audio/"))).toBe(false);
+    expect(JSON.parse(ledger[0]!).output).toBe("assets/audio/intro.mp3");
+  });
+
+  test("le fichier existant est cherché dans le dossier du morceau", async () => {
+    const intro = { ...OPTIONS, track: "intro", dir: "assets/audio" };
+    const { io, events } = fakeIo({ existing: ["assets/audio/intro.mp3"] });
+    expect(await generateTrack(intro, io)).toEqual({ outcome: "exists", exitCode: 1 });
+    expect(events).toEqual([]);
+  });
 });

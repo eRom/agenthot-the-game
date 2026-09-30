@@ -144,6 +144,8 @@ export interface GenerationOptions {
   // Faux : essai à blanc, aucun appel. Vrai : appel réel et facturé.
   pay: boolean;
   overwrite: boolean;
+  // Dossier du morceau : public/audio pour ceux que le jeu charge (par défaut), un autre pour la cinématique.
+  dir?: string;
 }
 
 export type Outcome =
@@ -173,7 +175,8 @@ export async function generateTrack(opts: GenerationOptions, io: GenerationIo): 
   if (!canAfford(ledgerText, LYRIA.ledgerTool, LYRIA.costUsd, LYRIA.budgetUsd)) return overBudget();
 
   const body: LyriaBody = { model: LYRIA.model, input: prompt, response_format: { type: "audio" } };
-  const mp3Path = `public/audio/${track}.mp3`;
+  const dir = opts.dir ?? "public/audio";
+  const mp3Path = `${dir}/${track}.mp3`;
   const alreadyThere = await io.exists(mp3Path);
   io.info(`track ${track} · spent ${spent.toFixed(2)} $ of ${LYRIA.budgetUsd} $ · this call ${LYRIA.costUsd} $`);
   if (!opts.pay) {
@@ -210,7 +213,7 @@ export async function generateTrack(opts: GenerationOptions, io: GenerationIo): 
     parsed = false;
   }
   const audio = parsed ? findAudio(json) : null;
-  const output = audio ? `public/audio/${track}.${audioExtension(audio.mimeType)}` : rawPath;
+  const output = audio ? `${dir}/${track}.${audioExtension(audio.mimeType)}` : rawPath;
 
   // HTTP 2xx : l'appel est facturé, même sans audio exploitable. Journal d'abord, fichiers ensuite.
   let ledgerError: unknown;
@@ -246,6 +249,6 @@ export async function generateTrack(opts: GenerationOptions, io: GenerationIo): 
   }
   await io.writeFile(output, Buffer.from(audio.data, "base64"));
   io.info(`wrote ${output} (${audio.mimeType}) · ledger ${(spent + LYRIA.costUsd).toFixed(2)} $`);
-  if (!output.endsWith(".mp3")) io.warn(`the game loads /audio/${track}.mp3: convert ${output} before playing`);
+  if (!output.endsWith(".mp3")) io.warn(`${mp3Path} is expected: convert ${output} before using it`);
   return { outcome: "written", exitCode: 0 };
 }
