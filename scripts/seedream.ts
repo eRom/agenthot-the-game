@@ -128,7 +128,11 @@ export async function generateImage(
   if (!canAfford(ledgerText, SEEDREAM.ledgerTool, estimate, SEEDREAM.budgetUsd)) return overBudget();
 
   const response = await io.callApi(body);
-  const rawPath = `.superpowers/seedream-${opts.name}-raw.json`;
+  // Un chemin par appel : la réponse brute d'un appel facturé sans image est la seule copie de la réponse payée,
+  // un second appel (même une erreur 402) ne doit pas la réécrire.
+  const now = io.now();
+  const stamp = now.toISOString().replace(/[:.]/g, "-");
+  const rawPath = `.superpowers/seedream-${opts.name}-raw-${stamp}.json`;
   let json: unknown = null;
   try {
     json = JSON.parse(response.text);
@@ -141,7 +145,7 @@ export async function generateImage(
   // 2xx : facturé (402, 429 et 502 ne le sont pas, brief section 2). Journal d'abord.
   if (response.ok) {
     const cost = billedCost(json, opts.spec.resolution);
-    const entry = { date: io.now().toISOString(), tool: SEEDREAM.ledgerTool, model: SEEDREAM.model, prompt: opts.spec.prompt, output, costUsd: cost };
+    const entry = { date: now.toISOString(), tool: SEEDREAM.ledgerTool, model: SEEDREAM.model, prompt: opts.spec.prompt, output, costUsd: cost };
     try {
       await io.appendLedgerLine(`${JSON.stringify(entry)}\n`);
     } catch (error) {

@@ -20,6 +20,12 @@ for q in 3 4 5 6 8 10; do
   size=$(stat -f %z "$ROOT/$OUT")
   (( size < 300000 )) && break
 done
+# Aucun palier n'a suffi : on échoue plutôt que de livrer une image trop lourde.
+if (( size >= 300000 )); then
+  echo "still over 300 KB: $size bytes" >&2
+  trash "$WORK"
+  exit 1
+fi
 ffprobe -v error -show_entries stream=width,height -of csv=p=0 "$ROOT/$OUT"
 echo "$OUT: $size bytes (q=$q)"
 trash "$WORK"

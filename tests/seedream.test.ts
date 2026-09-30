@@ -37,6 +37,8 @@ describe("images Seedream : requête et réponse (brief plan 3, section 2)", () 
 describe("images Seedream : garde-fous avant un appel payant", () => {
   const IMAGE_RESPONSE = JSON.stringify({ data: [{ b64_json: "QUJD", media_type: "image/png" }], usage: { cost: 0.09 } });
   const OK = { status: 200, ok: true, text: IMAGE_RESPONSE };
+  // Chemin de la réponse brute pour l'horloge figée du faux client (2026-09-30T12:00:00Z), « : » et « . » remplacés.
+  const RAW_PATH = ".superpowers/seedream-og-background-raw-2026-09-30T12-00-00-000Z.json";
   const OPTIONS = { name: "og-background", spec: SPEC, pay: true, overwrite: false };
 
   function fakeIo(over: { response?: { status: number; ok: boolean; text: string }; existing?: string[]; ledger?: string; apiKey?: string | undefined } = {}) {
@@ -98,14 +100,14 @@ describe("images Seedream : garde-fous avant un appel payant", () => {
     const { io, events, ledger } = fakeIo({ response: { status: 200, ok: true, text: JSON.stringify({ data: [] }) } });
     expect(await generateImage(OPTIONS, io)).toEqual({ outcome: "no-image", exitCode: 1 });
     expect(events.slice(0, 2)).toEqual(["call", "ledger"]);
-    expect(JSON.parse(ledger[0]!).output).toBe(".superpowers/seedream-og-background-raw.json");
+    expect(JSON.parse(ledger[0]!).output).toBe(RAW_PATH);
   });
 
   test("une erreur HTTP (402, 429, 502) n'est pas facturée : pas de ligne, la réponse brute est gardée", async () => {
     const { io, events, ledger } = fakeIo({ response: { status: 402, ok: false, text: JSON.stringify({ error: { code: 402, message: "no credit" } }) } });
     expect(await generateImage(OPTIONS, io)).toEqual({ outcome: "http-error", exitCode: 1 });
     expect(ledger).toEqual([]);
-    expect(events).toContain("write:.superpowers/seedream-og-background-raw.json");
+    expect(events).toContain(`write:${RAW_PATH}`);
   });
 
   test("un journal qui ne se laisse pas écrire n'empêche pas de garder la réponse payée", async () => {
@@ -114,7 +116,7 @@ describe("images Seedream : garde-fous avant un appel payant", () => {
       throw new Error("disk full");
     };
     expect(await generateImage(OPTIONS, io)).toEqual({ outcome: "ledger-failed", exitCode: 1 });
-    expect(events).toContain("write:.superpowers/seedream-og-background-raw.json");
+    expect(events).toContain(`write:${RAW_PATH}`);
   });
 
   test("un budget dépassé refuse avant l'appel", async () => {
@@ -122,6 +124,21 @@ describe("images Seedream : garde-fous avant un appel payant", () => {
     const { io, events } = fakeIo({ ledger: line });
     expect(await generateImage(OPTIONS, io)).toEqual({ outcome: "over-budget", exitCode: 2 });
     expect(events).toEqual([]);
+  });
+
+  test("deux appels à des instants différents écrivent deux réponses brutes différentes", async () => {
+    const noImage = { status: 200, ok: true, text: JSON.stringify({ data: [] }) };
+    const paths: string[] = [];
+    for (const iso of ["2026-09-30T12:00:00Z", "2026-09-30T12:05:30Z"]) {
+      const { io, events } = fakeIo({ response: noImage });
+      io.now = () => new Date(iso);
+      await generateImage(OPTIONS, io);
+      paths.push(...events.filter((e) => e.startsWith("write:.superpowers/")));
+    }
+    expect(paths).toEqual([
+      "write:.superpowers/seedream-og-background-raw-2026-09-30T12-00-00-000Z.json",
+      "write:.superpowers/seedream-og-background-raw-2026-09-30T12-05-30-000Z.json",
+    ]);
   });
 
   test("sans clé d'API, aucun appel", async () => {
