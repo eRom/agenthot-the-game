@@ -4,7 +4,8 @@
 - **Nouveau rendu de la salle validé par Romain en jeu** (« nickel, on ne touche plus à rien au niveau rendu »). Branche `spike/render-look` (2 commits au-dessus de `main`), pas fusionnée, pas relue.
 - Ce qu'il contient : dallage au sol, plafond à panneaux à 7,5 m (6 m avant), baies détaillées, étagères garnies sur le mur du fond (solides), bandeaux lumineux, lumière blanche, occlusion ambiante (GTAO sur une passe de profondeur à part), plus de trait d'encre (`POST.outline = false`), ambiance réduite sur la menace pour garder les facettes. Fichiers : `src/render/decor.ts` (nouveau), `world-renderer.ts`, `post.ts`, `materials.ts`, `rooms/`.
 - La décision « B » sur `rendu-simule/` (ne pas l'intégrer) est donc levée par Romain le 30/09.
-- **Pas vérifié :** la cadence mesurée (mon onglet était caché ; Romain a joué sans signaler de gêne), le repli `?renderer=webgl`, les appels de dessin (42 → 67).
+- **Cadence, mesurée par Romain en jeu le 30/09 à 16:20 :** `60 fps`, `res 1`, sur son Mac M1 chargé (Safari qui lit un film, plus de 10 onglets Chrome, Zed). **Sa barre : 30 images/s au minimum sur une telle machine = gagné.**
+- **Repli `?renderer=webgl` :** vu le 30/09 à 16:22, la salle s'affiche en WebGL2 avec l'occlusion, console sans erreur. Sa cadence n'est pas mesurée (onglet caché). Appels de dessin : 42 → 67.
 - **Reste à faire, dans l'ordre :** revue finale de la branche (Opus xhigh) puis fusion sur le go de Romain ; refaire les prises `?record` et la cinématique avec le nouveau rendu (Romain : « on s'occupe de la cinématique une fois que je valide le rendu ») ; vérifier que les vignettes et `og-v1.jpg` collent encore ; rejouer le plan 3c avant de l'exécuter.
 - Aperçus : `.superpowers/render-spike/` (local, ignoré par git).
 
