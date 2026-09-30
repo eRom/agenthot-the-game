@@ -1,14 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { CONTROLS, SITE_URL, creditsInfo, gameInfo } from "../src/app/game-facts";
 import { GAME_TOOLS, type ModelContext, type ModelContextTool, findModelContext, registerGameTools } from "../src/app/webmcp";
+import { ROOMS } from "../src/rooms/registry";
+import { room01 } from "../src/rooms/room-01-datacenter";
+import { WEAPON } from "../src/sim/entities";
 import { CREDITS } from "../src/ui/credits";
 
-// Ce qu'un agent reçoit en appelant un outil : le texte JSON du premier bloc.
+// Ce qu'un agent reçoit en appelant un outil : les données, telles quelles (le navigateur les met en JSON).
 async function call(name: string): Promise<unknown> {
   const tool = GAME_TOOLS.find((candidate) => candidate.name === name)!;
-  const result = await tool.execute();
-  expect(result.content).toHaveLength(1);
-  return JSON.parse(result.content[0]!.text);
+  return await tool.execute();
 }
 
 // Un navigateur qui garde les outils reçus ; `refuse` fait échouer l'enregistrement d'un nom.
@@ -28,7 +29,8 @@ describe("outils WebMCP (lecture seule)", () => {
     const names = GAME_TOOLS.map((tool) => tool.name);
     expect(new Set(names).size).toBe(names.length);
     for (const tool of GAME_TOOLS) {
-      // Spec WebMCP : nom de 1 à 128 caractères, lettres, chiffres, tiret bas.
+      // Règle volontairement plus stricte que le brouillon WebMCP (qui admet aussi "-", "." et les majuscules) :
+      // des noms simples, en minuscules, chiffres et tiret bas, 1 à 128 caractères.
       expect(tool.name).toMatch(/^[a-z0-9_]{1,128}$/);
       expect(tool.description.length).toBeGreaterThan(20);
       expect(tool.inputSchema).toEqual({ type: "object", properties: {}, additionalProperties: false });
@@ -41,8 +43,24 @@ describe("outils WebMCP (lecture seule)", () => {
     const info = gameInfo();
     expect(info.url).toBe(SITE_URL);
     expect(info.sources).toBe(CREDITS.repoUrl);
-    expect(info.rooms[0]).toEqual({ title: "Salle serveurs", status: "jouable" });
-    expect(info.rooms.some((room) => room.status === "à venir")).toBe(true);
+  });
+
+  test("les salles rendues ont un titre et un statut connu, une par salle du jeu", () => {
+    const { rooms } = gameInfo();
+    expect(rooms).toHaveLength(ROOMS.length);
+    for (const room of rooms) {
+      expect(room.title.length).toBeGreaterThan(0);
+      expect(["jouable", "à venir"]).toContain(room.status);
+    }
+  });
+
+  // Garde-fou voulu sur un texte public, pas un instantané : « une salle, cinq ennemis, quatre balles » est écrit à la
+  // main dans cinq fichiers. Si l'un de ces deux nombres change dans le jeu, corriger : src/app/game-facts.ts (rules),
+  // public/llms.txt, public/llms-full.txt, README.md et le JSON-LD d'index.html.
+  test("les faits écrits à la main (cinq ennemis, quatre balles) sont ceux du jeu", () => {
+    expect(room01.spawns).toHaveLength(5);
+    expect(WEAPON.capacity).toBe(4);
+    expect(gameInfo().rules.join(" ")).toContain("cinq ennemis, quatre balles");
   });
 
   test("get_controls rend chaque commande avec sa touche et son effet", async () => {
@@ -59,11 +77,18 @@ describe("outils WebMCP (lecture seule)", () => {
     expect(credits.usage).toContain("coût API estimé");
   });
 
+  test("chaque résultat se met en JSON et en revient identique, comme le fera le navigateur", async () => {
+    for (const tool of GAME_TOOLS) {
+      const result = await tool.execute();
+      expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+    }
+  });
+
   test("aucun texte rendu à un agent ne porte de tiret cadratin", async () => {
     const dash = String.fromCodePoint(0x2014);
     for (const tool of GAME_TOOLS) {
       expect(tool.description.includes(dash)).toBe(false);
-      expect((await tool.execute()).content[0]!.text.includes(dash)).toBe(false);
+      expect(JSON.stringify(await tool.execute()).includes(dash)).toBe(false);
     }
   });
 });

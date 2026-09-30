@@ -33,7 +33,7 @@ export function gameInfo(): GameInfo {
       "Le temps n'avance que quand tu bouges ou que tu tires.",
       "Une seule touche et tu meurs.",
       "Aucun ennemi ne tire sans avoir visé : un trait orange prévient toujours.",
-      "Une salle, cinq ennemis, quatre balles. Une arme vide se lance, une arme au sol se ramasse.",
+      "Une salle, cinq ennemis, quatre balles. Ton arme se lance, même vide. Une arme au sol se ramasse.",
       "La victoire rejoue la partie en temps réel.",
     ],
     rooms: ROOMS.map((room) => ({ title: room.title, status: room.status === "playable" ? "jouable" : "à venir" })),

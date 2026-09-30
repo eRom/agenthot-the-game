@@ -36,10 +36,12 @@ if (playOnDesktopOnly(browserEnvironment())) {
 // WebMCP : trois outils en lecture seule pour les agents IA du navigateur. Sans l'API (tout navigateur sans jeton
 // d'origin trial ni drapeau), rien n'est chargé : le jeu ne paie rien.
 if ("modelContext" in document || "modelContext" in navigator) {
-  void import("./webmcp").then(({ findModelContext, registerGameTools }) => {
-    const context = findModelContext(document, navigator);
-    if (context) void registerGameTools(context);
-  });
+  void import("./webmcp")
+    .then(({ findModelContext, registerGameTools }) => {
+      const context = findModelContext(document, navigator);
+      if (context) void registerGameTools(context);
+    })
+    .catch((error: unknown) => console.warn("[agenthot] webmcp: tools not loaded", error));
 }
 
 // Le chargeur d'abord ; toute erreur du démarrage s'y affiche au lieu de laisser « Chargement » à l'infini.

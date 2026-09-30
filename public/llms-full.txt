@@ -11,7 +11,7 @@ Ce n'est donc pas un jeu de réflexes. C'est un jeu de lecture : tu regardes où
 
 - **Une salle :** une salle de serveurs blanche, avec des baies, des étagères et une passerelle.
 - **Cinq ennemis :** trois au départ, deux qui sortent des baies quand il n'en reste que deux. Ils sont orange, faits de facettes, et volent en éclats.
-- **Quatre balles :** une arme vide se lance. Une arme tombée se ramasse. Mains vides, tu frappes.
+- **Quatre balles :** ton arme se lance, même vide. Une arme tombée se ramasse. Mains vides, tu frappes.
 - **Une seule touche et tu meurs.** La relance est immédiate.
 - **Aucun ennemi ne tire sans avoir visé :** un trait orange prévient toujours.
 - **La victoire rejoue ta partie en temps réel,** sans les pauses.
