@@ -133,9 +133,10 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     if (next === "dead" || next === "replay" || next === "won") input.clear();
     // Le réticule appartient au jeu : il ne se montre qu'en partie, pas sur le fond du menu ni sous la cinématique.
     hud.show(next === "playing" ? "none" : next === "idle" || next === "menu" ? "off" : next);
-    // Pas d'arme en main ni de bourdon dans le menu : on y regarde la salle, on n'y joue pas.
+    // Pas d'arme en main ni de bourdon dans le menu : on y regarde la salle, on n'y joue pas. Idem sous la
+    // cinématique (idle) : le bourdon ne doit pas monter sous la vidéo.
     world.viewModel.group.visible = next !== "menu";
-    audio.setDrone(next !== "menu");
+    audio.setDrone(next !== "menu" && next !== "idle");
     // Victoire : la souris est rendue, pour cliquer dans le panneau (Rejouer, Revoir, Menu).
     if (next === "won" && input.locked) document.exitPointerLock();
     options.onModeChange(next);

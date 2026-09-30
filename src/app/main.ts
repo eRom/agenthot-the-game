@@ -101,8 +101,8 @@ async function runBoot(loader: LoaderScreen): Promise<void> {
   loader.busy();
   // Le jeu finit de se charger pendant la cinématique ; le chargeur reste dessous si elle se termine avant lui.
   if (intro) {
-    await intro.play(settings.musicVolume / 100);
-    markIntroSeen(storage);
+    // « Vue » seulement si la lecture a réellement démarré (fichier absent ou lecture refusée : elle reste à voir).
+    if (await intro.play(settings.musicVolume / 100)) markIntroSeen(storage);
   }
   // Un échec du moteur remonte à boot(), qui le dit au joueur au lieu d'un écran noir.
   const engine = await enginePromise;
@@ -130,7 +130,8 @@ async function runBoot(loader: LoaderScreen): Promise<void> {
     intro ??= new IntroScreen(screens);
     await intro.play(settings.musicVolume / 100);
     engine.showMenu();
-    menu.show();
+    // Le focus revient sur « Intro », l'entrée qui vient d'être validée, pas sur « Jouer ».
+    menu.show("intro");
   };
   // Jouer : le clic (ou la touche) qui lance la salle est aussi celui qui prend la souris (AC-10).
   const play = (): void => {

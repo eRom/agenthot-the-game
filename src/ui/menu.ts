@@ -83,10 +83,11 @@ export class MenuScreen {
     return this.root.querySelector<HTMLElement>(".menu-panel-slot")!;
   }
 
-  show(): void {
+  // `focused` : l'entrée qui prend le focus (la première par défaut).
+  show(focused?: MenuAction): void {
     this.root.hidden = false;
     window.addEventListener("keydown", this.onKey);
-    this.focus(0);
+    this.focus(Math.max(0, this.entries.findIndex((entry) => entry.dataset.action === focused)));
     // Entrée orchestrée : les lettres du logo tombent en cascade, puis les entrées glissent une à une.
     this.root.querySelectorAll<HTMLElement>(".menu-brand .logo-letter").forEach((letter, i) => {
       letter.animate(
