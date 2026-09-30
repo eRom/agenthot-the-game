@@ -6,7 +6,8 @@
 - La décision « B » sur `rendu-simule/` (ne pas l'intégrer) est donc levée par Romain le 30/09.
 - **Cadence, mesurée par Romain en jeu le 30/09 à 16:20 :** `60 fps`, `res 1`, sur son Mac M1 chargé (Safari qui lit un film, plus de 10 onglets Chrome, Zed). **Sa barre : 30 images/s au minimum sur une telle machine = gagné.**
 - **Repli `?renderer=webgl` :** vu le 30/09 à 16:22, la salle s'affiche en WebGL2 avec l'occlusion, console sans erreur. Sa cadence n'est pas mesurée (onglet caché). Appels de dessin : 42 → 67.
-- **Reste à faire, dans l'ordre :** revue finale de la branche (Opus xhigh) puis fusion sur le go de Romain ; refaire les prises `?record` et la cinématique avec le nouveau rendu (Romain : « on s'occupe de la cinématique une fois que je valide le rendu ») ; vérifier que les vignettes et `og-v1.jpg` collent encore ; rejouer le plan 3c avant de l'exécuter.
+- **Revue finale faite** (`docs/superpowers/reports/2026-09-30-agenthot-render-look-final-review.md`) : 0 critique, 0 important. Corrigés le 30/09 : ses défauts 1, 2, 3, 6, 7, 10 et ses décisions D1 (seuil à 80 appels de dessin, spec et plan 3c), D2 (arme hors de la passe d'occlusion), D3 (code du contour supprimé), D4 (spec à jour). Laissés : défauts 4, 8, 9, D5, et le prompt de `scripts/generate-image.ts` (il décrit l'image déjà générée).
+- **Reste à faire, dans l'ordre :** Romain rejoue 2 minutes, puis fusion sur son go ; refaire les prises `?record` et la cinématique avec le nouveau rendu (Romain : « on s'occupe de la cinématique une fois que je valide le rendu ») ; vérifier que les vignettes et `og-v1.jpg` collent encore ; rejouer le plan 3c avant de l'exécuter.
 - Aperçus : `.superpowers/render-spike/` (local, ignoré par git).
 
 ## Mise à jour du 2026-09-30 à 15:45 (prime sur le reste de la note)

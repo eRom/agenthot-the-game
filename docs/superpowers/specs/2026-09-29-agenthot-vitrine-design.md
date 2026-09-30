@@ -171,7 +171,7 @@ Le pas de simulation vaut `simDt = dtReal × timeScale`, plafonné à 1/60 s. Le
 
 ### 5.7 Déroulé de la salle 1
 
-- **Lieu :** une salle serveurs d'environ 24 × 16 m. Rangées de baies blanches de 2,2 m de haut, qui servent d'abri et forment des allées de tir. Un ascenseur au fond. Une passerelle latérale à 3,5 m avec garde-corps, inaccessible au joueur. Chemins de câbles gris au plafond. Vide bleu nuit au-delà.
+- **Lieu :** une salle serveurs d'environ 24 × 16 m. Rangées de baies blanches de 2,2 m de haut, qui servent d'abri et forment des allées de tir. Un ascenseur au fond. Une passerelle latérale à 3,5 m avec garde-corps, inaccessible au joueur. Plafond fermé à 7,5 m : une dalle lumineuse et des panneaux suspendus. Sol en dalles de 60 cm. Étagères garnies sur le mur du fond, de part et d'autre de l'ascenseur. Bandeau lumineux à mi-hauteur des murs. (Révisé le 2026-09-30, rendu validé en jeu par Romain ; avant : chemins de câbles gris au plafond, vide bleu nuit au-delà.)
 - **Au départ :** 2 ennemis armés dans les allées, 1 ennemi armé sur la passerelle.
 - **Quand il reste 2 ennemis :** 2 ennemis sortent de 2 baies en les faisant exploser (éclats blancs et gris). L'un est armé, l'autre est en mêlée.
 - **Victoire :** les 5 ennemis éclatés.
@@ -204,17 +204,19 @@ Le pas de simulation vaut `simDt = dtReal × timeScale`, plafonné à 1/60 s. Le
 | `void-2` | `#141A28` | Ombres portées des panneaux. |
 | `world` | `#ECEBE7` | Décor, panneaux Encre. |
 | `world-2` | `#C9CBD0` | Décor secondaire, texte UI secondaire. |
-| `ink` | `#0A0C10` | Contours, armes, mains du joueur, texte sur panneaux. |
+| `ink` | `#0A0C10` | Armes, mains du joueur, texte sur panneaux. |
 | `threat` | `#D97757` | Ennemis, balles, traînées, visée. Rien d'autre. |
 | `threat-hot` | `#FF9D73` | Cœur lumineux des balles, arêtes des ennemis. |
 | `muted` | `#7C8394` | Petits textes d'UI. |
 
 **Règle :** `threat` et `threat-hot` ne s'appliquent qu'aux entités de menace. Câbles, lumières, voyants et décor n'en utilisent jamais.
 
+**Blancs du décor (ajout du 2026-09-30) :** la salle emploie des blancs et gris clairs hors tokens, réglés à l'œil dans `src/render/decor.ts` et `world-renderer.ts` : joints du sol `#AEB2BA`, baies et étagères `#F1F1EE`, panneaux du plafond `#F4F4F2`, lumière venue du sol `#F2F2F2`, dalle et bandeaux lumineux en blanc pur. Aucun n'est orange.
+
 ### 6.2 Rendu
 
-- **Décor :** blanc cassé, flat shading, ombres portées douces.
-- **Contours :** fins, couleur `ink`, obtenus par détection de bords sur la profondeur et les normales, via `RenderPipeline` et TSL.
+- **Décor :** blanc, lumière d'ambiance forte, ombres portées douces et claires.
+- **Volumes :** pas de contour. L'occlusion ambiante (ombre des coins, GTAO débruité, via `RenderPipeline` et TSL) dessine les volumes. Elle ne touche ni la menace, ni l'arme du joueur. (Révisé le 2026-09-30 ; avant : contours fins à l'encre, par détection de bords sur la profondeur et les normales.)
 - **Ennemis :**
   - `threat` émissif léger, facettes latérales plus sombres ;
   - glow par bloom **limité** aux matériaux de menace (masque dédié) ;
@@ -330,7 +332,7 @@ src/
 ### 9.2 Performance
 
 - 60 images/s sur un Mac Apple Silicon de base ; jusqu'à 120 sur un écran rapide.
-- Moins de 60 appels de dessin par image, lus via `renderer.info`.
+- Moins de 80 appels de dessin par image, lus via `renderer.info`. (Révisé le 2026-09-30 : 60 avant le décor détaillé et la passe d'occlusion ; mesuré alors vers 65 en jeu. C'est un indicateur : ce qu'il protège, la cadence, se mesure à part.)
 - Poids initial transféré, hors cinématique et hors musiques : moins de 3 Mo.
 - **Qualité auto :**
   - si le temps d'image moyen dépasse 18 ms pendant 2 s, la résolution de rendu baisse par paliers (1 → 0,85 → 0,7) ;
@@ -403,11 +405,11 @@ src/
 - **Vérifié par :** en debug, la console affiche le temps de simulation et la durée du replay. L'écart est ≤ 5 %. Revue en jouant par Romain.
 
 **AC-8 : 60 images/s au pire moment**
-- **Comportement :** quand 5 ennemis sont en jeu et qu'un éclatement a lieu, alors le jeu tient 60 images/s sur le Mac de Romain, avec moins de 60 appels de dessin.
-- **Vérifié par :** trace de performance Chrome DevTools pendant ce moment : temps d'image p95 ≤ 16,7 ms. `renderer.info.render.drawCalls` < 60 (lu via `evaluate_script`).
+- **Comportement :** quand 5 ennemis sont en jeu et qu'un éclatement a lieu, alors le jeu tient 60 images/s sur le Mac de Romain, avec moins de 80 appels de dessin.
+- **Vérifié par :** trace de performance Chrome DevTools pendant ce moment : temps d'image p95 ≤ 16,7 ms. `renderer.info.render.drawCalls` < 80 (lu via `evaluate_script`).
 
 **AC-9 : repli WebGL2 fonctionnel**
-- **Comportement :** quand WebGPU n'est pas disponible, alors le jeu s'affiche et se joue de la même façon, contours et glow compris.
+- **Comportement :** quand WebGPU n'est pas disponible, alors le jeu s'affiche et se joue de la même façon, ombre des coins et glow compris.
 - **Vérifié par :** lancement avec `?renderer=webgl` (qui passe `forceWebGL: true`), capture comparée à la version WebGPU, partie jouée jusqu'à la victoire.
 
 **AC-10 : jouable en 2 secondes**
