@@ -18,8 +18,9 @@ import { BootError, ENGINE_TIMEOUT_MS, TimeoutError, bootFailureMessage, withTim
 import { browserEnvironment, playOnDesktopOnly } from "./device";
 import type { Engine, EngineMode, EngineOptions } from "./engine";
 
-// Au plus 1,5 s d'attente des polices : une police bloquée ne doit pas retarder l'invite au-delà d'AC-10.
-const FONTS_TIMEOUT_MS = 1500;
+// Au plus 1,5 s d'attente des polices et de la boucle du menu : un fichier lent ou bloqué ne doit pas retarder
+// l'invite au-delà d'AC-10. Une musique arrivée plus tard démarre dès qu'elle est prête (MusicTrack, lecture en attente).
+const PRELOAD_TIMEOUT_MS = 1500;
 
 const params = new URLSearchParams(window.location.search);
 const screens = document.querySelector<HTMLElement>("#screens")!;
@@ -82,7 +83,11 @@ async function runBoot(loader: LoaderScreen): Promise<void> {
   // Première visite : la cinématique se précharge pendant le chargeur (spec 4.1 et 4.2).
   let intro = readIntroSeen(storage) ? null : new IntroScreen(screens);
   // Polices, boucle du menu et début de la cinématique : un fichier absent (pas encore généré) n'empêche pas d'entrer.
-  await loader.waitReady([withTimeout(document.fonts.ready, FONTS_TIMEOUT_MS), audio.loadMenuMusic(), ...(intro ? [intro.ready] : [])]);
+  await loader.waitReady([
+    withTimeout(document.fonts.ready, PRELOAD_TIMEOUT_MS),
+    withTimeout(audio.loadMenuMusic(), PRELOAD_TIMEOUT_MS),
+    ...(intro ? [intro.ready] : []),
+  ]);
   // Le moteur (Three.js, 90 % du code, puis l'initialisation du rendu) se charge une fois l'invite affichée,
   // pendant que le joueur la lit : il ne dispute pas le fil principal au chargeur (AC-10).
   const enginePromise = startEngine({
