@@ -14,6 +14,7 @@ import { Game, type PlayerInput, emptyInput } from "../sim/game";
 import { TIME } from "../sim/time";
 import { createWorldView, writeGameView } from "../sim/view";
 import { CAPTURE, CanvasCapture, type CaptureTarget, captureDisplayRect } from "./capture";
+import { FrameStats } from "./frame-stats";
 import { Hud } from "./hud";
 import { InputController } from "./input";
 
@@ -117,6 +118,10 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
   let fpsFrames = 0;
   let fpsTime = 0;
   let fps = 0;
+  // Sonde AC-8 : en debug seulement, pour ne rien coûter au jeu normal.
+  const frameStats = debug ? new FrameStats() : null;
+  // Heure de l'image précédente, donnée par le navigateur (calée sur l'écran, sans la gigue de performance.now()).
+  let lastFrameTime = 0;
 
   // Relance (R, clic à la mort, Recommencer) : même salle, sans rien recharger (AC-6).
   function restartRun(): void {
@@ -145,6 +150,8 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
 
   function startRun(): void {
     game.reset();
+    // La sonde ne garde que la partie en cours.
+    frameStats?.reset();
     recorder.reset();
     writeGameView(game, view);
     recorder.capture(game.simTime, view, true);
@@ -225,10 +232,13 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
         world.update(view);
         // Le rendu reste celui de la boucle : ses appels de dessin se lisent dans le panneau debug.
       },
+      // AC-8 : intervalles entre images et appels de dessin depuis le dernier resetFrameStats().
+      frameStats: () => frameStats?.report() ?? null,
+      resetFrameStats: () => frameStats?.reset(),
     };
   }
 
-  renderer.setAnimationLoop(() => {
+  renderer.setAnimationLoop((frameTime: number) => {
     // Rien à montrer tant que la salle n'est pas ouverte : le GPU se repose (chargeur, cinématique).
     if (mode === "idle") return;
     const now = performance.now();
@@ -266,6 +276,8 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
       audio.frame(view, game.events);
       hud.updateCrosshair(view.playerCooldown, view.playerAmmo);
       world.update(view, simDt);
+      // Preuve AC-8 : à la fin de chaque partie, le pire moment de ses images et son maximum d'appels de dessin.
+      if (frameStats && game.status !== "playing") console.info(`[agenthot] frames ${JSON.stringify(frameStats.report())}`);
       if (game.status === "dead") setMode("dead");
       if (game.status === "won") {
         // Preuve AC-7 : la durée rejouée doit coller au temps de simulation écoulé.
@@ -296,6 +308,10 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     }
 
     post.render();
+    if (frameStats) {
+      frameStats.push(frameTime - lastFrameTime, renderer.info.render.drawCalls);
+      lastFrameTime = frameTime;
+    }
 
     fpsFrames++;
     fpsTime += dt;
