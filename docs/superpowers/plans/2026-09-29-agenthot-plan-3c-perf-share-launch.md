@@ -34,6 +34,9 @@
 - Tâche 8b, `d7dc74b` : les deux liens `alternate` exigés, titre absent signalé, adresse illisible ignorée sans exception, `uploadDate` en `Z`, icône sans `src`.
 - Tâche 8d, `ae6f2b5` : les outils WebMCP rendent leurs données directement (brouillon du W3C : `Promise<any>`, mis en JSON par le navigateur), et non `{ content: [...] }` ; un test lie « 5 ennemis, 4 balles » aux constantes du jeu ; « Ton arme se lance, même vide ».
 - Suite après ces corrections : 354 tests.
+- Revue finale (`docs/superpowers/reports/2026-09-30-agenthot-plan-3c-final-review.md`, 0 critique) puis corrections sur le go de Romain (19 h 39, « go pour les 4 corrections ») : `471ba09` (type de contenu de repli = `warn`, pas `FAIL`), `96835ea` (`llms-full.txt` : les outils WebMCP demandent l'essai de Chrome), `acbbe07` (catalogue identifié par son domaine, plus par `did:web`), `3657e34` (`rel="describedby"` pour `llms.txt`), `5c170f4` (`.env*` ignoré), `963ba1e` (critères et spec d'accord avec la ligne des crédits). Les blocs de code des tâches 8b à 8e gardent les anciennes formes : le dépôt fait foi. Suite : 358 tests.
+- Firefox : joué par Romain sur `http://localhost:4319/?debug` le 2026-09-30 à 19 h 39, « ça marche nickel !!! » (point I1 de la revue). Rendu (WebGPU ou WebGL2) non relevé.
+- Crédits, dernier compte (tâche 10, étape 1) : 2026-09-30 à 19 h 44, 1 120 605 292 tokens, 441,05 $ (`05a1648`). Aucun message en mode rapide.
 
 **Retours de Romain à la recette (2026-09-30, 18 h 57) :**
 - Ligne des crédits sans « AGENTHOT ‧ » en tête : `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`. AC-3c-4 et la spec (4.3, AC-15) se lisent avec cette ligne. Police de la ligne à 12 px : l'adresse du dépôt tient entière sur la deuxième ligne.
@@ -125,7 +128,7 @@ Cinq situations qu'un visiteur rencontrera et qu'aucun test de tâche ne couvre 
 
 **AC-3c-13 : les agents IA trouvent le jeu**
 - **Comportement :** quand un agent lit `/llms.txt`, `/llms-full.txt` ou `/.well-known/ard.json`, alors il reçoit le fichier, dans le bon type de contenu, avec l'adresse du jeu.
-- **Vérifié par :** `bun scripts/check-release.ts https://agenthot.erom.cloud/` : lignes `llms.txt served`, `llms-full.txt served`, `.well-known/ard.json served`, `.well-known/ai-catalog.json served` en `ok` (tâche 13, étape 6).
+- **Vérifié par :** `bun scripts/check-release.ts https://agenthot.erom.cloud/` : lignes `llms.txt served`, `llms-full.txt served`, `.well-known/ard.json served`, `.well-known/ai-catalog.json served` en `ok`, ou en `warn` pour un type de repli (`text/plain`, `application/json`), et le contenu de chacun en `ok` (tâche 13, étape 6).
 
 **AC-3c-14 : trois outils WebMCP répondent**
 - **Comportement :** quand un navigateur expose `document.modelContext`, alors la page y enregistre `get_game_info`, `get_controls` et `get_credits`, en lecture seule, et chacun rend les faits du jeu.

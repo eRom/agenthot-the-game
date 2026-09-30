@@ -1,6 +1,12 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
-## Mise à jour du 2026-09-30 à 19:05 (prime sur le reste de la note)
+## Mise à jour du 2026-09-30 à 19:45 (prime sur le reste de la note)
+- **Revue finale faite** (neptune-2uki) : `docs/superpowers/reports/2026-09-30-agenthot-plan-3c-final-review.md`, 0 critique. Firefox joué par Romain à 19:39 (« ça marche nickel !!! », rendu non relevé). Ses 4 corrections (« go pour les 4 corrections ») et 2 mineurs gratuits : faits, relus, 358 tests, `check-release dist` : all good.
+- **Crédits, dernier compte** à 19:44 : 1 120 605 292 tokens, 441,05 $. 97 % sont des relectures de cache ; 4,9 millions de tokens produits.
+- **Backlog de la revue, non corrigé :** M5 à M9, M12 à M14 (liste dans `.superpowers/sdd/…/progress.md`).
+- **Arrêt en cours : avant la fusion** (go de Romain, demandé par la session venus). Puis ses portes : push (public, choix de l'adresse Gmail), Vercel, DNS, tâche 13b.
+
+## Mise à jour du 2026-09-30 à 19:05
 - **Recette locale jouée par Romain (18:57) : tout validé.** Safari, repli WebGL2, icône, README, `llms.txt`. Branche `feat/agenthot-plan-3c`, 354 tests, rien poussé.
 - **Cadence, tranchée par Romain à 19:01** (dit à la session venus) : « Accepter, j'ai mon Mac qui fait beaucoup de chose... je ne veux pas perdre en qualité alors que j'ai une machine vieille lol. » Son critère devient l'officiel : jamais sous 30 images/s sur son Mac M1 chargé. Sa partie : `maxMs` 31,9, `worstWindowP95Ms` 25,7, 63 appels de dessin. AC-8 (spec) et AC-3c-5 (plan) révisés. Pas de diagnostic, le rendu ne bouge pas.
 - **Backlog cadence, sans y toucher :** la qualité auto oscille entre `res 1` et `res 0.85` ; l'occlusion pèse environ 75 % de l'image (levier `SSAONode`, qui changerait le rendu).
