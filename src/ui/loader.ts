@@ -1,7 +1,7 @@
 // Écran de chargement (spec 4.1) : le logo se construit en facettes orange, puis « APPUIE SUR UNE TOUCHE ».
 // Au moins 1,2 s, même si tout est prêt, pour poser l'univers. Le geste attendu débloque le son.
 import { Rng } from "../sim/rng";
-import { EASE, isPlainKeypress, logoMarkup } from "./dom";
+import { EASE, isActivationKeypress, logoMarkup } from "./dom";
 
 export const LOADER = {
   minDurationMs: 1200,
@@ -109,8 +109,8 @@ export class LoaderScreen {
   waitForGesture(onGesture: () => void): Promise<void> {
     return new Promise((resolve) => {
       const handler = (event: Event): void => {
-        // Ni les touches de modification seules, ni les raccourcis du navigateur (Cmd+R, Cmd+Maj+4).
-        if (event instanceof KeyboardEvent && !isPlainKeypress(event)) return;
+        // Ni les touches de modification seules, ni les raccourcis du navigateur (Cmd+R, Cmd+Maj+4), ni Échap.
+        if (event instanceof KeyboardEvent && !isActivationKeypress(event)) return;
         window.removeEventListener("keydown", handler);
         window.removeEventListener("pointerdown", handler);
         onGesture();

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { TimeoutError, withTimeout } from "../src/app/boot-failure";
 import { hasRendering } from "../src/render/rendering-support";
-import { isPlainKeypress } from "../src/ui/dom";
+import { isActivationKeypress, isPlainKeypress } from "../src/ui/dom";
 
 describe("détection du rendu (chargeur, AC-10)", () => {
   test("WebGPU annoncé mais aucun adaptateur, et pas de WebGL2 : aucun rendu possible", async () => {
@@ -92,5 +92,26 @@ describe("gestes acceptés par le chargeur et la cinématique", () => {
 
   test("la répétition d'une touche tenue ne compte pas", () => {
     expect(key({ repeat: true })).toBe(false);
+  });
+});
+
+describe("« Appuie sur une touche » : seul un geste qui débloque le son compte", () => {
+  const press = (init: Partial<Parameters<typeof isActivationKeypress>[0]>) =>
+    isActivationKeypress({ key: "Enter", metaKey: false, ctrlKey: false, altKey: false, repeat: false, ...init });
+
+  test("Échap ne compte pas : le navigateur n'en fait pas un geste, le son et la cinématique resteraient bloqués", () => {
+    expect(press({ key: "Escape" })).toBe(false);
+  });
+
+  test("une touche simple compte ; modificateurs, raccourcis et répétitions restent écartés", () => {
+    expect(press({})).toBe(true);
+    expect(press({ key: " " })).toBe(true);
+    expect(press({ key: "Shift" })).toBe(false);
+    expect(press({ key: "r", metaKey: true })).toBe(false);
+    expect(press({ repeat: true })).toBe(false);
+  });
+
+  test("Échap passe toujours la cinématique : là, aucun son n'est à débloquer", () => {
+    expect(isPlainKeypress({ key: "Escape", metaKey: false, ctrlKey: false, altKey: false, repeat: false })).toBe(true);
   });
 });

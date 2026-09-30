@@ -14,9 +14,15 @@ export function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
-// Une touche qui vaut geste (passer la cinématique, entrer depuis le chargeur) : ni une touche de modification
+// Une touche qui vaut geste (passer la cinématique ; le chargeur y ajoute Échap, plus bas) : ni une touche de modification
 // seule, ni un raccourci du navigateur (Cmd+R, Cmd+Maj+4, Ctrl+…), ni la répétition d'une touche tenue.
 export function isPlainKeypress(event: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey" | "repeat">): boolean {
   if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return false;
   return !["Shift", "Control", "Alt", "Meta"].includes(event.key);
+}
+
+// Une touche qui vaut geste et débloque le son (invite du chargeur) : une touche simple, sauf Échap. Le navigateur
+// n'accorde pas à Échap l'activation utilisateur : le contexte audio et la cinématique sonore seraient refusés.
+export function isActivationKeypress(event: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey" | "repeat">): boolean {
+  return event.key !== "Escape" && isPlainKeypress(event);
 }
