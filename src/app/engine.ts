@@ -35,7 +35,8 @@ export interface Engine {
   applySettings(settings: Settings): void;
   // Fond du menu : la démo rejouée à 3 % du temps, caméra qui dérive, musique du menu (spec 4.3).
   showMenu(): void;
-  // Affiche la salle, prête à jouer : un clic prend la souris et lance la partie.
+  // Affiche la salle, prête à jouer : la souris est demandée tout de suite (à appeler dans le clic ou la touche
+  // du joueur, seul moment où le navigateur l'accorde), sinon au premier clic sur la salle.
   enterRoom(): void;
 }
 
@@ -264,7 +265,12 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     },
     enterRoom(): void {
       last = performance.now();
+      // La salle au départ, vue par le joueur (la caméra sortait de la dérive du menu).
+      game.reset();
+      writeGameView(game, view);
+      world.update(view);
       setMode("start");
+      input.lock();
     },
   };
   return engine;

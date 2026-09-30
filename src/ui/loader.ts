@@ -116,6 +116,12 @@ export class LoaderScreen {
     });
   }
 
+  // Geste reçu mais moteur pas encore prêt : l'invite laisse place à « Chargement » jusqu'au menu.
+  busy(): void {
+    this.root.querySelector<HTMLElement>(".loader-prompt")!.hidden = true;
+    this.root.querySelector<HTMLElement>(".loader-status")!.hidden = false;
+  }
+
   // Échec du moteur : l'invite laisse place au message, le logo reste.
   fail(message: string): void {
     const prompt = this.root.querySelector<HTMLElement>(".loader-prompt")!;

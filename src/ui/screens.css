@@ -13,6 +13,11 @@
   pointer-events: auto;
 }
 
+/* Un écran caché l'est vraiment : sans cette règle, le `display: grid` d'un écran l'emporte sur l'attribut. */
+.screen[hidden] {
+  display: none;
+}
+
 /* ---------- Logo Monolithe ---------- */
 
 .logo {
@@ -162,4 +167,349 @@
   min-height: 1.4em;
   color: #5b6170;
   word-break: break-all;
+}
+
+/* ---------- Menu (spec 4.3), Monolithe ---------- */
+
+.menu {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: center;
+  padding: 6vh 6vw;
+  gap: 4vw;
+}
+
+/* Le vide monte de la gauche : le logo reste lisible sur la salle claire. */
+.menu-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(13 17 27 / 0.92) 0%, rgb(13 17 27 / 0.7) 38%, rgb(13 17 27 / 0.15) 70%, transparent 100%),
+    linear-gradient(0deg, rgb(13 17 27 / 0.55), transparent 30%);
+}
+
+.menu-brand {
+  position: relative;
+  display: grid;
+  gap: 22px;
+  align-content: center;
+}
+
+.menu-tag {
+  letter-spacing: 0.2em;
+}
+
+.menu-logo {
+  position: relative;
+  width: fit-content;
+}
+
+.menu-shards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.menu-shards i {
+  position: absolute;
+  display: block;
+  background: var(--threat);
+  opacity: 0.85;
+  box-shadow: 0 0 16px rgb(217 119 87 / 0.6);
+  animation: shard-drift linear infinite alternate;
+}
+
+/* Dérive très lente : un éclat au ralenti, comme la salle derrière. */
+@keyframes shard-drift {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  to {
+    transform: translate(14px, -22px) rotate(150deg);
+  }
+}
+
+.menu-entries {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  justify-self: start;
+  transition: opacity var(--t-mid) var(--ease), filter var(--t-mid) var(--ease);
+}
+
+.menu.has-panel .menu-entries {
+  opacity: 0.18;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+/* Entrée : Big Shoulders 800, capitales. Survol ou focus : glisse de 10 px, un losange `threat` s'allume. */
+.menu-entry {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-mono-title);
+  font-weight: 800;
+  font-size: clamp(34px, 4.6vw, 64px);
+  line-height: 1.02;
+  text-transform: uppercase;
+  color: var(--world-2);
+  text-shadow: 0 2px 0 rgb(10 12 16 / 0.5);
+  transition:
+    color var(--t-fast) var(--ease),
+    transform var(--t-slow) var(--ease);
+}
+
+.menu-entry small {
+  font-family: var(--font-label);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.menu-entry::before {
+  content: "";
+  position: absolute;
+  left: -0.62em;
+  top: 50%;
+  width: 0.3em;
+  height: 0.3em;
+  background: var(--threat);
+  box-shadow: 0 0 14px var(--threat);
+  transform: translateY(-50%) rotate(45deg) scale(0);
+  transition: transform var(--t-mid) var(--ease);
+}
+
+.menu-entry.is-focused,
+.menu-entry:focus-visible {
+  color: var(--world);
+  transform: translateX(10px);
+  outline: none;
+}
+
+.menu-entry.is-focused::before {
+  transform: translateY(-50%) rotate(45deg) scale(1);
+}
+
+.menu-panel-slot {
+  position: absolute;
+  right: 6vw;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(520px, 44vw);
+}
+
+.menu-hint {
+  position: absolute;
+  left: 6vw;
+  bottom: 4vh;
+}
+
+/* ---------- Panneaux du menu, Encre ---------- */
+
+.menu-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.panel-back {
+  margin-top: 8px;
+}
+
+.room-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.room-card {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  text-align: left;
+  font-family: var(--font-ink);
+  color: var(--ink);
+  background: transparent;
+  border: 12px solid transparent;
+  border-image: var(--ink-button-frame) 12 fill / 12px stretch;
+  cursor: pointer;
+  transition: transform var(--t-mid) var(--ease);
+}
+
+.room-card:hover,
+.room-card:focus-visible {
+  border-image-source: var(--ink-button-frame-active);
+  transform: translateY(-3px);
+  outline: none;
+}
+
+.room-card:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+  border-image-source: var(--ink-button-frame);
+}
+
+.room-thumb {
+  display: block;
+  aspect-ratio: 16 / 10;
+  background:
+    repeating-linear-gradient(90deg, rgb(236 235 231 / 0.08) 0 1px, transparent 1px 14%),
+    var(--void);
+  overflow: hidden;
+}
+
+.room-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-title {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.room-status {
+  font-family: var(--font-label);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5b6170;
+}
+
+.settings-rows {
+  display: grid;
+  gap: 12px;
+}
+
+.setting-slider,
+.setting-choice {
+  display: grid;
+  grid-template-columns: 11em 1fr 3.2em;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.setting-choice {
+  grid-template-columns: 11em 1fr;
+}
+
+.setting-value {
+  font-family: var(--font-label);
+  font-size: 12px;
+  text-align: right;
+}
+
+/* Curseur : filet d'encre, poignée carrée tournée à 45°. */
+.setting-slider input {
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: linear-gradient(var(--ink), var(--ink)) center / 100% 2px no-repeat;
+  cursor: pointer;
+}
+
+.setting-slider input::-webkit-slider-thumb {
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  background: var(--world);
+  border: 2px solid var(--ink);
+  transform: rotate(45deg);
+}
+
+.setting-slider input::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 0;
+  background: var(--world);
+  border: 2px solid var(--ink);
+  transform: rotate(45deg);
+}
+
+.setting-slider input:focus-visible {
+  outline: none;
+}
+
+.setting-slider input:focus-visible::-webkit-slider-thumb {
+  background: var(--threat);
+}
+
+.setting-slider input:focus-visible::-moz-range-thumb {
+  background: var(--threat);
+}
+
+.segmented {
+  display: flex;
+  gap: 6px;
+}
+
+.segmented button {
+  flex: 1;
+  padding: 5px 8px;
+  font-family: var(--font-ink);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: transparent;
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  transition:
+    background var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.segmented button:hover,
+.segmented button:focus-visible {
+  background: var(--ink);
+  color: var(--world);
+  outline: none;
+}
+
+.segmented button.is-active {
+  box-shadow: inset 4px 0 0 var(--threat);
+}
+
+.credits {
+  display: grid;
+  gap: 12px;
+}
+
+.credits-line {
+  font-family: var(--font-label);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.credits-usage {
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+.credits-note {
+  color: #5b6170;
+  text-transform: none;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
 }

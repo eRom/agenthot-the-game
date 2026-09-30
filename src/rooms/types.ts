@@ -41,4 +41,6 @@ export interface RoomEntry {
   title: string;
   status: "playable" | "locked";
   definition?: RoomDefinition;
+  // Vignette du panneau Salles (spec 4.3), générée au plan 3b ; absente, la carte garde son fond d'encre.
+  thumbnail?: string;
 }
