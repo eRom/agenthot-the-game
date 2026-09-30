@@ -1,6 +1,15 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
-## Mise à jour du 2026-09-30 à 18:45 (prime sur le reste de la note)
+## Mise à jour du 2026-09-30 à 19:05 (prime sur le reste de la note)
+- **Recette locale jouée par Romain (18:57) : tout validé.** Safari, repli WebGL2, icône, README, `llms.txt`. Branche `feat/agenthot-plan-3c`, 354 tests, rien poussé.
+- **Cadence, tranchée par Romain à 19:01** (dit à la session venus) : « Accepter, j'ai mon Mac qui fait beaucoup de chose... je ne veux pas perdre en qualité alors que j'ai une machine vieille lol. » Son critère devient l'officiel : jamais sous 30 images/s sur son Mac M1 chargé. Sa partie : `maxMs` 31,9, `worstWindowP95Ms` 25,7, 63 appels de dessin. AC-8 (spec) et AC-3c-5 (plan) révisés. Pas de diagnostic, le rendu ne bouge pas.
+- **Backlog cadence, sans y toucher :** la qualité auto oscille entre `res 1` et `res 0.85` ; l'occlusion pèse environ 75 % de l'image (levier `SSAONode`, qui changerait le rendu).
+- **Ses retouches du 30/09, faites (`db52e08`) :** ligne des crédits sans « AGENTHOT ‧ » (12 px, l'adresse du dépôt tient sur la 2e ligne) ; titre de la page « AGENTHOT ‧ Le temps est votre arme ».
+- **Pas encore dit par Romain :** son nom « Romain Ecarnot (eRom) » dans la fiche JSON-LD, la phrase du Making-of, les trois outils WebMCP. À lui redemander avant le push.
+- Les 4 lignes en plus dans `.gitignore` sont de lui ; non commitées, il n'a pas dit de les commiter.
+- **Arrêt en cours : avant la tâche 10** (dernier compte des crédits, revue finale par une autre session, fusion sur son go). Puis ses portes : push, Vercel, DNS, tâche 13b.
+
+## Mise à jour du 2026-09-30 à 18:45
 - **Plan 3c en cours d'exécution**, branche `feat/agenthot-plan-3c` (pas fusionnée, rien poussé). Tâches 1 à 8f faites et relues. `bun test` : 354 verts. `bun scripts/check-release.ts dist` : all good.
 - **Arrêt en cours : tâche 9, étape 7.** Romain joue et relit (Safari, une partie en `?debug`, le repli WebGL, l'icône, les textes). Serveur : `bun run preview --port 4319 --strictPort`.
 - **Deux ajouts de Romain du 30/09, entrés dans le plan :**

@@ -39,7 +39,7 @@
 - Ligne des crédits sans « AGENTHOT ‧ » en tête : `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`. AC-3c-4 et la spec (4.3, AC-15) se lisent avec cette ligne. Police de la ligne à 12 px : l'adresse du dépôt tient entière sur la deuxième ligne.
 - Titre de la page : « AGENTHOT ‧ Le temps est votre arme » (remplace la décision 13).
 - Safari, repli WebGL2, icône, README, `llms.txt` : validés.
-- AC-3c-5 : sa partie donne `worstWindowP95Ms` 25,7, `maxMs` 31,9, `maxDrawCalls` 63. Au-dessus du seuil de 20 du plan, sous sa barre de 30 images par seconde (33 ms). Décision demandée à Romain.
+- AC-3c-5 : sa partie donne `worstWindowP95Ms` 25,7, `maxMs` 31,9, `maxDrawCalls` 63. Au-dessus de l'ancien seuil de 20. Romain a accepté à 19 h 01 : son critère (jamais sous 30 images par seconde) devient l'officiel, et il est tenu. Voir AC-3c-5.
 
 **Place de ce plan :** plan 3c sur 3, le dernier.
 - **3a** (fait, fusionné à `54a6288`) : finitions du jeu et écrans.
@@ -89,9 +89,11 @@ Cinq situations qu'un visiteur rencontrera et qu'aucun test de tâche ne couvre 
 - **Comportement :** quand on ouvre Crédits, alors on lit exactement `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`, puis le nombre de tokens et le coût API estimé, mesurés sur les sessions du projet.
 - **Vérifié par :** texte du panneau lu dans Chrome (tâche 9, étape 4), comparé à la chaîne attendue et à la sortie de `zsh scripts/count-tokens.sh` du jour.
 
-**AC-3c-5 : 60 images par seconde au pire moment (spec AC-8)**
-- **Comportement :** quand Romain joue une partie entière sur son Mac, éclatements et sortie des baies compris, alors aucune fenêtre de 2 s ne perd d'images, et une image ne demande jamais 80 appels de dessin.
-- **Vérifié par :** la ligne console `[agenthot] frames {…}` de fin de partie (tâche 9, étape 7) : `worstWindowP95Ms` ≤ 20 et `maxDrawCalls` < 80. Pourquoi 20 et pas 16,7 : voir la décision 4.
+**AC-3c-5 : jamais sous 30 images par seconde (spec AC-8, révisé le 2026-09-30)**
+- **Comportement :** quand Romain joue une partie entière sur son Mac, éclatements et sortie des baies compris, alors aucune image ne met plus de 33,3 ms, et une image ne demande jamais 80 appels de dessin.
+- **Vérifié par :** la ligne console `[agenthot] frames {…}` de fin de partie (tâche 9, étape 7) : `maxMs` ≤ 33,3 et `maxDrawCalls` < 80.
+- **Révision :** l'ancien seuil était `worstWindowP95Ms` ≤ 20 (60 images par seconde, décision 4). La partie de Romain du 30/09 à 18 h 57 l'a dépassé : `worstWindowP95Ms` 25,7, `maxMs` 31,9, 63 appels de dessin. Romain a tranché à 19 h 01 : « Accepter, j'ai mon Mac qui fait beaucoup de chose... je ne veux pas perdre en qualité alors que j'ai une machine vieille lol. » Pas de diagnostic, le rendu ne bouge pas. **Tenu** avec le nouveau critère (31,9 ≤ 33,3 ; 63 < 80).
+- **Backlog, sans y toucher :** la qualité auto oscille entre `res 1` et `res 0.85` (à regarder si des visiteurs se plaignent) ; l'occlusion ambiante pèse environ 75 % du temps d'image (levier `SSAONode`, qui changerait le rendu).
 
 **AC-3c-6 : jouable en 2 secondes (spec AC-10)**
 - **Comportement :** quand on ouvre l'adresse cache vide, alors « APPUIE SUR UNE TOUCHE » apparaît en 2 s au plus, et le poids transféré hors cinématique et musiques reste sous 3 Mo.
@@ -3805,7 +3807,7 @@ Le serveur de l'étape 2 tourne toujours. Envoyer à Romain ce message, tel quel
 
 Attendu de Romain :
 - Safari : la cinématique joue (AC-3c-3, en local).
-- La ligne `[agenthot] frames {"frames":…,"p95Ms":…,"worstWindowP95Ms":…,"maxMs":…,"maxDrawCalls":…}` : `worstWindowP95Ms` ≤ 20 et `maxDrawCalls` < 80 (AC-3c-5). Une ligne sort aussi à chaque mort : seule celle de la victoire compte.
+- La ligne `[agenthot] frames {"frames":…,"p95Ms":…,"worstWindowP95Ms":…,"maxMs":…,"maxDrawCalls":…}` : `maxMs` ≤ 33,3 et `maxDrawCalls` < 80 (AC-3c-5, révisé). Une ligne sort aussi à chaque mort : seule celle de la victoire compte.
 - WebGL2 : victoire, rendu identique (AC-3c-7).
 - Un oui ou un retour sur l'icône, la phrase, le README, le titre, `llms.txt`, les outils, et son nom dans la fiche (décision 15).
 

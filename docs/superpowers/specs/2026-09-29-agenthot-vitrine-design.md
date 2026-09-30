@@ -404,9 +404,10 @@ src/
 - **Comportement :** quand le dernier ennemi éclate, alors toute la partie est rejouée à vitesse réelle avec « AGENT... HOT... ». Sa durée égale le temps de simulation écoulé.
 - **Vérifié par :** en debug, la console affiche le temps de simulation et la durée du replay. L'écart est ≤ 5 %. Revue en jouant par Romain.
 
-**AC-8 : 60 images/s au pire moment**
-- **Comportement :** quand 5 ennemis sont en jeu et qu'un éclatement a lieu, alors le jeu tient 60 images/s sur le Mac de Romain, avec moins de 80 appels de dessin.
-- **Vérifié par :** trace de performance Chrome DevTools pendant ce moment : temps d'image p95 ≤ 16,7 ms. `renderer.info.render.drawCalls` < 80 (lu via `evaluate_script`).
+**AC-8 : jamais sous 30 images/s au pire moment**
+- **Comportement :** quand 5 ennemis sont en jeu et qu'un éclatement a lieu, alors le jeu ne passe jamais sous 30 images/s sur le Mac M1 de Romain, même chargé, avec moins de 80 appels de dessin.
+- **Vérifié par :** en `?debug`, la ligne console `[agenthot] frames {…}` de fin de partie : `maxMs` ≤ 33,3 et `maxDrawCalls` < 80.
+- **Révisé le 2026-09-30 par Romain.** Ancien critère : 60 images/s, temps d'image p95 ≤ 16,7 ms (lu à 20 ms par la sonde du plan 3c). Sa partie du 30/09 sur son Mac chargé : `worstWindowP95Ms` 25,7, `maxMs` 31,9, 63 appels de dessin. Ses mots : « Accepter, j'ai mon Mac qui fait beaucoup de chose... je ne veux pas perdre en qualité alors que j'ai une machine vieille lol. » Le rendu reste figé ; 60 images/s reste la cible sur une machine libre (section 9.2), sans être un critère.
 
 **AC-9 : repli WebGL2 fonctionnel**
 - **Comportement :** quand WebGPU n'est pas disponible, alors le jeu s'affiche et se joue de la même façon, ombre des coins et glow compris.
