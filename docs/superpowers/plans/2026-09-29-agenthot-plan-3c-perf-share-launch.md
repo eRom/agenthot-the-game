@@ -44,6 +44,8 @@
 - Safari, repli WebGL2, icône, README, `llms.txt` : validés. À 19 h 10 (« 3x oui ! ») : son nom dans la fiche (décision 15), la phrase du Making-of, les trois outils WebMCP.
 - AC-3c-5 : sa partie donne `worstWindowP95Ms` 25,7, `maxMs` 31,9, `maxDrawCalls` 63. Au-dessus de l'ancien seuil de 20. Romain a accepté à 19 h 01 : son critère (jamais sous 30 images par seconde) devient l'officiel, et il est tenu. Voir AC-3c-5.
 
+**Porte 1, le push (tâche 11), faite le 2026-09-30 à 19 h 59** par la session venus, sur les mots de Romain : « garde mon adresse Gmail, go push » et « supprime la branche une fois fait et checké ». `main` et `origin/main` au même hash (`60c4deb`), dépôt public, branche par défaut `main`, description et site posés. Branche `feat/agenthot-plan-3c` supprimée en local (jamais poussée). **AC-3c-11 tenu :** `https://github.com/eRom/agenthot-the-game` répond `200` sans connexion (relu par le contrôleur à 20 h 00). Porte suivante : le déploiement Vercel (tâche 12), sur son go.
+
 **Place de ce plan :** plan 3c sur 3, le dernier.
 - **3a** (fait, fusionné à `54a6288`) : finitions du jeu et écrans.
 - **3b** (fait, fusionné à `fd71576`) : assets générés, `?record`, cinématique.

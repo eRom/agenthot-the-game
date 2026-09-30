@@ -1,6 +1,11 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
-## Mise à jour du 2026-09-30 à 20:00 (prime sur le reste de la note)
+## Mise à jour du 2026-09-30 à 20:02 (prime sur le reste de la note)
+- **Poussé** (porte 1, tâche 11, faite par la session venus à 19:59, sur les mots de Romain : « garde mon adresse Gmail, go push » et « supprime la branche une fois fait et checké »). `origin/main` = `60c4deb`, dépôt public, page GitHub en 200. Branche `feat/agenthot-plan-3c` supprimée en local. AC-3c-11 tenu.
+- Ce commit de note est **local** (`main` un commit devant `origin`) : il part au prochain push, sur un go.
+- **Prochaine porte : le déploiement Vercel (tâche 12)**, sur son go. Puis le DNS (tâche 13) et la tâche 13b.
+
+## Mise à jour du 2026-09-30 à 20:00
 - **Plan 3c fusionné dans `main`** (avance rapide, `6e2ccd3`), sur le go de Romain (19:49, « Demande de fusion dans main validé »). 367 tests, `check-release dist` : all good. Rien poussé, rien déployé. La branche `feat/agenthot-plan-3c` est gardée (sa suppression attend son mot).
 - **Dépôt GitHub rendu public par Romain** (19:49, « pour info ») ; toujours vide. **Prochaine porte : le push (tâche 11)**, avec son choix sur l'adresse Gmail des commits (garder, ou `noreply` avec réécriture de l'historique).
 - **Crédits honnêtes** (sa demande de 19:49 : « On va préciser le coup du cache svp, pour ne pas se la jouer. C'est une vitrine opus, autant être honnête ! sur les tokens et coûts ») : sous « 1 129 844 422 tokens ‧ coût API estimé : 443,80 $ », la ligne « dont 1 097 034 905 tokens relus en cache (219,41 $) ‧ 4 947 744 tokens produits par les modèles, réflexion comprise ». Même précision dans le README, `llms.txt`, `llms-full.txt` et l'outil `get_credits` ; un test échoue si l'un d'eux ne suit pas un nouveau compte. `zsh scripts/count-tokens.sh …` sort maintenant une ligne `SPLIT`.
