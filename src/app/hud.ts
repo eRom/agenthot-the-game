@@ -1,9 +1,10 @@
 // Surcouche du jeu : réticule, messages, chant du replay, panneau debug (styles : style.css et ui/tokens.css).
 
-export type HudMessage = "start" | "paused" | "dead" | "replay" | "won" | "none";
+// « none » : en jeu, le réticule seul. « off » : menu et cinématique, aucun élément du jeu (pas même le réticule).
+export type HudMessage = "start" | "paused" | "dead" | "replay" | "won" | "none" | "off";
 
 // La pause et la fin de victoire ont leur panneau Encre (ui/room-panels.ts) : pas de texte du HUD.
-const MESSAGES: Record<Exclude<HudMessage, "none" | "replay">, string> = {
+const MESSAGES: Record<Exclude<HudMessage, "none" | "off" | "replay">, string> = {
   start: "CLIQUE POUR JOUER",
   paused: "",
   // Spec 4.4 : texte discret ; un clic relance aussi.
@@ -37,7 +38,7 @@ export class Hud {
     this.chantWord = "";
     this.deathTint.classList.toggle("on", message === "dead");
     this.crosshair.hidden = message !== "none";
-    if (message === "none" || message === "replay") {
+    if (message === "none" || message === "off" || message === "replay") {
       this.message.textContent = "";
       this.message.classList.remove("chant", "hot");
       return;

@@ -124,7 +124,8 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     if (next === "dead") deadSince = performance.now();
     // Écrans de fin : on oublie les appuis du jeu (saut, R, clic de tir) pour ne pas sauter l'écran.
     if (next === "dead" || next === "replay" || next === "won") input.clear();
-    hud.show(next === "playing" || next === "idle" || next === "menu" ? "none" : next);
+    // Le réticule appartient au jeu : il ne se montre qu'en partie, pas sur le fond du menu ni sous la cinématique.
+    hud.show(next === "playing" ? "none" : next === "idle" || next === "menu" ? "off" : next);
     // Pas d'arme en main ni de bourdon dans le menu : on y regarde la salle, on n'y joue pas.
     world.viewModel.group.visible = next !== "menu";
     audio.setDrone(next !== "menu");
@@ -277,6 +278,9 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     showMenu(): void {
       if (input.locked) document.exitPointerLock();
       last = performance.now();
+      // La démo repart de son début (le fondu depuis le noir), pas d'où elle en était restée.
+      menuReplay.restart();
+      menuTime = 0;
       setMode("menu");
       audio.playMenuMusic();
     },
