@@ -12,6 +12,9 @@ export const QUALITY = {
   slowWindow: 2,
   recoverWindow: 10,
   steps: [1, 0.85, 0.7],
+  // Échauffement (s) : au démarrage et après un changement de mode, la compilation des shaders fait des accrocs de
+  // 150 à 250 ms qui ne sont pas un GPU lent. Pendant cette durée, la mesure est ignorée.
+  warmUp: 3,
   fpsCap: 60,
   // Au-delà (ms), un écart entre deux images est un arrêt (onglet caché, chargement), pas un GPU lent : ignoré.
   stallMs: 250,
@@ -26,6 +29,7 @@ export class QualityGovernor {
   private windowFrames = 0;
   private windowMs = 0;
   private stableTime = 0;
+  private warmUpTime = 0;
 
   constructor(mode: QualityMode) {
     this.mode = mode;
@@ -47,17 +51,28 @@ export class QualityGovernor {
     this.step = mode === "low" ? QUALITY.steps.length - 1 : 0;
     this.resetWindow();
     this.stableTime = 0;
+    this.warmUpTime = 0;
   }
 
   // Une image rendue : `frameMs` est l'écart avec la précédente. Renvoie vrai si l'échelle a changé.
   sample(frameMs: number): boolean {
-    if (this.mode !== "auto" || frameMs > QUALITY.stallMs) return false;
+    if (this.mode !== "auto") return false;
+    // Un arrêt (onglet caché) ne compte pas, et les images qui l'entourent non plus : la fenêtre repart de zéro.
+    if (frameMs > QUALITY.stallMs) {
+      this.resetWindow();
+      return false;
+    }
+    // Échauffement : rien n'est enregistré, l'échelle ne bouge pas.
+    if (this.warmUpTime < QUALITY.warmUp) {
+      this.warmUpTime += frameMs / 1000;
+      return false;
+    }
     this.windowTime += frameMs / 1000;
     this.windowFrames++;
     this.windowMs += frameMs;
     if (this.windowTime < QUALITY.slowWindow) return false;
     const average = this.windowMs / this.windowFrames;
-    const window = this.windowTime;
+    const windowSeconds = this.windowTime;
     this.resetWindow();
     if (average > QUALITY.slowFrameMs) {
       this.stableTime = 0;
@@ -67,7 +82,7 @@ export class QualityGovernor {
       }
       return false;
     }
-    this.stableTime += window;
+    this.stableTime += windowSeconds;
     if (this.stableTime >= QUALITY.recoverWindow && this.step > 0) {
       this.step--;
       this.stableTime = 0;
