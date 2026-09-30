@@ -16,7 +16,7 @@ import { createWorldView, writeGameView } from "../sim/view";
 import { Hud } from "./hud";
 import { InputController } from "./input";
 
-type Mode = "idle" | "menu" | "start" | "playing" | "paused" | "dead" | "replay" | "won";
+export type EngineMode = "idle" | "menu" | "start" | "playing" | "paused" | "dead" | "replay" | "won";
 
 // Après la mort, on ignore R et le clic pendant 0,3 s réelle : un clic de tir en rafale ne doit pas sauter l'écran.
 const DEAD_INPUT_GUARD_MS = 300;
@@ -29,6 +29,8 @@ export interface EngineOptions {
   forceWebGL: boolean;
   // Réglages changés par la sonde debug : le point d'entrée les enregistre.
   onSettingsChange(settings: Settings): void;
+  // Chaque changement d'écran de la salle : le point d'entrée y accroche ses panneaux (pause, victoire).
+  onModeChange(mode: EngineMode): void;
 }
 
 export interface Engine {
@@ -38,6 +40,11 @@ export interface Engine {
   // Affiche la salle, prête à jouer : la souris est demandée tout de suite (à appeler dans le clic ou la touche
   // du joueur, seul moment où le navigateur l'accorde), sinon au premier clic sur la salle.
   enterRoom(): void;
+  // Pause : reprendre (dans un clic, pour reprendre la souris), recommencer la salle.
+  resume(): void;
+  restart(): void;
+  // Victoire : revoir le replay.
+  rewatch(): void;
 }
 
 export async function createEngine(options: EngineOptions): Promise<Engine> {
@@ -73,13 +80,32 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
   }
   applySettings(settings);
 
-  let mode: Mode = "idle";
+  let mode: EngineMode = "idle";
   let last = performance.now();
   let restartPending = false;
   let deadSince = 0;
   let fpsFrames = 0;
   let fpsTime = 0;
   let fps = 0;
+
+  // Relance (R, clic à la mort, Recommencer) : même salle, sans rien recharger (AC-6).
+  function restartRun(): void {
+    restartPending = true;
+    startRun();
+    // Sans verrou (Échap sur l'écran de fin), on le redemande et on attend qu'il revienne.
+    if (input.locked) setMode("playing");
+    else {
+      input.lock();
+      setMode("paused");
+    }
+    world.update(view);
+  }
+
+  function rewatch(): void {
+    replay.restart();
+    audio.playReplayMusic();
+    setMode("replay");
+  }
 
   function startRun(): void {
     game.reset();
@@ -91,7 +117,7 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     audio.playGameMusic();
   }
 
-  function setMode(next: Mode): void {
+  function setMode(next: EngineMode): void {
     mode = next;
     if (next === "dead") deadSince = performance.now();
     // Écrans de fin : on oublie les appuis du jeu (saut, R, clic de tir) pour ne pas sauter l'écran.
@@ -100,6 +126,9 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     // Pas d'arme en main ni de bourdon dans le menu : on y regarde la salle, on n'y joue pas.
     world.viewModel.group.visible = next !== "menu";
     audio.setDrone(next !== "menu");
+    // Victoire : la souris est rendue, pour cliquer dans le panneau (Rejouer, Revoir, Menu).
+    if (next === "won" && input.locked) document.exitPointerLock();
+    options.onModeChange(next);
     // Aberration chromatique : seulement pendant l'écran de mort (spec 6.2).
     post.setDeath(next === "dead" ? 1 : 0);
     post.setFade(0);
@@ -109,7 +138,8 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
   // Sans verrou, les clics de tir ne sont jamais enregistrés : ce clic ne relance donc pas une partie.
   renderer.domElement.addEventListener("click", () => {
     audio.unlock();
-    if (mode !== "idle" && mode !== "menu" && mode !== "playing" && !input.locked) input.lock();
+    // Ni dans le menu, ni à la fin d'une victoire, où la souris sert à cliquer dans les panneaux.
+    if (mode !== "idle" && mode !== "menu" && mode !== "playing" && mode !== "won" && !input.locked) input.lock();
   });
   document.addEventListener("pointerlockchange", () => {
     if (input.locked && (mode === "start" || mode === "paused")) {
@@ -143,9 +173,10 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
         options.onSettingsChange(settings);
         return settings;
       },
-      // Vérification du fond du menu avant que le menu ne l'ouvre (plan 3a, tâche 9).
-      menu(): void {
-        engine.showMenu();
+      // Écrans de la salle sans verrou de souris (captures) : « paused », « dead », « won », « replay ».
+      forceMode(next: EngineMode): void {
+        if (next === "replay") rewatch();
+        else setMode(next);
       },
 
       advance(seconds: number, overrides: Partial<PlayerInput> = {}): void {
@@ -200,33 +231,17 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
       if (game.status === "won") {
         // Preuve AC-7 : la durée rejouée doit coller au temps de simulation écoulé.
         if (debug) console.info(`[agenthot] replay sim ${game.simTime.toFixed(2)} s vs duration ${replay.duration.toFixed(2)} s`);
-        replay.restart();
-        audio.playReplayMusic();
-        setMode("replay");
+        rewatch();
       }
-    } else if (mode === "dead" || mode === "won") {
+    } else if (mode === "dead") {
       // Temps figé : le son reste grave et étouffé.
       audio.freeze(TIME.min);
-      // Mort : R ou un clic relance (spec 4.4). Victoire : R seulement, le clic est trop facile à faire par erreur.
-      const clicked = input.consumeFire() && mode === "dead";
+      // Mort : R ou un clic relance (spec 4.4).
+      const clicked = input.consumeFire();
       const pressedR = input.consumePress("KeyR");
       // Pendant la garde, R et le clic sont écartés (consommés ci-dessus), pas mis en attente.
-      const guarded = mode === "dead" && now - deadSince < DEAD_INPUT_GUARD_MS;
-      if (!guarded && (pressedR || clicked)) {
-        restartPending = true;
-        startRun();
-        // Sans verrou (Échap sur l'écran de fin), on le redemande et on attend qu'il revienne.
-        if (input.locked) setMode("playing");
-        else {
-          input.lock();
-          setMode("paused");
-        }
-        world.update(view);
-      } else if (mode === "won" && input.consumePress("Space")) {
-        replay.restart();
-        audio.playReplayMusic();
-        setMode("replay");
-      }
+      const guarded = now - deadSince < DEAD_INPUT_GUARD_MS;
+      if (!guarded && (pressedR || clicked)) restartRun();
     } else if (mode === "replay") {
       replay.update(dt);
       world.update(replay.view, dt);
@@ -234,7 +249,7 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
       hud.chant(replay.playhead);
       if (replay.finished) setMode("won");
     } else {
-      // Départ et pause : la partie est figée, le son aussi.
+      // Départ, pause et fin de victoire : la partie est figée, le son aussi.
       audio.freeze(TIME.min);
     }
 
@@ -272,6 +287,11 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
       setMode("start");
       input.lock();
     },
+    resume(): void {
+      input.lock();
+    },
+    restart: restartRun,
+    rewatch,
   };
   return engine;
 }

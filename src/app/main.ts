@@ -11,8 +11,9 @@ import { LoaderScreen } from "../ui/loader";
 import { MenuScreen } from "../ui/menu";
 import { MobileScreen } from "../ui/mobile";
 import { type PanelHandle, creditsBody, openPanel, roomsBody, settingsBody } from "../ui/panels";
+import { RoomPanels } from "../ui/room-panels";
 import { browserEnvironment, playOnDesktopOnly } from "./device";
-import type { Engine } from "./engine";
+import type { Engine, EngineMode } from "./engine";
 
 const params = new URLSearchParams(window.location.search);
 const screens = document.querySelector<HTMLElement>("#screens")!;
@@ -57,8 +58,11 @@ async function boot(): Promise<void> {
       debug: params.has("debug"),
       forceWebGL: params.get("renderer") === "webgl",
       onSettingsChange: (next) => saveSettings(storage, next),
+      onModeChange: (mode) => onModeChange(mode),
     }),
   );
+  // Panneaux de la salle, branchés une fois le menu construit (plus bas).
+  let onModeChange: (mode: EngineMode) => void = () => undefined;
   // Rejet traité plus bas, après le geste : on le marque comme attendu dès maintenant.
   enginePromise.catch(() => undefined);
   await loader.waitForGesture(() => audio.unlock());
@@ -119,6 +123,32 @@ async function boot(): Promise<void> {
       },
     },
   );
+
+  // Salle : pause et fin de victoire (spec 4.4). Menu : retour au menu, depuis l'un ou l'autre.
+  const roomPanels = new RoomPanels(screens);
+  const backToMenu = (): void => {
+    roomPanels.hide();
+    audio.ui("back");
+    engine.showMenu();
+    menu.show();
+  };
+  onModeChange = (mode) => {
+    if (mode === "paused") {
+      roomPanels.show("Pause", "Le temps est figé", [
+        { label: "Reprendre", key: "Clic", run: () => engine.resume() },
+        { label: "Recommencer", code: "KeyR", key: "R", run: () => engine.restart() },
+        { label: "Menu", code: "KeyM", key: "M", run: backToMenu },
+      ]);
+    } else if (mode === "won") {
+      roomPanels.show("Salle nettoyée", "Le temps t'a obéi", [
+        { label: "Rejouer", code: "KeyR", key: "R", run: () => engine.restart() },
+        { label: "Revoir le replay", code: "Space", key: "Espace", run: () => engine.rewatch() },
+        { label: "Menu", code: "KeyM", key: "M", run: backToMenu },
+      ]);
+    } else {
+      roomPanels.hide();
+    }
+  };
 
   await loader.hide();
   engine.showMenu();

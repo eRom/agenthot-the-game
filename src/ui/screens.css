@@ -513,3 +513,26 @@
   letter-spacing: 0.04em;
   line-height: 1.6;
 }
+
+/* ---------- Salle : pause et fin de victoire (spec 4.4) ---------- */
+
+.room-panels {
+  display: grid;
+  place-items: center;
+  background: rgb(13 17 27 / 0.35);
+}
+
+.room-panel {
+  display: grid;
+  gap: 10px;
+  width: min(420px, 90vw);
+}
+
+.room-panel h2 {
+  margin-bottom: 0;
+}
+
+.room-panel-sub {
+  margin-bottom: 10px;
+  color: #5b6170;
+}

@@ -2,12 +2,13 @@
 
 export type HudMessage = "start" | "paused" | "dead" | "replay" | "won" | "none";
 
+// La pause et la fin de victoire ont leur panneau Encre (ui/room-panels.ts) : pas de texte du HUD.
 const MESSAGES: Record<Exclude<HudMessage, "none" | "replay">, string> = {
   start: "CLIQUE POUR JOUER",
-  paused: "PAUSE ‧ CLIQUE POUR REPRENDRE",
+  paused: "",
   // Spec 4.4 : texte discret ; un clic relance aussi.
   dead: "R ‧ RECOMMENCER",
-  won: "R ‧ REJOUER  ·  ESPACE ‧ REVOIR",
+  won: "",
 };
 
 export class Hud {
