@@ -1,0 +1,91 @@
+<!doctype html>
+<!-- Image de partage (spec 4.7) : fond Seedream, logo et texte posés avec nos polices. Capturée à 1200 × 630 par
+     scripts/build-og.sh (Chrome sans écran). Fond : ?bg=<chemin relatif à cette page>, sinon le vide seul. -->
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @font-face {
+        font-family: "Big Shoulders Display";
+        src: url("../../public/fonts/big-shoulders-display-900.woff2") format("woff2");
+        font-weight: 900;
+      }
+      @font-face {
+        font-family: "Martian Mono";
+        src: url("../../public/fonts/martian-mono-300-400.woff2") format("woff2");
+        font-weight: 300 400;
+      }
+      * {
+        margin: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #0d111b;
+      }
+      .card {
+        position: relative;
+        width: 1200px;
+        height: 630px;
+        background: #0d111b center / cover no-repeat;
+        display: grid;
+        align-content: center;
+        padding: 0 88px;
+      }
+      /* Le vide monte de la gauche : le logo reste lisible sur n'importe quel fond. */
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgb(13 17 27 / 0.94) 0%, rgb(13 17 27 / 0.75) 42%, rgb(13 17 27 / 0) 78%);
+      }
+      .content {
+        position: relative;
+        display: grid;
+        gap: 26px;
+      }
+      .logo {
+        font-family: "Big Shoulders Display", sans-serif;
+        font-weight: 900;
+        font-size: 190px;
+        line-height: 0.8;
+        letter-spacing: -0.01em;
+        color: #ecebe7;
+      }
+      .logo span {
+        display: block;
+        color: #d97757;
+        text-shadow: 0 0 40px rgb(217 119 87 / 0.5);
+      }
+      .label {
+        font-family: "Martian Mono", monospace;
+        font-weight: 400;
+        font-size: 19px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #c9cbd0;
+      }
+      .label.small {
+        font-weight: 300;
+        font-size: 15px;
+        color: #7c8394;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="content">
+        <div class="logo">AGENT<span>HOT</span></div>
+        <p class="label">Le temps n'avance que quand tu bouges</p>
+        <p class="label small">Un FPS dans le navigateur · Made with Claude Opus 5.5</p>
+      </div>
+    </div>
+    <script>
+      const bg = new URLSearchParams(location.search).get("bg");
+      if (bg) document.querySelector(".card").style.backgroundImage = `url("${bg}")`;
+    </script>
+  </body>
+</html>

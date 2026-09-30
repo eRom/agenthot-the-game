@@ -85,7 +85,7 @@ export type ParsedArgs = { ok: true; track: string; pay: boolean; overwrite: boo
 // Arguments du script, en échec fermé : seul `--pay` ouvre le chemin payant. Sans lui, la piste seule (ou avec
 // `--dry-run`, toujours accepté) est un essai à blanc. `--overwrite` autorise à écraser un fichier existant.
 // Un drapeau inconnu, répété, ou `--pay` avec `--dry-run` (contradiction) est refusé.
-export function parseArgs(args: readonly string[], tracks: Record<string, string>): ParsedArgs {
+export function parseArgs(args: readonly string[], tracks: Readonly<Record<string, unknown>>): ParsedArgs {
   const [track, ...flags] = args;
   if (track === undefined || !Object.hasOwn(tracks, track)) return { ok: false, error: `unknown or missing track: ${track ?? "(none)"}` };
   let pay = false;
