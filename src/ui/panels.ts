@@ -14,6 +14,7 @@ export function openPanel(slot: HTMLElement, title: string, body: HTMLElement, o
   const panel = document.createElement("div");
   panel.className = "ink-panel menu-panel";
   panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
   panel.setAttribute("aria-label", title);
   panel.innerHTML = `<h2>${escapeHtml(title)}</h2>`;
   panel.appendChild(body);
@@ -180,7 +181,10 @@ export function settingsBody(initial: Settings, onChange: (next: Settings) => vo
   reset.addEventListener("click", () => {
     // Le panneau se reconstruit avec les valeurs par défaut : plus simple que de resynchroniser chaque contrôle.
     update({ ...DEFAULT_SETTINGS });
-    body.replaceWith(settingsBody(current, onChange));
+    const rebuilt = settingsBody(current, onChange);
+    body.replaceWith(rebuilt);
+    // Le bouton cliqué disparaît avec l'ancien corps : le focus revient sur son remplaçant, pas sur <body>.
+    rebuilt.querySelector<HTMLElement>(".settings-reset")?.focus({ preventScroll: true });
   });
   body.appendChild(reset);
   return body;

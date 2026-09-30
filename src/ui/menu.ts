@@ -72,6 +72,8 @@ export class MenuScreen {
         this.focus(i);
         this.callbacks.onSound("hover");
       });
+      // Tab (ou tout focus natif) déplace aussi l'entrée active : clavier, souris et Tab restent d'accord.
+      button.addEventListener("focus", () => this.markFocused(i));
       button.addEventListener("click", () => this.activate(i));
     });
   }
@@ -118,13 +120,20 @@ export class MenuScreen {
   setPanelOpen(open: boolean): void {
     this.panelOpen = open;
     this.root.classList.toggle("has-panel", open);
+    // Derrière un panneau, les entrées sortent de l'ordre de Tab (et ne reprennent pas le focus tant qu'il est ouvert).
+    this.root.querySelector<HTMLElement>(".menu-entries")!.inert = open;
     if (!open) this.entries[this.focusIndex]!.focus({ preventScroll: true });
   }
 
   private focus(index: number): void {
+    this.markFocused(index);
+    this.entries[this.focusIndex]!.focus({ preventScroll: true });
+  }
+
+  // Entrée active (losange orange) sans déplacer le focus natif : appelé aussi quand le focus vient d'ailleurs (Tab).
+  private markFocused(index: number): void {
     this.focusIndex = (index + this.entries.length) % this.entries.length;
     this.entries.forEach((entry, i) => entry.classList.toggle("is-focused", i === this.focusIndex));
-    this.entries[this.focusIndex]!.focus({ preventScroll: true });
   }
 
   private activate(index: number): void {
@@ -135,6 +144,12 @@ export class MenuScreen {
   }
 
   private handleKey(event: KeyboardEvent): void {
+    // Entrée tenue : les répétitions ne valident rien. Sans ce garde, celles qui arrivent après l'ouverture d'un
+    // panneau cliqueraient nativement la carte ou « Retour » qui vient de prendre le focus.
+    if (event.repeat && (event.code === "Enter" || event.code === "Space")) {
+      event.preventDefault();
+      return;
+    }
     if (this.panelOpen) return;
     if (event.code === "ArrowDown" || event.code === "ArrowUp") {
       event.preventDefault();

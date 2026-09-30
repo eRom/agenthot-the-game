@@ -78,7 +78,10 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     world.setFov(next.fov);
     audio.engine.setVolumes(next.musicVolume / 100, next.sfxVolume / 100);
     if (quality.mode !== next.quality) quality.setMode(next.quality);
-    renderer.setPixelRatio(basePixelRatio(isWebGPU) * quality.scale);
+    // Chaque cran d'un curseur appelle cette fonction : le pixel ratio (coûteux : cibles de rendu recréées) ne
+    // bouge que s'il change vraiment.
+    const ratio = basePixelRatio(isWebGPU) * quality.scale;
+    if (renderer.getPixelRatio() !== ratio) renderer.setPixelRatio(ratio);
   }
   applySettings(settings);
 

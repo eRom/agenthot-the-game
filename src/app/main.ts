@@ -111,10 +111,11 @@ async function runBoot(loader: LoaderScreen): Promise<void> {
   const closePanel = (): void => {
     panel?.close();
   };
-  // Un panneau ouvert se ferme : son de retour, les entrées reprennent le clavier.
+  // Un panneau ouvert se ferme : son de retour (sauf si c'est une salle lancée depuis lui), les entrées reprennent le clavier.
+  let launchingRoom = false;
   const onPanelClosed = (): void => {
     panel = null;
-    audio.ui("back");
+    if (!launchingRoom) audio.ui("back");
     menu.setPanelOpen(false);
   };
   const showPanel = (title: string, body: HTMLElement): void => {
@@ -133,7 +134,14 @@ async function runBoot(loader: LoaderScreen): Promise<void> {
   };
   // Jouer : le clic (ou la touche) qui lance la salle est aussi celui qui prend la souris (AC-10).
   const play = (): void => {
-    closePanel();
+    // Depuis le panneau Salles, le clic est une validation (« select »), pas un retour. Depuis l'entrée « Jouer »,
+    // le menu a déjà joué « select » et aucun panneau n'est ouvert.
+    if (panel) {
+      audio.ui("select");
+      launchingRoom = true;
+      closePanel();
+      launchingRoom = false;
+    }
     menu.hide();
     engine.enterRoom();
   };
