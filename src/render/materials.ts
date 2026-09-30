@@ -4,9 +4,9 @@ import * as THREE from "three/webgpu";
 import { PALETTE } from "./palette";
 import { GLOW_MRT } from "./post";
 
-// Part de la lumière d'ambiance reçue par la menace, facette par facette (essai de rendu du 2026-09-30). La salle
-// blanche baigne dans une ambiance forte, claire aussi par en dessous, qui aplatirait le cristal. La menace garde
-// l'ambiance d'avant : entière par le haut, presque nulle par le bas. Les facettes tournées vers le sol restent sombres.
+// Part de la lumière d'ambiance reçue par la menace, facette par facette (rendu du 2026-09-30). La salle blanche
+// baigne dans une ambiance forte, claire aussi par en dessous, qui aplatirait le cristal. La menace n'en reçoit
+// qu'une part, grande par le haut et petite par le bas : les facettes tournées vers le sol restent sombres.
 export const THREAT_AMBIENT = { down: 0.16, up: 0.85 } as const;
 
 function threatAmbient() {

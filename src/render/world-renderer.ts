@@ -10,6 +10,7 @@ import { buildCeiling, floorMaterial, rackGeometry, rackMaterial, shelfGeometry 
 import { EnemyBodies } from "./enemy-bodies";
 import { aimLineMaterial, enemyBodyMaterial, inkMaterial, threatBasicMaterial, threatMaterial, worldMaterial } from "./materials";
 import { PALETTE } from "./palette";
+import { NO_OCCLUSION_LAYER } from "./post";
 import { ViewModel, pistolGeometry } from "./view-model";
 
 // Lumière de la salle (essai de rendu du 2026-09-30).
@@ -75,7 +76,8 @@ export class WorldRenderer {
     sun.shadow.camera.right = 16;
     sun.shadow.camera.top = 16;
     sun.shadow.camera.bottom = -16;
-    sun.shadow.camera.near = 1;
+    // Plan proche au plus près : à 1 m, le haut des murs (7,5 m) sortait du champ et laissait un coin sans ombre.
+    sun.shadow.camera.near = 0.1;
     sun.shadow.camera.far = 40;
     sun.shadow.radius = 3;
     sun.shadow.bias = -0.0005;
@@ -119,11 +121,16 @@ export class WorldRenderer {
 
     if (room.interior) this.scene.add(buildCeiling(room.interior.halfX, room.interior.halfZ, room.interior.height));
 
-    // Baies : un seul InstancedMesh, une baie explosée est mise à l'échelle 0. La géométrie est à taille réelle
-    // (toutes les baies d'une salle ont la même) ; une baie sur deux est tournée d'un demi-tour, pour varier.
-    const firstRack = room.boxes[room.rackBoxIndices[0]!]!;
-    const rackSize = new THREE.Vector3().subVectors(toV3(firstRack.max), toV3(firstRack.min));
-    const rackGeo = rackGeometry({ depth: rackSize.x, height: rackSize.y, width: rackSize.z });
+    // Baies : un seul InstancedMesh, une baie explosée est mise à l'échelle 0. La géométrie est à taille réelle,
+    // celle de la première baie (toutes les baies d'une salle ont la même taille) ; une baie sur trois est tournée
+    // d'un demi-tour, pour varier. Une salle sans baie garde un maillage vide.
+    const firstRackIndex = room.rackBoxIndices[0];
+    let rackGeo: THREE.BufferGeometry = new THREE.BoxGeometry(1, 1, 1);
+    if (firstRackIndex !== undefined) {
+      const firstRack = room.boxes[firstRackIndex]!;
+      const rackSize = new THREE.Vector3().subVectors(toV3(firstRack.max), toV3(firstRack.min));
+      rackGeo = rackGeometry({ depth: rackSize.x, height: rackSize.y, width: rackSize.z });
+    }
     this.racks = new THREE.InstancedMesh(rackGeo, rackMaterial(), room.rackBoxIndices.length);
     this.racks.castShadow = true;
     this.racks.receiveShadow = true;
@@ -132,7 +139,7 @@ export class WorldRenderer {
       const box = room.boxes[boxIndex]!;
       const matrix = new THREE.Matrix4().compose(
         new THREE.Vector3().addVectors(toV3(box.min), toV3(box.max)).multiplyScalar(0.5),
-        (i * 7) % 3 === 0 ? halfTurn : new THREE.Quaternion(),
+        i % 3 === 0 ? halfTurn : new THREE.Quaternion(),
         new THREE.Vector3(1, 1, 1),
       );
       this.rackMatrices.push(matrix);
@@ -186,6 +193,11 @@ export class WorldRenderer {
       mesh.frustumCulled = false;
       this.scene.add(mesh);
     }
+
+    // Ces objets ne comptent pas dans l'ombre des coins (post.ts) : ils passent sur leur calque, que la caméra voit.
+    this.camera.layers.enable(NO_OCCLUSION_LAYER);
+    const noOcclusion = [this.viewModel.group, this.aimLines, this.weapons, this.bulletHeads, this.bulletTrails, this.threatShards, this.neutralShards];
+    for (const root of noOcclusion) root.traverse((object) => object.layers.set(NO_OCCLUSION_LAYER));
   }
 
   resize(aspect: number): void {

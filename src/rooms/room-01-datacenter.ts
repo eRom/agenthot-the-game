@@ -55,10 +55,10 @@ for (const [x0, x1] of [
   boxes.push(aabb(x0, 0, -HALF_Z, x1, SHELF_HEIGHT, -HALF_Z + SHELF_DEPTH));
 }
 
-// Plafond invisible à la hauteur des murs, sur toute la salle : les éclats ne passent plus par-dessus les murs
-// (tâche 9, M1). Collision seulement, jamais dessiné : la salle reste ouverte sur le vide. Personne n'y monte
-// (tête du joueur au plus vers 3,4 m, ennemi de la passerelle vers 5,3 m) ; une balle ou une arme lancée vers
-// le haut s'y arrête à cette hauteur.
+// Plafond de collision à la hauteur des murs, sur toute la salle : les éclats ne passent plus par-dessus les murs
+// (tâche 9, M1). Cette boîte n'est jamais dessinée : le rendu pose à sa place une dalle lumineuse et des panneaux
+// suspendus (decor.ts). Personne n'y monte (tête du joueur au plus vers 3,4 m, ennemi de la passerelle vers
+// 5,3 m) ; une balle ou une arme lancée vers le haut s'y arrête.
 const ceilingIndex = boxes.length;
 boxes.push(aabb(-HALF_X - WALL, WALL_HEIGHT, -HALF_Z - WALL, HALF_X + WALL, WALL_HEIGHT + WALL, HALF_Z + WALL));
 
