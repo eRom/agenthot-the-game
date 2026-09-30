@@ -32,12 +32,12 @@ export function barLoop(m: BarMeasure): MusicPlayback {
   return { offset: loopStart, loopStart, loopEnd: loopStart + bars * m.barSeconds };
 }
 
-// Boucle du menu : public/audio/menu.mp3, mesurée le 2026-09-30 par bun scripts/measure-loop.ts (plan 3b, tâche 6).
+// Boucle du menu : src/audio/tracks/menu.mp3, mesurée le 2026-09-30 par bun scripts/measure-loop.ts (plan 3b, tâche 6).
 export const MENU_LOOP: BarMeasure = { firstDownbeat: 0.093, barSeconds: 1.875128, tailSilenceStart: 62.575034 };
 
 // Les morceaux Lyria portent du silence : `game` 2,57 s à la fin, `replay` 2,69 s au début et 2,34 s à la fin.
 // Mesures du 2026-09-29 (seuil -50 dB, durée minimale 0,5 s) :
-//   ffmpeg -i public/audio/<piste>.mp3 -af silencedetect=noise=-50dB:d=0.5 -f null -
+//   ffmpeg -i src/audio/tracks/<piste>.mp3 -af silencedetect=noise=-50dB:d=0.5 -f null -
 //   game   : silence_start 89.1435 -> fin (91.7159)
 //   replay : silence 0 -> 2.6918, puis silence_start 103.0595 -> fin (105.4040)
 // Valeurs arrondies vers l'intérieur du son (au plus 10 ms de musique sacrifiés).

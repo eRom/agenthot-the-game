@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { barMeasure, beatPeriod, parseSilences } from "../scripts/loop-measure";
 
-// Sortie réelle de `ffmpeg -af silencedetect=noise=-50dB:d=0.5` sur public/audio/replay.mp3 (2026-09-30).
+// Sortie réelle de `ffmpeg -af silencedetect=noise=-50dB:d=0.5` sur src/audio/tracks/replay.mp3 (2026-09-30).
 const REPLAY_LOG = `[Parsed_silencedetect_0 @ 0x79230a8900] silence_start: 0
 [Parsed_silencedetect_0 @ 0x79230a8900] silence_end: 2.691769 | silence_duration: 2.691769
 [Parsed_silencedetect_0 @ 0x79230a8900] silence_start: 103.059546

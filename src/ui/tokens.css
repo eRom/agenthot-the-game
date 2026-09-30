@@ -3,31 +3,31 @@
 
 @font-face {
   font-family: "Big Shoulders Display";
-  src: url("/fonts/big-shoulders-display-800.woff2") format("woff2");
+  src: url("./fonts/big-shoulders-display-800.woff2") format("woff2");
   font-weight: 800;
   font-display: swap;
 }
 @font-face {
   font-family: "Big Shoulders Display";
-  src: url("/fonts/big-shoulders-display-900.woff2") format("woff2");
+  src: url("./fonts/big-shoulders-display-900.woff2") format("woff2");
   font-weight: 900;
   font-display: swap;
 }
 @font-face {
   font-family: "Chakra Petch";
-  src: url("/fonts/chakra-petch-500.woff2") format("woff2");
+  src: url("./fonts/chakra-petch-500.woff2") format("woff2");
   font-weight: 500;
   font-display: swap;
 }
 @font-face {
   font-family: "Chakra Petch";
-  src: url("/fonts/chakra-petch-600.woff2") format("woff2");
+  src: url("./fonts/chakra-petch-600.woff2") format("woff2");
   font-weight: 600;
   font-display: swap;
 }
 @font-face {
   font-family: "Martian Mono";
-  src: url("/fonts/martian-mono-300-400.woff2") format("woff2");
+  src: url("./fonts/martian-mono-300-400.woff2") format("woff2");
   font-weight: 300 400;
   font-display: swap;
 }

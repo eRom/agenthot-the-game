@@ -2,14 +2,16 @@
 # Polices de l'interface (spec 3 et 6.3), auto-hébergées en woff2 : sous-ensemble latin + français.
 # Sources : dépôt google/fonts, figé au commit ci-dessous. Licence SIL OFL 1.1 sans nom réservé : sous-ensemble et
 # conversion permis sans renommage, à condition de livrer la licence (public/fonts/LICENSES.txt).
-# Usage : zsh scripts/build-fonts.sh   (réseau + uvx ; écrit public/fonts/)
+# Usage : zsh scripts/build-fonts.sh   (réseau + uvx ; écrit src/ui/fonts/ et public/fonts/LICENSES.txt)
 set -euo pipefail
 # Date figée dans les fichiers produits (fontTools la lit) et versions d'outils épinglées : deux lancements
 # donnent les mêmes octets.
 export SOURCE_DATE_EPOCH=1790640000
 
 ROOT=${0:A:h:h}
-OUT=$ROOT/public/fonts
+# Les polices sont importées par le CSS (nom haché au build) ; la licence reste servie à /fonts/LICENSES.txt.
+OUT=$ROOT/src/ui/fonts
+LICENSE_DIR=$ROOT/public/fonts
 COMMIT=23e54b51ddffbc7713c583748e3bd86f62b1fa4a
 BASE=https://raw.githubusercontent.com/google/fonts/$COMMIT/ofl
 WORK=$(mktemp -d)
@@ -34,7 +36,7 @@ instance bsd.ttf bsd-800.ttf wght=800
 instance bsd.ttf bsd-900.ttf wght=900
 instance martian.ttf martian-300-400.ttf wght=300:400 wdth=100
 
-mkdir -p "$OUT"
+mkdir -p "$OUT" "$LICENSE_DIR"
 subset() {
   uvx --from "fonttools[woff]==4.66.1" --with brotli==1.2.0 pyftsubset "$WORK/$1" --unicodes="$UNICODES" --flavor=woff2 \
     --layout-features='*' --no-hinting --output-file="$OUT/$2"
@@ -52,7 +54,7 @@ subset martian-300-400.ttf martian-mono-300-400.woff2
     print "\n==== $name ====\n"
     cat "$WORK/$name-OFL.txt"
   done
-} > "$OUT/LICENSES.txt"
+} > "$LICENSE_DIR/LICENSES.txt"
 
 trash "$WORK"
-ls -l "$OUT"
+ls -l "$OUT" "$LICENSE_DIR"

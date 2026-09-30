@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { MENU_LOOP, type TrackName, barLoop, musicPlayback } from "../src/audio/music";
 
 // Mesures du 2026-09-29 (voir le commentaire de src/audio/music.ts) :
-//   ffprobe -v error -show_entries format=duration -of default=nw=1 public/audio/<piste>.mp3
-//   ffmpeg -i public/audio/<piste>.mp3 -af silencedetect=noise=-50dB:d=0.5 -f null -
+//   ffprobe -v error -show_entries format=duration -of default=nw=1 src/audio/tracks/<piste>.mp3
+//   ffmpeg -i src/audio/tracks/<piste>.mp3 -af silencedetect=noise=-50dB:d=0.5 -f null -
 const MEASURED: Record<Exclude<TrackName, "menu">, { duration: number; headSilenceEnd: number; tailSilenceStart: number }> = {
   // game.mp3 : pas de silence de tête ; 2,57 s de silence de 89,14 s à la fin.
   game: { duration: 91.715875, headSilenceEnd: 0, tailSilenceStart: 89.143537 },
@@ -88,7 +88,7 @@ describe("boucle coupée sur le temps (plan 3b, boucle du menu)", () => {
 });
 
 describe("boucle du menu mesurée (plan 3b)", () => {
-  // ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 public/audio/menu.mp3
+  // ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 src/audio/tracks/menu.mp3
   const MENU_DURATION = 63.999958;
 
   test("menu : la fenêtre mesurée tient dans le fichier, sans repli sur tout le fichier", () => {

@@ -5,13 +5,17 @@ import { AudioEngine } from "./audio-engine";
 import { MusicTrack } from "./music";
 import { playDryFire, playImpact, playNearMiss, playShatter, playShot, startDrone } from "./sfx";
 import { type UiSound, playUiSound } from "./ui-sfx";
+import gameTrackUrl from "./tracks/game.mp3";
+import menuTrackUrl from "./tracks/menu.mp3";
+import replayTrackUrl from "./tracks/replay.mp3";
 import { AUDIO_TIME, droneGain, musicRate, sfxRate } from "./time-coupling";
 
-// Morceaux Lyria (tâche 8 du plan 2 ; boucle du menu au plan 3b), servis depuis public/audio/.
+// Morceaux Lyria (tâche 8 du plan 2 ; boucle du menu au plan 3b). Importés : Vite leur donne un nom haché, que
+// l'hébergeur sert avec un cache d'un an (vercel.json).
 const MUSIC = {
-  game: "/audio/game.mp3",
-  replay: "/audio/replay.mp3",
-  menu: "/audio/menu.mp3",
+  game: gameTrackUrl,
+  replay: replayTrackUrl,
+  menu: menuTrackUrl,
 } as const;
 
 export class GameAudio {

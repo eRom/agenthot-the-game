@@ -1,8 +1,11 @@
-// Fichiers de la cinématique (spec 4.2), fabriqués au plan 3b : WebM AV1, repli MP4 H.264.
-// Tant qu'ils n'existent pas, les écrans qui les lisent se passent de vidéo, sans erreur.
+// Fichiers de la cinématique (spec 4.2), fabriqués au plan 3b : WebM AV1, repli MP4 H.264. Importés : Vite leur
+// donne un nom haché (cache d'un an chez l'hébergeur). Illisibles, les écrans se passent de vidéo, sans erreur.
+import introMp4Url from "./video/intro.mp4";
+import introWebmUrl from "./video/intro.webm";
+
 export const INTRO_VIDEO = {
-  webm: "/video/intro.webm",
-  mp4: "/video/intro.mp4",
+  webm: introWebmUrl,
+  mp4: introMp4Url,
 } as const;
 
 // Balise <video> de la cinématique. `ambient` : muette, en boucle, lancée seule (écran mobile).
