@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type TrackName, barLoop, musicPlayback } from "../src/audio/music";
+import { MENU_LOOP, type TrackName, barLoop, musicPlayback } from "../src/audio/music";
 
 // Mesures du 2026-09-29 (voir le commentaire de src/audio/music.ts) :
 //   ffprobe -v error -show_entries format=duration -of default=nw=1 public/audio/<piste>.mp3
@@ -84,5 +84,22 @@ describe("boucle coupée sur le temps (plan 3b, boucle du menu)", () => {
 
   test("un temps fort à l'instant 0 ne fait pas partir la boucle avant le fichier", () => {
     expect(barLoop({ firstDownbeat: 0.01, barSeconds: 2, tailSilenceStart: 10 }).loopStart).toBe(0);
+  });
+});
+
+describe("boucle du menu mesurée (plan 3b)", () => {
+  // ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 public/audio/menu.mp3
+  const MENU_DURATION = 63.999958;
+
+  test("menu : la fenêtre mesurée tient dans le fichier, sans repli sur tout le fichier", () => {
+    expect(musicPlayback("menu", MENU_DURATION)).toEqual(barLoop(MENU_LOOP));
+    expect(MENU_LOOP.tailSilenceStart).toBeLessThanOrEqual(MENU_DURATION);
+  });
+
+  test("menu : la boucle dure un nombre entier de mesures, jusqu'avant le silence de fin", () => {
+    const p = musicPlayback("menu", MENU_DURATION);
+    const bars = (p.loopEnd - p.loopStart) / MENU_LOOP.barSeconds;
+    expect(Math.abs(bars - Math.round(bars))).toBeLessThan(1e-9);
+    expect(p.loopEnd).toBeLessThanOrEqual(MENU_LOOP.tailSilenceStart);
   });
 });

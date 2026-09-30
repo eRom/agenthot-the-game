@@ -32,6 +32,9 @@ export function barLoop(m: BarMeasure): MusicPlayback {
   return { offset: loopStart, loopStart, loopEnd: loopStart + bars * m.barSeconds };
 }
 
+// Boucle du menu : public/audio/menu.mp3, mesurée le 2026-09-30 par bun scripts/measure-loop.ts (plan 3b, tâche 6).
+export const MENU_LOOP: BarMeasure = { firstDownbeat: 0.093, barSeconds: 1.875128, tailSilenceStart: 62.575034 };
+
 // Les morceaux Lyria portent du silence : `game` 2,57 s à la fin, `replay` 2,69 s au début et 2,34 s à la fin.
 // Mesures du 2026-09-29 (seuil -50 dB, durée minimale 0,5 s) :
 //   ffmpeg -i public/audio/<piste>.mp3 -af silencedetect=noise=-50dB:d=0.5 -f null -
@@ -41,8 +44,8 @@ export function barLoop(m: BarMeasure): MusicPlayback {
 const PLAYBACK: Record<TrackName, MusicPlayback> = {
   game: { offset: 0, loopStart: 0, loopEnd: 89.14 },
   replay: { offset: 2.69, loopStart: 2.69, loopEnd: 103.05 },
-  // Boucle du menu (plan 3b) : tout le fichier tant qu'elle n'est pas générée et mesurée (loopEnd borné à sa durée).
-  menu: { offset: 0, loopStart: 0, loopEnd: Number.POSITIVE_INFINITY },
+  // Boucle du menu : un nombre entier de mesures, calé sur le temps (MENU_LOOP).
+  menu: barLoop(MENU_LOOP),
 };
 
 // Paramètres de lecture d'une piste, bornés à la durée du tampon décodé : une piste régénérée plus courte
