@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { type TrackName, musicPlayback } from "../src/audio/music";
+import { type TrackName, barLoop, musicPlayback } from "../src/audio/music";
 
 // Mesures du 2026-09-29 (voir le commentaire de src/audio/music.ts) :
 //   ffprobe -v error -show_entries format=duration -of default=nw=1 public/audio/<piste>.mp3
@@ -57,5 +57,32 @@ describe("boucles musicales sans silence (plan 2, correctif 2)", () => {
     expect(p.offset).toBe(0);
     expect(p.loopStart).toBe(0);
     expect(p.loopEnd).toBe(2);
+  });
+});
+
+describe("boucle coupée sur le temps (plan 3b, boucle du menu)", () => {
+  // Répétition sur game.mp3 (2026-09-30) : analyze-beatgrid.py puis bun scripts/measure-loop.ts. Demandé à 120 BPM,
+  // mesuré à 130 : premier temps fort 0,093 s, mesure 1,846184 s, silence de fin à 89,143537 s.
+  const GAME = { firstDownbeat: 0.093, barSeconds: 1.846184, tailSilenceStart: 89.143537 };
+
+  test("la boucle dure un nombre entier de mesures", () => {
+    const p = barLoop(GAME);
+    const bars = (p.loopEnd - p.loopStart) / GAME.barSeconds;
+    expect(Math.abs(bars - Math.round(bars))).toBeLessThan(1e-9);
+    expect(Math.round(bars)).toBe(48);
+  });
+
+  test("elle part juste avant le premier temps fort et s'arrête avant le silence de fin", () => {
+    const p = barLoop(GAME);
+    expect(p.offset).toBe(p.loopStart);
+    expect(p.loopStart).toBeLessThan(GAME.firstDownbeat);
+    expect(p.loopStart).toBeGreaterThan(GAME.firstDownbeat - 0.05);
+    expect(p.loopEnd).toBeLessThanOrEqual(GAME.tailSilenceStart);
+    // Au plus une mesure de musique laissée de côté à la fin.
+    expect(p.loopEnd).toBeGreaterThan(GAME.tailSilenceStart - GAME.barSeconds);
+  });
+
+  test("un temps fort à l'instant 0 ne fait pas partir la boucle avant le fichier", () => {
+    expect(barLoop({ firstDownbeat: 0.01, barSeconds: 2, tailSilenceStart: 10 }).loopStart).toBe(0);
   });
 });

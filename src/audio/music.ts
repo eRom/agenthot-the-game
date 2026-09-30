@@ -12,6 +12,26 @@ export interface MusicPlayback {
   loopEnd: number;
 }
 
+// Mesure d'une boucle coupée sur le temps (bun scripts/measure-loop.ts) : premier temps fort après le silence de
+// tête, durée d'une mesure et début du silence de fin, en secondes.
+export interface BarMeasure {
+  firstDownbeat: number;
+  barSeconds: number;
+  tailSilenceStart: number;
+}
+
+// Avance de la coupe sur le temps fort (s) : le pointage des temps est à ±23 ms près ; couper un peu avant ne mange
+// pas l'attaque de la grosse caisse, et la fin de boucle, décalée d'autant, garde la même phase.
+const BAR_LOOP_LEAD = 0.03;
+
+// Boucle d'un nombre entier de mesures, qui démarre juste avant un temps fort : la jointure tombe sur le temps. Le
+// tempo est mesuré, jamais supposé : Lyria ne tient pas le BPM demandé (game.mp3, demandé à 120, mesuré à 130).
+export function barLoop(m: BarMeasure): MusicPlayback {
+  const loopStart = Math.max(0, m.firstDownbeat - BAR_LOOP_LEAD);
+  const bars = Math.floor((m.tailSilenceStart - loopStart) / m.barSeconds);
+  return { offset: loopStart, loopStart, loopEnd: loopStart + bars * m.barSeconds };
+}
+
 // Les morceaux Lyria portent du silence : `game` 2,57 s à la fin, `replay` 2,69 s au début et 2,34 s à la fin.
 // Mesures du 2026-09-29 (seuil -50 dB, durée minimale 0,5 s) :
 //   ffmpeg -i public/audio/<piste>.mp3 -af silencedetect=noise=-50dB:d=0.5 -f null -
