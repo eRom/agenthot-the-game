@@ -1,10 +1,11 @@
 // Crédits (spec 4.3, AC-15) : la ligne exacte donnée par Romain, puis les tokens et le coût API estimé.
-// Valeurs provisoires : mesure du brief plan 3 (2026-09-29, 13 h 35, chantier en cours). Le plan 3c les remplace
-// par le total final (scripts/count-tokens.sh), et remplace XXXXXX par le nom du dépôt choisi par Romain.
+// Mesure du 2026-09-30 à 18 h 12, toutes sessions du projet, sous-agents compris :
+//   zsh scripts/count-tokens.sh ~/.claude/projects/*claudehot*
+// À relancer juste avant la mise en ligne : chaque session de plus s'ajoute au total.
 export const CREDITS = {
-  repoUrl: "https://github.com/eRom/XXXXXX",
-  tokens: 118_795_538,
-  apiCostUsd: 50.31,
+  repoUrl: "https://github.com/eRom/agenthot-the-game",
+  tokens: 979_282_748,
+  apiCostUsd: 384.71,
 } as const;
 
 export interface CreditsData {
