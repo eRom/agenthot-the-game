@@ -80,10 +80,11 @@ body {
   }
 }
 
+/* Voile de mort : l'orange assombri d'encre, pour que « R ‧ RECOMMENCER » reste lisible sur un sol clair. */
 #death-tint {
   position: absolute;
   inset: 0;
-  background: var(--threat);
+  background: linear-gradient(rgb(10 12 16 / 0.45), rgb(10 12 16 / 0.45)), var(--threat);
   mix-blend-mode: multiply;
   opacity: 0;
   transition: opacity 120ms;
