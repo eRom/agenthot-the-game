@@ -16,6 +16,7 @@ AGENTHOT se joue sur ordinateur, au clavier et à la souris, dans Chrome, Safari
 ## Auteur
 
 - [Romain Ecarnot](https://www.romain-ecarnot.com/): eRom, l'auteur.
+- Coût du chantier : 1 129 844 422 tokens, coût API estimé 443,80 $, dont 1 097 034 905 relus en cache (219,41 $) ; 4 947 744 tokens écrits par les modèles.
 
 ## Optional
 

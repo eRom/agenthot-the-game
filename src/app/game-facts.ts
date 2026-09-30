@@ -2,7 +2,7 @@
 // Les mêmes faits sont écrits pour les robots dans public/llms.txt et dans le JSON-LD d'index.html : un changement
 // ici se reporte là-bas.
 import { ROOMS } from "../rooms/registry";
-import { CREDITS, creditsLine, usageLine } from "../ui/credits";
+import { CREDITS, cacheLine, creditsLine, usageLine } from "../ui/credits";
 
 export const SITE_URL = "https://agenthot.erom.cloud/";
 
@@ -63,10 +63,11 @@ export const CONTROLS: readonly Control[] = [
 export interface CreditsInfo {
   line: string;
   usage: string;
+  cache: string;
   author: string;
   sources: string;
 }
 
 export function creditsInfo(): CreditsInfo {
-  return { line: creditsLine(CREDITS), usage: usageLine(CREDITS), author: "eRom (Romain Ecarnot)", sources: CREDITS.repoUrl };
+  return { line: creditsLine(CREDITS), usage: usageLine(CREDITS), cache: cacheLine(CREDITS), author: "eRom (Romain Ecarnot)", sources: CREDITS.repoUrl };
 }

@@ -4,7 +4,7 @@ import { GAME_TOOLS, type ModelContext, type ModelContextTool, findModelContext,
 import { ROOMS } from "../src/rooms/registry";
 import { room01 } from "../src/rooms/room-01-datacenter";
 import { WEAPON } from "../src/sim/entities";
-import { CREDITS } from "../src/ui/credits";
+import { CREDITS, cacheLine } from "../src/ui/credits";
 
 // Ce qu'un agent reçoit en appelant un outil : les données, telles quelles (le navigateur les met en JSON).
 async function call(name: string): Promise<unknown> {
@@ -75,6 +75,8 @@ describe("outils WebMCP (lecture seule)", () => {
     expect(credits).toEqual(creditsInfo());
     expect(credits.line).toContain("Made with: Claude Opus 5.5");
     expect(credits.usage).toContain("coût API estimé");
+    expect(credits.cache).toBe(cacheLine(CREDITS));
+    expect(credits.cache).toContain("relus en cache");
   });
 
   test("chaque résultat se met en JSON et en revient identique, comme le fera le navigateur", async () => {

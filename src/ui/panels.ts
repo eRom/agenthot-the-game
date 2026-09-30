@@ -1,7 +1,7 @@
 // Panneaux Encre du menu (spec 4.3, 4.5, 6.3) : Salles, Paramètres, Crédits. Échap ou « Retour » les ferme.
 import type { RoomEntry } from "../rooms/types";
 import { DEFAULT_SETTINGS, QUALITY_MODES, SETTING_RANGES, type Settings, clampSetting } from "../settings/settings";
-import { CREDITS, creditsLine, usageLine } from "./credits";
+import { CREDITS, cacheLine, creditsLine, usageLine } from "./credits";
 import { EASE, escapeHtml } from "./dom";
 
 export interface PanelHandle {
@@ -197,6 +197,7 @@ export function creditsBody(): HTMLElement {
   body.innerHTML = `
     <p class="panel-row credits-line">${escapeHtml(creditsLine(CREDITS))}</p>
     <p class="panel-row credits-usage">${escapeHtml(usageLine(CREDITS))}</p>
+    <p class="panel-row label credits-note">${escapeHtml(cacheLine(CREDITS))}</p>
     <p class="panel-row label credits-note">Coût API estimé : tokens de toutes les sessions du chantier, au tarif public de l'API.</p>
     <p class="panel-row label credits-note">Polices : Big Shoulders Display, Chakra Petch, Martian Mono (SIL OFL 1.1). Musique : Lyria 3.5.</p>`;
   return body;

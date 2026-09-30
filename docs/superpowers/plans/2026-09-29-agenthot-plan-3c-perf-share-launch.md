@@ -89,8 +89,8 @@ Cinq situations qu'un visiteur rencontrera et qu'aucun test de tâche ne couvre 
 - **Vérifié par :** `ffprobe` de `src/ui/video/intro.mp4` : `h264`, `High`, `level=41` (tâche 3) ; Romain dans Safari, en local (tâche 9, étape 7) puis en ligne (tâche 14, étape 2).
 
 **AC-3c-4 : crédits vrais (spec AC-15)**
-- **Comportement :** quand on ouvre Crédits, alors on lit exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`, puis le nombre de tokens et le coût API estimé, mesurés sur les sessions du projet.
-- **Vérifié par :** texte du panneau lu dans Chrome (tâche 9, étape 4), comparé à la chaîne attendue et à la sortie de `zsh scripts/count-tokens.sh` du jour.
+- **Comportement :** quand on ouvre Crédits, alors on lit exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`, puis le nombre de tokens et le coût API estimé, mesurés sur les sessions du projet, puis la précision sur le cache : `dont <relus en cache> tokens relus en cache (<coût des relectures> $)`, puis le nombre de tokens écrits par les modèles (décision de Romain du 2026-09-30 à 19 h 49 : « On va préciser le coup du cache svp, pour ne pas se la jouer. C'est une vitrine opus, autant être honnête ! sur les tokens et coûts »).
+- **Vérifié par :** texte du panneau lu dans Chrome (tâche 9, étape 4), comparé à la chaîne attendue et aux lignes `TOTAL` et `SPLIT` de `zsh scripts/count-tokens.sh` du jour.
 
 **AC-3c-5 : jamais sous 30 images par seconde (spec AC-8, révisé le 2026-09-30)**
 - **Comportement :** quand Romain joue une partie entière sur son Mac, éclatements et sortie des baies compris, alors aucune image ne met plus de 33,3 ms, et une image ne demande jamais 80 appels de dessin.
@@ -3730,11 +3730,12 @@ async () => {
   return {
     line: document.querySelector(".credits-line")?.textContent ?? null,
     usage: document.querySelector(".credits-usage")?.textContent ?? null,
+    cache: document.querySelector(".credits-usage + .credits-note")?.textContent ?? null,
   };
 }
 ```
 
-Expected : `line` vaut exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game` ; `usage` porte les nombres de la tâche 6, par exemple `955 020 037 tokens ‧ coût API estimé : 373,80 $`.
+Expected : `line` vaut exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game` ; `usage` porte les nombres de la tâche 6, par exemple `955 020 037 tokens ‧ coût API estimé : 373,80 $` ; `cache` est la ligne de `cacheLine` : `dont <relus en cache> tokens relus en cache (<coût des relectures> $)`, puis les tokens écrits par les modèles, avec les nombres de la ligne `SPLIT` du dernier compte.
 
 - [ ] **Step 5 : AC-3c-8, téléphone et iPad**
 
