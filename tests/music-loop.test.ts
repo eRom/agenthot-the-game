@@ -4,7 +4,7 @@ import { type TrackName, musicPlayback } from "../src/audio/music";
 // Mesures du 2026-09-29 (voir le commentaire de src/audio/music.ts) :
 //   ffprobe -v error -show_entries format=duration -of default=nw=1 public/audio/<piste>.mp3
 //   ffmpeg -i public/audio/<piste>.mp3 -af silencedetect=noise=-50dB:d=0.5 -f null -
-const MEASURED: Record<TrackName, { duration: number; headSilenceEnd: number; tailSilenceStart: number }> = {
+const MEASURED: Record<Exclude<TrackName, "menu">, { duration: number; headSilenceEnd: number; tailSilenceStart: number }> = {
   // game.mp3 : pas de silence de tête ; 2,57 s de silence de 89,14 s à la fin.
   game: { duration: 91.715875, headSilenceEnd: 0, tailSilenceStart: 89.143537 },
   // replay.mp3 : 2,69 s de silence au début, 2,34 s à la fin.

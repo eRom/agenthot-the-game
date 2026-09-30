@@ -2,7 +2,7 @@
 // correction de hauteur : un AudioBufferSourceNode ralenti descend dans le grave (spec 7.1).
 import { AUDIO_TIME } from "./time-coupling";
 
-export type TrackName = "game" | "replay";
+export type TrackName = "game" | "replay" | "menu";
 
 export interface MusicPlayback {
   // Où la lecture démarre dans le fichier (s).
@@ -21,6 +21,8 @@ export interface MusicPlayback {
 const PLAYBACK: Record<TrackName, MusicPlayback> = {
   game: { offset: 0, loopStart: 0, loopEnd: 89.14 },
   replay: { offset: 2.69, loopStart: 2.69, loopEnd: 103.05 },
+  // Boucle du menu (plan 3b) : tout le fichier tant qu'elle n'est pas générée et mesurée (loopEnd borné à sa durée).
+  menu: { offset: 0, loopStart: 0, loopEnd: Number.POSITIVE_INFINITY },
 };
 
 // Paramètres de lecture d'une piste, bornés à la durée du tampon décodé : une piste régénérée plus courte

@@ -1,7 +1,8 @@
 // Graphe Web Audio (spec 7.1) :
 //   sources SFX ─► panner HRTF ─► bus SFX (passe-bas asservi) ────────────────┐
 //   musique en jeu ─► passe-bas asservi et plafonné ─► gain de jeu (−12 dB) ─┼─► compresseur ─► sortie
-//   musique menu / replay ────────────────────────────────────────────────────┘
+//   musique menu / replay ────────────────────────────────────────────────────┤
+//   sons d'interface (menu) ─► volume des effets, sans filtre ───────────────────┘
 // Le débit de la musique en jeu suit aussi le temps, côté MusicTrack.
 import { AUDIO_TIME, gameMusicCutoff, lowpassCutoff } from "./time-coupling";
 
@@ -20,6 +21,8 @@ export class AudioEngine {
   readonly musicIn: GainNode;
   // Entrée de la musique du menu et du replay : jamais filtrée.
   readonly cleanMusicIn: GainNode;
+  // Entrée des sons d'interface (survol, validation, retour) : volume des effets, jamais filtrée par le temps.
+  readonly uiIn: GainNode;
   // Sortie commune, avant la destination : le plan 3 s'y branche pour enregistrer (?record=1).
   readonly master: DynamicsCompressorNode;
   // Une seconde de bruit blanc, générée une fois : matière première des bruitages.
@@ -39,6 +42,8 @@ export class AudioEngine {
     this.sfxFilter = new BiquadFilterNode(ctx, { type: "lowpass", frequency: lowpassCutoff(1), Q: 0.7 });
     this.sfxIn = new GainNode(ctx);
     this.sfxIn.connect(this.sfxFilter).connect(this.sfxVolume).connect(this.master);
+    this.uiIn = new GainNode(ctx);
+    this.uiIn.connect(this.sfxVolume);
 
     this.musicVolume = new GainNode(ctx, { gain: DEFAULT_MUSIC_VOLUME });
     this.musicFilter = new BiquadFilterNode(ctx, { type: "lowpass", frequency: gameMusicCutoff(1), Q: 0.7 });

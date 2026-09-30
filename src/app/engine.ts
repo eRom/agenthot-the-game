@@ -1,6 +1,7 @@
 // Moteur du jeu, chargé à part (import dynamique) : Three.js, la simulation, le replay. Le point d'entrée
 // (main.ts) affiche le chargeur sans l'attendre (AC-10 : « APPUIE SUR UNE TOUCHE » en 2 s au plus).
 import type { GameAudio } from "../audio/game-audio";
+import { MENU_DEMO, type MenuCameraPose, menuCamera, menuFade, recordMenuDemo } from "../replay/menu-demo";
 import { ReplayPlayer } from "../replay/player";
 import { ReplayRecorder } from "../replay/recorder";
 import { basePixelRatio, createRenderer } from "../render/create-renderer";
@@ -15,7 +16,7 @@ import { createWorldView, writeGameView } from "../sim/view";
 import { Hud } from "./hud";
 import { InputController } from "./input";
 
-type Mode = "idle" | "start" | "playing" | "paused" | "dead" | "replay" | "won";
+type Mode = "idle" | "menu" | "start" | "playing" | "paused" | "dead" | "replay" | "won";
 
 // Après la mort, on ignore R et le clic pendant 0,3 s réelle : un clic de tir en rafale ne doit pas sauter l'écran.
 const DEAD_INPUT_GUARD_MS = 300;
@@ -32,6 +33,8 @@ export interface EngineOptions {
 
 export interface Engine {
   applySettings(settings: Settings): void;
+  // Fond du menu : la démo rejouée à 3 % du temps, caméra qui dérive, musique du menu (spec 4.3).
+  showMenu(): void;
   // Affiche la salle, prête à jouer : un clic prend la souris et lance la partie.
   enterRoom(): void;
 }
@@ -47,6 +50,10 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
   const recorder = new ReplayRecorder();
   const replay = new ReplayPlayer(recorder, room01);
   const input = new InputController(renderer.domElement);
+  // Fond du menu : démo jouée sans écran au démarrage (quelques millisecondes), puis rejouée au ralenti.
+  const menuReplay = new ReplayPlayer(recordMenuDemo(room01), room01);
+  const menuPose: MenuCameraPose = menuReplay.view.camera;
+  let menuTime = 0;
   const hud = new Hud(document.querySelector<HTMLElement>("#hud")!, debug);
   // Qualité auto (spec 9.2) : 60 images par seconde au plus, résolution adaptative, selon le réglage Qualité.
   const quality = new QualityGovernor(options.settings.quality);
@@ -88,16 +95,20 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     if (next === "dead") deadSince = performance.now();
     // Écrans de fin : on oublie les appuis du jeu (saut, R, clic de tir) pour ne pas sauter l'écran.
     if (next === "dead" || next === "replay" || next === "won") input.clear();
-    hud.show(next === "playing" || next === "idle" ? "none" : next);
+    hud.show(next === "playing" || next === "idle" || next === "menu" ? "none" : next);
+    // Pas d'arme en main ni de bourdon dans le menu : on y regarde la salle, on n'y joue pas.
+    world.viewModel.group.visible = next !== "menu";
+    audio.setDrone(next !== "menu");
     // Aberration chromatique : seulement pendant l'écran de mort (spec 6.2).
     post.setDeath(next === "dead" ? 1 : 0);
+    post.setFade(0);
   }
 
   // Un clic reprend le verrou du pointeur sur tous les écrans (Échap ou alt-tab l'ont peut-être perdu).
   // Sans verrou, les clics de tir ne sont jamais enregistrés : ce clic ne relance donc pas une partie.
   renderer.domElement.addEventListener("click", () => {
     audio.unlock();
-    if (mode !== "idle" && mode !== "playing" && !input.locked) input.lock();
+    if (mode !== "idle" && mode !== "menu" && mode !== "playing" && !input.locked) input.lock();
   });
   document.addEventListener("pointerlockchange", () => {
     if (input.locked && (mode === "start" || mode === "paused")) {
@@ -131,6 +142,11 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
         options.onSettingsChange(settings);
         return settings;
       },
+      // Vérification du fond du menu avant que le menu ne l'ouvre (plan 3a, tâche 9).
+      menu(): void {
+        engine.showMenu();
+      },
+
       advance(seconds: number, overrides: Partial<PlayerInput> = {}): void {
         const frameInput = { ...emptyInput(), ...overrides };
         for (let t = 0; t < seconds; t += 1 / 60) {
@@ -162,7 +178,15 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
       restartPending = false;
     }
 
-    if (mode === "playing") {
+    if (mode === "menu") {
+      menuTime += dt;
+      // Boucle de la démo : au bout de la fenêtre, on repart du début (les éclats et les baies sont rejoués).
+      if (menuReplay.finished) menuReplay.restart();
+      menuReplay.update(dt * MENU_DEMO.playbackRate);
+      menuCamera(menuTime, menuPose);
+      post.setFade(menuFade(menuReplay.playhead, menuReplay.duration));
+      world.update(menuReplay.view, dt * MENU_DEMO.playbackRate);
+    } else if (mode === "playing") {
       const simDt = game.step(dt, input.sample());
       writeGameView(game, view);
       for (let i = 0; i < game.events.count; i++) if (game.events.items[i]!.type === "punch") world.viewModel.punch();
@@ -230,11 +254,18 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     }
   });
 
-  return {
+  const engine: Engine = {
     applySettings,
+    showMenu(): void {
+      if (input.locked) document.exitPointerLock();
+      last = performance.now();
+      setMode("menu");
+      audio.playMenuMusic();
+    },
     enterRoom(): void {
       last = performance.now();
       setMode("start");
     },
   };
+  return engine;
 }

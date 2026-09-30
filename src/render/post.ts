@@ -71,6 +71,8 @@ export class PostPipeline {
   private readonly pipeline: THREE.RenderPipeline;
   // 0 en jeu, 1 à la mort.
   private readonly death = uniform(0);
+  // Fondu au vide (0 = image nette, 1 = tout `void`) : bouclage du fond du menu.
+  private readonly fade = uniform(0);
 
   constructor(renderer: THREE.WebGPURenderer, scene: THREE.Scene, camera: THREE.Camera) {
     const scenePass = pass(scene, camera);
@@ -140,11 +142,16 @@ export class PostPipeline {
     // ajouté en entier, ce flou uniforme remontait les facettes sombres et aplatissait le cristal (spec 6.2).
     const halo = glow.rgb.mul(mix(float(1), float(POST.bloomOnThreat), glowTex.sample(screenUV).x));
 
-    this.pipeline = new THREE.RenderPipeline(renderer, vec4(inked.add(halo), 1));
+    const faded = mix(inked.add(halo), linearColor(PALETTE.void), this.fade);
+    this.pipeline = new THREE.RenderPipeline(renderer, vec4(faded, 1));
   }
 
   setDeath(amount: number): void {
     this.death.value = amount;
+  }
+
+  setFade(amount: number): void {
+    this.fade.value = amount;
   }
 
   render(): void {

@@ -4,12 +4,14 @@ import type { WorldView } from "../sim/view";
 import { AudioEngine } from "./audio-engine";
 import { MusicTrack } from "./music";
 import { playDryFire, playImpact, playNearMiss, playShatter, playShot, startDrone } from "./sfx";
+import { type UiSound, playUiSound } from "./ui-sfx";
 import { AUDIO_TIME, droneGain, musicRate, sfxRate } from "./time-coupling";
 
-// Morceaux Lyria (tâche 8 du plan 2), servis depuis public/audio/.
+// Morceaux Lyria (tâche 8 du plan 2 ; boucle du menu au plan 3b), servis depuis public/audio/.
 const MUSIC = {
   game: "/audio/game.mp3",
   replay: "/audio/replay.mp3",
+  menu: "/audio/menu.mp3",
 } as const;
 
 export class GameAudio {
@@ -18,7 +20,11 @@ export class GameAudio {
   // Musique en jeu : filtrée et ralentie avec le temps. Musique du replay : à vitesse réelle, non filtrée.
   private readonly gameMusic: MusicTrack;
   private readonly replayMusic: MusicTrack;
+  // Boucle du menu : non filtrée, à vitesse réelle, comme celle du replay.
+  private readonly menuMusic: MusicTrack;
   private timeScale = 1;
+  // Bourdon d'ambiance (spec 7.3 : « ambiance en jeu ») : coupé dans le menu.
+  private droneOn = true;
   // Vrai si c'est nous qui avons suspendu le contexte (onglet caché) : on ne reprend que dans ce cas,
   // jamais un contexte que le premier geste n'a pas encore débloqué.
   private suspendedByHidden = false;
@@ -27,20 +33,41 @@ export class GameAudio {
     this.drone = startDrone(this.engine, this.engine.sfxIn);
     this.gameMusic = new MusicTrack(this.engine.ctx, this.engine.musicIn, MUSIC.game, "game");
     this.replayMusic = new MusicTrack(this.engine.ctx, this.engine.cleanMusicIn, MUSIC.replay, "replay");
+    this.menuMusic = new MusicTrack(this.engine.ctx, this.engine.cleanMusicIn, MUSIC.menu, "menu");
+  }
+
+  // Boucle du menu, attendue par le chargeur (spec 4.1).
+  loadMenuMusic(): Promise<void> {
+    return this.menuMusic.load();
   }
 
   loadMusic(): Promise<void> {
     return Promise.all([this.gameMusic.load(), this.replayMusic.load()]).then(() => undefined);
   }
 
+  // Une seule musique à la fois.
+  private switchTo(track: MusicTrack): void {
+    for (const other of [this.gameMusic, this.replayMusic, this.menuMusic]) if (other !== track) other.stop();
+    track.play();
+  }
+
   playGameMusic(): void {
-    this.replayMusic.stop();
-    this.gameMusic.play();
+    this.switchTo(this.gameMusic);
   }
 
   playReplayMusic(): void {
-    this.gameMusic.stop();
-    this.replayMusic.play();
+    this.switchTo(this.replayMusic);
+  }
+
+  playMenuMusic(): void {
+    this.switchTo(this.menuMusic);
+  }
+
+  // Son d'interface, joué tout de suite, même temps figé (il ne passe pas par le filtre du temps).
+  ui(sound: UiSound): void {
+    const engine = this.engine;
+    if (engine.ctx.state !== "running") return;
+    playUiSound(engine, engine.uiIn, engine.ctx.currentTime, sound);
   }
 
   unlock(): void {
@@ -69,8 +96,17 @@ export class GameAudio {
     engine.setListener(cam.pos.x, cam.pos.y, cam.pos.z, cam.yaw, cam.pitch);
     engine.setTimeScale(view.timeScale);
     this.gameMusic.setRate(musicRate(view.timeScale));
-    this.drone.gain.setTargetAtTime(droneGain(view.timeScale), engine.ctx.currentTime, AUDIO_TIME.rampTime);
+    this.drone.gain.setTargetAtTime(this.droneLevel(view.timeScale), engine.ctx.currentTime, AUDIO_TIME.rampTime);
     this.play(events, view);
+  }
+
+  setDrone(on: boolean): void {
+    this.droneOn = on;
+    this.drone.gain.setTargetAtTime(this.droneLevel(this.timeScale), this.engine.ctx.currentTime, AUDIO_TIME.rampTime);
+  }
+
+  private droneLevel(timeScale: number): number {
+    return this.droneOn ? droneGain(timeScale) : 0;
   }
 
   // Figé (mort, pause) : le son reste grave et étouffé, sans nouveaux événements.
@@ -78,7 +114,7 @@ export class GameAudio {
     this.timeScale = timeScale;
     this.engine.setTimeScale(timeScale);
     this.gameMusic.setRate(musicRate(timeScale));
-    this.drone.gain.setTargetAtTime(droneGain(timeScale), this.engine.ctx.currentTime, AUDIO_TIME.rampTime);
+    this.drone.gain.setTargetAtTime(this.droneLevel(timeScale), this.engine.ctx.currentTime, AUDIO_TIME.rampTime);
   }
 
   private play(events: EventQueue, view: WorldView): void {
