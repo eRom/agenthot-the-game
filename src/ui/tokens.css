@@ -1,0 +1,182 @@
+/* Design system de l'interface (spec 6.3) : « Monolithe » (logo, titres, replay) + « Encre » (panneaux).
+   Palette partagée avec le jeu (spec 6.1, src/render/palette.ts). L'orange ne signale que la menace ou l'action. */
+
+@font-face {
+  font-family: "Big Shoulders Display";
+  src: url("/fonts/big-shoulders-display-800.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Big Shoulders Display";
+  src: url("/fonts/big-shoulders-display-900.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/chakra-petch-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/chakra-petch-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Martian Mono";
+  src: url("/fonts/martian-mono-300-400.woff2") format("woff2");
+  font-weight: 300 400;
+  font-display: swap;
+}
+
+:root {
+  --void: #0d111b;
+  --void-2: #141a28;
+  --world: #ecebe7;
+  --world-2: #c9cbd0;
+  --ink: #0a0c10;
+  --threat: #d97757;
+  --threat-hot: #ff9d73;
+  --muted: #7c8394;
+
+  /* Piles de repli : le « ‧ » (U+2027) n'est dans aucune des trois polices, il vient d'une police système. */
+  --font-mono-title: "Big Shoulders Display", "Arial Narrow", sans-serif;
+  --font-ink: "Chakra Petch", system-ui, sans-serif;
+  --font-label: "Martian Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Mouvement : 150 à 250 ms, sans rebond. */
+  --ease: cubic-bezier(0.2, 0.9, 0.2, 1);
+  --t-fast: 150ms;
+  --t-mid: 200ms;
+  --t-slow: 250ms;
+
+  /* Cadres Encre en « 9-slice » (border-image) : trait d'encre, filet et coins coupés à 45° restent nets à
+     toute taille, y compris sur la diagonale des coins (un clip-path, lui, y coupait le trait). Plaque : 64 × 64,
+     coins de 18 px, trait de 2 px, filet à 6,5 px et 25 %. Bouton : 40 × 40, coin de 10 px, trait de 1,5 px,
+     filet `threat` de 4 px à gauche quand il est actif. Coordonnées calculées pour des diagonales à 45°.
+     `width` et `height` sont obligatoires : sans taille propre, le SVG serait étiré à la taille du bloc. */
+  --ink-panel-frame: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cpolygon points='0,0 46,0 64,18 64,64 18,64 0,46' fill='%230a0c10'/%3E%3Cpolygon points='2,2 45.17,2 62,18.83 62,62 18.83,62 2,45.17' fill='%23ecebe7'/%3E%3Cpolygon points='6.5,6.5 43.31,6.5 57.5,20.69 57.5,57.5 20.69,57.5 6.5,43.31' fill='none' stroke='%230a0c10' stroke-opacity='.25'/%3E%3C/svg%3E");
+  --ink-button-frame: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpolygon points='0,0 30,0 40,10 40,40 0,40' fill='%230a0c10'/%3E%3Cpolygon points='1.5,1.5 29.38,1.5 38.5,10.62 38.5,38.5 1.5,38.5' fill='%23ecebe7'/%3E%3C/svg%3E");
+  --ink-button-frame-hover: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpolygon points='0,0 30,0 40,10 40,40 0,40' fill='%230a0c10'/%3E%3C/svg%3E");
+  --ink-button-frame-active: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpolygon points='0,0 30,0 40,10 40,40 0,40' fill='%230a0c10'/%3E%3Cpolygon points='1.5,1.5 29.38,1.5 38.5,10.62 38.5,38.5 1.5,38.5' fill='%23ecebe7'/%3E%3Crect x='1.5' y='1.5' width='4' height='37' fill='%23d97757'/%3E%3C/svg%3E");
+  --ink-button-frame-active-hover: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpolygon points='0,0 30,0 40,10 40,40 0,40' fill='%230a0c10'/%3E%3Crect x='1.5' y='1.5' width='4' height='37' fill='%23d97757'/%3E%3C/svg%3E");
+}
+
+/* ---------- Monolithe ---------- */
+
+.mono-title {
+  font-family: var(--font-mono-title);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.82;
+  letter-spacing: -0.01em;
+  color: var(--world);
+}
+
+.mono-title .hot {
+  color: var(--threat);
+  text-shadow: 0 0 28px rgb(217 119 87 / 0.45);
+}
+
+.label {
+  font-family: var(--font-label);
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- Encre ---------- */
+
+/* Plaque : fond `world`, trait `ink` de 2 px, coins coupés, filet intérieur à 25 %, ombre décalée `void-2`
+   (drop-shadow : elle suit les coins coupés). */
+.ink-panel {
+  position: relative;
+  color: var(--ink);
+  font-family: var(--font-ink);
+  font-weight: 500;
+  border: 22px solid transparent;
+  border-image: var(--ink-panel-frame) 22 fill / 22px stretch;
+  padding: 8px 12px 4px;
+  filter: drop-shadow(10px 10px 0 var(--void-2));
+}
+
+.ink-panel h2 {
+  font-family: var(--font-ink);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+/* Bouton : cadre `ink` de 1,5 px, coin coupé. Survol ou focus : fond `ink`, texte `world`.
+   Élément actif : filet `threat` de 4 px à gauche. */
+.ink-button {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 0 4px 0 6px;
+  font-family: var(--font-ink);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 18px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: none;
+  border: 12px solid transparent;
+  border-image: var(--ink-button-frame) 12 fill / 12px stretch;
+  cursor: pointer;
+  transition: color var(--t-fast) var(--ease);
+}
+
+.ink-button:hover,
+.ink-button:focus-visible,
+.ink-button.is-focused {
+  border-image-source: var(--ink-button-frame-hover);
+  color: var(--world);
+  outline: none;
+}
+
+.ink-button.is-active {
+  border-image-source: var(--ink-button-frame-active);
+}
+
+.ink-button.is-active:hover,
+.ink-button.is-active:focus-visible,
+.ink-button.is-active.is-focused {
+  border-image-source: var(--ink-button-frame-active-hover);
+}
+
+.ink-button:disabled {
+  opacity: 0.38;
+  cursor: default;
+  border-image-source: var(--ink-button-frame);
+  color: var(--ink);
+}
+
+.ink-button small {
+  font-family: var(--font-label);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
+
+/* Écran sans mouvement demandé : les transitions restent, les animations d'entrée et d'ambiance s'arrêtent. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

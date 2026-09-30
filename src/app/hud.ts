@@ -1,12 +1,12 @@
-// Surcouche HTML minimale de la phase « gris » : réticule, messages, panneau debug.
-// Le design system Monolithe + Encre arrive au plan 3.
+// Surcouche du jeu : réticule, messages, chant du replay, panneau debug (styles : style.css et ui/tokens.css).
 
 export type HudMessage = "start" | "paused" | "dead" | "replay" | "won" | "none";
 
 const MESSAGES: Record<Exclude<HudMessage, "none" | "replay">, string> = {
   start: "CLIQUE POUR JOUER",
   paused: "PAUSE ‧ CLIQUE POUR REPRENDRE",
-  dead: "R OU CLIC ‧ RECOMMENCER",
+  // Spec 4.4 : texte discret ; un clic relance aussi.
+  dead: "R ‧ RECOMMENCER",
   won: "R ‧ REJOUER  ·  ESPACE ‧ REVOIR",
 };
 
@@ -38,11 +38,11 @@ export class Hud {
     this.crosshair.hidden = message !== "none";
     if (message === "none" || message === "replay") {
       this.message.textContent = "";
-      this.message.classList.remove("chant");
+      this.message.classList.remove("chant", "hot");
       return;
     }
     this.message.textContent = MESSAGES[message];
-    this.message.classList.remove("chant");
+    this.message.classList.remove("chant", "hot");
   }
 
   // « AGENT » puis « HOT », en alternance toutes les 0,5 s de replay.
@@ -52,6 +52,11 @@ export class Hud {
     this.chantWord = word;
     this.message.textContent = word;
     this.message.classList.add("chant");
+    this.message.classList.toggle("hot", word === "HOT");
+    // Relance l'animation d'arrivée du mot (même classe, nouveau mot).
+    this.message.style.animation = "none";
+    void this.message.offsetWidth;
+    this.message.style.animation = "";
   }
 
   // Le réticule fait un demi-tour quand une balle est chambrée (fin du temps de recharge).

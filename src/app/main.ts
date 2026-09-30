@@ -1,4 +1,5 @@
 // Point d'entrée de la phase « gris » : une salle, sans menu. Machine d'états réduite.
+import "../ui/tokens.css";
 import "./style.css";
 import { GameAudio } from "../audio/game-audio";
 import { ReplayPlayer } from "../replay/player";

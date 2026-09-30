@@ -1,11 +1,5 @@
-/* Phase « gris » : le strict minimum. Le design system arrive au plan 3. */
-:root {
-  --void: #0d111b;
-  --world: #ecebe7;
-  --threat: #d97757;
-  --ink: #0a0c10;
-}
-
+/* Surcouche du jeu : réticule, messages, chant du replay, teinte de mort, panneau debug.
+   Les tokens (couleurs, polices, mouvement) viennent de src/ui/tokens.css. */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -17,7 +11,8 @@ body {
   overflow: hidden;
   background: var(--void);
   color: var(--world);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: var(--font-label);
+  -webkit-font-smoothing: antialiased;
 }
 
 #app canvas {
@@ -30,35 +25,59 @@ body {
   pointer-events: none;
 }
 
+/* Réticule : un petit point carré, qui fait un demi-tour quand une balle est chambrée (spec 4.4). */
 #crosshair {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 10px;
-  height: 10px;
-  border: 2px solid var(--ink);
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--ink);
   background: var(--world);
   transform: translate(-50%, -50%) rotate(0deg);
-  transition: transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  transition: transform var(--t-slow) var(--ease);
 }
 
+/* Message discret sous le centre : départ, pause, « R ‧ RECOMMENCER » à la mort. */
 #message {
   position: absolute;
   left: 50%;
-  top: 58%;
+  top: 62%;
   transform: translateX(-50%);
-  font-size: 16px;
-  letter-spacing: 0.2em;
+  font-family: var(--font-label);
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.24em;
   color: var(--world);
-  text-shadow: 0 1px 0 var(--ink);
+  text-shadow: 0 1px 0 var(--ink), 0 0 12px rgb(10 12 16 / 0.6);
   white-space: nowrap;
 }
 
+/* Chant du replay (spec 4.4) : « AGENT » / « HOT » en Monolithe, sur le temps fort de la musique. */
 #message.chant {
-  top: 40%;
-  font-size: clamp(64px, 14vw, 200px);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono-title);
   font-weight: 900;
-  letter-spacing: 0;
+  font-size: clamp(96px, 22vw, 320px);
+  line-height: 0.82;
+  letter-spacing: -0.01em;
+  color: var(--world);
+  text-shadow: 0 6px 0 var(--ink);
+  animation: chant-slam var(--t-mid) var(--ease);
+}
+
+#message.chant.hot {
+  color: var(--threat);
+  text-shadow: 0 6px 0 var(--ink), 0 0 48px rgb(217 119 87 / 0.5);
+}
+
+/* Chaque mot arrive un peu plus grand et se pose : un coup de poing typographique, sans rebond. */
+@keyframes chant-slam {
+  from {
+    transform: translate(-50%, -50%) scale(1.12);
+    opacity: 0.4;
+  }
 }
 
 #death-tint {
@@ -78,7 +97,7 @@ body {
   position: absolute;
   left: 12px;
   bottom: 12px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--world);
   background: rgb(10 12 16 / 0.7);
   padding: 6px 10px;
