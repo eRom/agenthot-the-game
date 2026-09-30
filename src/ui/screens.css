@@ -505,7 +505,8 @@
 .credits-line {
   font-family: var(--font-label);
   font-weight: 400;
-  font-size: 13px;
+  /* 12 px : « Sources: » et l'adresse du dépôt tiennent sur une ligne (455 px à 13 px, pour 452 px de large). */
+  font-size: 12px;
   line-height: 1.7;
   word-break: break-word;
 }

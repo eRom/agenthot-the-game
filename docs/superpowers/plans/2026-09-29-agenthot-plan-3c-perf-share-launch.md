@@ -35,6 +35,12 @@
 - Tâche 8d, `ae6f2b5` : les outils WebMCP rendent leurs données directement (brouillon du W3C : `Promise<any>`, mis en JSON par le navigateur), et non `{ content: [...] }` ; un test lie « 5 ennemis, 4 balles » aux constantes du jeu ; « Ton arme se lance, même vide ».
 - Suite après ces corrections : 354 tests.
 
+**Retours de Romain à la recette (2026-09-30, 18 h 57) :**
+- Ligne des crédits sans « AGENTHOT ‧ » en tête : `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`. AC-3c-4 et la spec (4.3, AC-15) se lisent avec cette ligne. Police de la ligne à 12 px : l'adresse du dépôt tient entière sur la deuxième ligne.
+- Titre de la page : « AGENTHOT ‧ Le temps est votre arme » (remplace la décision 13).
+- Safari, repli WebGL2, icône, README, `llms.txt` : validés.
+- AC-3c-5 : sa partie donne `worstWindowP95Ms` 25,7, `maxMs` 31,9, `maxDrawCalls` 63. Au-dessus du seuil de 20 du plan, sous sa barre de 30 images par seconde (33 ms). Décision demandée à Romain.
+
 **Place de ce plan :** plan 3c sur 3, le dernier.
 - **3a** (fait, fusionné à `54a6288`) : finitions du jeu et écrans.
 - **3b** (fait, fusionné à `fd71576`) : assets générés, `?record`, cinématique.

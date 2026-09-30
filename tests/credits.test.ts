@@ -7,16 +7,16 @@ const DOT = String.fromCodePoint(0x2027);
 const THIN_SPACE = new RegExp(String.fromCodePoint(0x202f), "g");
 
 describe("crédits (spec 4.3, AC-15)", () => {
-  test("la ligne des crédits est exactement celle de la spec", () => {
+  test("la ligne des crédits est exactement celle de la spec (sans le nom du jeu, retiré par Romain le 2026-09-30)", () => {
     expect(creditsLine(CREDITS)).toBe(
-      `AGENTHOT ${DOT} Author: eRom ${DOT} Made with: Claude Opus 5.5 ${DOT} Sources: ${CREDITS.repoUrl}`,
+      `Author: eRom ${DOT} Made with: Claude Opus 5.5 ${DOT} Sources: ${CREDITS.repoUrl}`,
     );
     expect(CREDITS.repoUrl.startsWith("https://github.com/eRom/")).toBe(true);
   });
 
   test("le lien des sources mène au dépôt du jeu, plus à un nom provisoire (AC-15)", () => {
     expect(creditsLine(CREDITS)).toBe(
-      `AGENTHOT ${DOT} Author: eRom ${DOT} Made with: Claude Opus 5.5 ${DOT} Sources: https://github.com/eRom/agenthot-the-game`,
+      `Author: eRom ${DOT} Made with: Claude Opus 5.5 ${DOT} Sources: https://github.com/eRom/agenthot-the-game`,
     );
   });
 

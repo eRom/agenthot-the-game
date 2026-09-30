@@ -14,9 +14,10 @@ export interface CreditsData {
   apiCostUsd: number;
 }
 
-// Ligne exacte de la spec 4.3 ; `‧` est U+2027.
+// Ligne exacte de la spec 4.3 ; `‧` est U+2027. Sans « AGENTHOT » en tête (retiré par Romain le 2026-09-30 : le
+// panneau porte déjà le nom, et la ligne tient mieux).
 export function creditsLine(data: CreditsData): string {
-  return `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: ${data.repoUrl}`;
+  return `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: ${data.repoUrl}`;
 }
 
 // « 118 795 538 tokens ‧ coût API estimé : 50,31 $ ». Coût équivalent au tarif public de l'API : Romain paie un

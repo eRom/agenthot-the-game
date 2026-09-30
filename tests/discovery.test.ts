@@ -44,7 +44,7 @@ function graph(patch: (nodes: Record<string, Record<string, unknown>>) => void =
 }
 
 function page(jsonLd = graph(), head = ""): string {
-  return `<!doctype html><html lang="fr"><head><title>AGENTHOT - Le FPS où le temps n'avance que quand tu bouges</title>
+  return `<!doctype html><html lang="fr"><head><title>AGENTHOT ‧ Le temps est votre arme</title>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
     <link rel="ard" href="/.well-known/ard.json" type="application/json" />

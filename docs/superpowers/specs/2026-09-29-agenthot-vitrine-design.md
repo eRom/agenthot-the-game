@@ -61,7 +61,7 @@ Versions et API à revérifier au moment du plan (brief `pre-plan-research`) : T
   - **Jouer** : lance la salle 1.
   - **Salles** : panneau Encre avec 2 cartes. Salle 1 jouable. Salle 2 verrouillée, « BIENTÔT ». Vignettes générées avec Nano Banana.
   - **Paramètres** : panneau Encre (section 4.5).
-  - **Crédits** : panneau Encre. Ligne exacte : `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/XXXXXX`. En dessous : nombre de tokens et coût API estimé (décidé le 2026-09-29), avec des valeurs fictives jusqu'à la fin du chantier. Le comptage dédoublonne les lignes des transcripts par `message.id` (script en annexe du brief plan 3).
+  - **Crédits** : panneau Encre. Ligne exacte : `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/XXXXXX`. En dessous : nombre de tokens et coût API estimé (décidé le 2026-09-29), avec des valeurs fictives jusqu'à la fin du chantier. Le comptage dédoublonne les lignes des transcripts par `message.id` (script en annexe du brief plan 3).
   - **Intro** : rejoue la cinématique.
 - Navigation au clavier (flèches + Entrée) et à la souris.
 
@@ -441,7 +441,7 @@ src/
 - **Vérifié par :** parcours manuel (sensibilité, inversion Y, champ de vision, deux volumes, qualité), rechargement, contrôle de l'effet de chaque réglage.
 
 **AC-15 : crédits exacts**
-- **Comportement :** quand on ouvre Crédits, alors on lit exactement `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/XXXXXX`, suivi des tokens et du coût.
+- **Comportement :** quand on ouvre Crédits, alors on lit exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/XXXXXX`, suivi des tokens et du coût.
 - **Vérifié par :** `get_page_text` (DevTools MCP) comparé à la chaîne attendue.
 
 **AC-16 : une 2e salle s'ajoute par un fichier**
