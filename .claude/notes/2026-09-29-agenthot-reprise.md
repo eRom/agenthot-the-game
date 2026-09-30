@@ -1,9 +1,11 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
 ## Mise à jour du 2026-09-30 à 13:30 (prime sur le reste de la note)
-- **Plan 3b exécuté** sur la branche `feat/agenthot-plan-3b` (non fusionnée, rien poussé). `bun test` : 279 verts. Détail et dépenses : `.claude/notes/agenthot-plan-3-remaining.md` (en-tête du 30/09 13:30).
+- **Plan 3b exécuté, relu et fusionné** dans `main` (`fd71576`, avance rapide, 14:47). Rien poussé. `bun test` : 279 verts. Détail et dépenses : `.claude/notes/agenthot-plan-3-remaining.md` (en-tête du 30/09 13:30).
 - Validé par Romain : boucle du menu, intro, images, plan de la cinématique, cinématique finale (après 3 retours : action calée sur 7,33 s, plus aucune image fixe sauf « FIGÉ »).
-- **Prochaine étape : revue finale du 3b** (Opus, xhigh), fusion sur le go de Romain, puis écrire le plan 3c dans une session neuve.
+- Revue finale (Opus xhigh) : `docs/superpowers/reports/2026-09-30-agenthot-plan-3b-final-review.md`, 0 critique, 0 important, 17 mineurs. **Backlog avant la prochaine dépense : ses points 2 à 4** (scripts payants) ; **avant la mise en ligne : points 6 et 7** (MP4 à ré-encoder en `-level 4.1`, lecture dans Safari). La marge du go du 30/09 reste ouverte (choix de Romain, `GO_CAPS`).
+- Décisions prises pour Romain pendant l'exécution : `docs/superpowers/reports/2026-09-30-agenthot-plan-3b-rulings.md`.
+- **Prochaine étape : écrire le plan 3c** (perf, balises de partage sur `public/og-v1.jpg`, crédits, mise en ligne) dans une session neuve.
 - Journal d'exécution local : `.superpowers/sdd/2026-09-29-agenthot-plan-3b-assets-cinematic/progress.md`.
 
 ## Mise à jour du 2026-09-30 à 08:30 (prime sur le reste de la note)

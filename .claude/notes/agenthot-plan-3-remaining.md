@@ -1,10 +1,10 @@
 # Passation : ce qui reste du plan 3 (3b et 3c)
 
-## Mise à jour du 2026-09-30 à 13:30 : 3b fait (branche feat/agenthot-plan-3b, non fusionnée)
+## Mise à jour du 2026-09-30 à 14:47 : 3b fait, relu et fusionné dans main (fd71576)
 - Plan : `docs/superpowers/plans/2026-09-29-agenthot-plan-3b-assets-cinematic.md`. 12 tâches ; la 10 (fondu de la boucle) sans objet, Romain n'entend pas la jointure.
 - Fait : `?record` (centré sur le viseur), scripts Seedream et image de partage, outil `bun scripts/spend.ts` (plafonds du go dans `GO_CAPS`), pistes Lyria menu et intro, boucle du menu coupée sur 33 mesures (128 BPM mesurés), vignettes des salles, `public/og-v1.jpg`, cinématique Hyperframes (`videos/agenthot-intro/`, 26,3 s, `public/video/intro.webm` 4,8 Mo AV1 et `intro.mp4` 5,6 Mo H.264), bourdon éteint avant le moteur.
 - Dépenses du 3b : Lyria 0,16 $, Nano Banana 0,134 $, Seedream 0,045 $ (0,34 $ sur 1,10 $ autorisés). Totaux du journal : Lyria 0,32 $, Nano Banana 0,134 $, Seedream 0,045 $.
-- Reste pour le 3b : revue finale (Opus, xhigh), puis fusion sur le go de Romain.
+- Revue finale : `docs/superpowers/reports/2026-09-30-agenthot-plan-3b-final-review.md` ; ses points 2 à 4 avant toute nouvelle dépense, 6 et 7 au 3c.
 - Le 3c est inchangé (section plus bas) ; il pose les balises Open Graph sur `public/og-v1.jpg`.
 
 De : la session qui a écrit le plan 3a, 2026-09-29 19:40. Arrêt propre à la demande de neptune (fenêtre de contexte).
