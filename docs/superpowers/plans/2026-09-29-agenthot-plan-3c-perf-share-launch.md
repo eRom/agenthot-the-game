@@ -86,7 +86,7 @@ Cinq situations qu'un visiteur rencontrera et qu'aucun test de tâche ne couvre 
 - **Vérifié par :** `ffprobe` de `src/ui/video/intro.mp4` : `h264`, `High`, `level=41` (tâche 3) ; Romain dans Safari, en local (tâche 9, étape 7) puis en ligne (tâche 14, étape 2).
 
 **AC-3c-4 : crédits vrais (spec AC-15)**
-- **Comportement :** quand on ouvre Crédits, alors on lit exactement `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`, puis le nombre de tokens et le coût API estimé, mesurés sur les sessions du projet.
+- **Comportement :** quand on ouvre Crédits, alors on lit exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game`, puis le nombre de tokens et le coût API estimé, mesurés sur les sessions du projet.
 - **Vérifié par :** texte du panneau lu dans Chrome (tâche 9, étape 4), comparé à la chaîne attendue et à la sortie de `zsh scripts/count-tokens.sh` du jour.
 
 **AC-3c-5 : jamais sous 30 images par seconde (spec AC-8, révisé le 2026-09-30)**
@@ -3731,7 +3731,7 @@ async () => {
 }
 ```
 
-Expected : `line` vaut exactement `AGENTHOT ‧ Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game` ; `usage` porte les nombres de la tâche 6, par exemple `955 020 037 tokens ‧ coût API estimé : 373,80 $`.
+Expected : `line` vaut exactement `Author: eRom ‧ Made with: Claude Opus 5.5 ‧ Sources: https://github.com/eRom/agenthot-the-game` ; `usage` porte les nombres de la tâche 6, par exemple `955 020 037 tokens ‧ coût API estimé : 373,80 $`.
 
 - [ ] **Step 5 : AC-3c-8, téléphone et iPad**
 
