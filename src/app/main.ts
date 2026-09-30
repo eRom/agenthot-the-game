@@ -14,8 +14,12 @@ import { MenuScreen } from "../ui/menu";
 import { MobileScreen } from "../ui/mobile";
 import { type PanelHandle, creditsBody, openPanel, roomsBody, settingsBody } from "../ui/panels";
 import { RoomPanels } from "../ui/room-panels";
+import { BootError, ENGINE_TIMEOUT_MS, TimeoutError, bootFailureMessage, withTimeout } from "./boot-failure";
 import { browserEnvironment, playOnDesktopOnly } from "./device";
-import type { Engine, EngineMode } from "./engine";
+import type { Engine, EngineMode, EngineOptions } from "./engine";
+
+// Au plus 1,5 s d'attente des polices : une police bloquée ne doit pas retarder l'invite au-delà d'AC-10.
+const FONTS_TIMEOUT_MS = 1500;
 
 const params = new URLSearchParams(window.location.search);
 const screens = document.querySelector<HTMLElement>("#screens")!;
@@ -27,9 +31,35 @@ if (playOnDesktopOnly(browserEnvironment())) {
   void boot();
 }
 
+// Le chargeur d'abord ; toute erreur du démarrage s'y affiche au lieu de laisser « Chargement » à l'infini.
 async function boot(): Promise<void> {
   const loader = new LoaderScreen(screens);
   void loader.play();
+  try {
+    await runBoot(loader);
+  } catch (error) {
+    console.error("[agenthot] boot failed", error);
+    loader.fail(bootFailureMessage(error));
+  }
+}
+
+// Charge le moteur à part : l'échec du chargement du code (réseau), celui du rendu et un moteur qui ne répond pas
+// se distinguent, pour que le joueur sache quoi faire.
+async function startEngine(options: EngineOptions): Promise<Engine> {
+  let module: typeof import("./engine");
+  try {
+    module = await import("./engine");
+  } catch (error) {
+    throw new BootError("load", error);
+  }
+  try {
+    return await withTimeout(module.createEngine(options), ENGINE_TIMEOUT_MS);
+  } catch (error) {
+    throw new BootError(error instanceof TimeoutError ? "timeout" : "render", error);
+  }
+}
+
+async function runBoot(loader: LoaderScreen): Promise<void> {
   const storage = browserStorage();
   let settings = loadSettings(storage);
   // Contexte audio créé tout de suite, suspendu jusqu'au premier geste : les musiques se décodent pendant ce temps.
@@ -52,19 +82,17 @@ async function boot(): Promise<void> {
   // Première visite : la cinématique se précharge pendant le chargeur (spec 4.1 et 4.2).
   let intro = readIntroSeen(storage) ? null : new IntroScreen(screens);
   // Polices, boucle du menu et début de la cinématique : un fichier absent (pas encore généré) n'empêche pas d'entrer.
-  await loader.waitReady([document.fonts.ready, audio.loadMenuMusic(), ...(intro ? [intro.ready] : [])]);
+  await loader.waitReady([withTimeout(document.fonts.ready, FONTS_TIMEOUT_MS), audio.loadMenuMusic(), ...(intro ? [intro.ready] : [])]);
   // Le moteur (Three.js, 90 % du code, puis l'initialisation du rendu) se charge une fois l'invite affichée,
   // pendant que le joueur la lit : il ne dispute pas le fil principal au chargeur (AC-10).
-  const enginePromise = import("./engine").then(({ createEngine }) =>
-    createEngine({
-      audio,
-      settings,
-      debug: params.has("debug"),
-      forceWebGL: params.get("renderer") === "webgl",
-      onSettingsChange: (next) => saveSettings(storage, next),
-      onModeChange: (mode) => onModeChange(mode),
-    }),
-  );
+  const enginePromise = startEngine({
+    audio,
+    settings,
+    debug: params.has("debug"),
+    forceWebGL: params.get("renderer") === "webgl",
+    onSettingsChange: (next) => saveSettings(storage, next),
+    onModeChange: (mode) => onModeChange(mode),
+  });
   // Panneaux de la salle, branchés une fois le menu construit (plus bas).
   let onModeChange: (mode: EngineMode) => void = () => undefined;
   // Rejet traité plus bas, après le geste : on le marque comme attendu dès maintenant.
@@ -76,15 +104,8 @@ async function boot(): Promise<void> {
     await intro.play(settings.musicVolume / 100);
     markIntroSeen(storage);
   }
-  let engine: Engine;
-  try {
-    engine = await enginePromise;
-  } catch (error) {
-    // Ni WebGPU ni WebGL2 : on le dit au lieu d'un écran noir.
-    console.error("[agenthot] engine failed", error);
-    loader.fail("Ton navigateur ne peut pas afficher le jeu : WebGL2 est nécessaire.");
-    return;
-  }
+  // Un échec du moteur remonte à boot(), qui le dit au joueur au lieu d'un écran noir.
+  const engine = await enginePromise;
 
   let panel: PanelHandle | null = null;
   const closePanel = (): void => {

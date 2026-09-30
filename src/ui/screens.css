@@ -35,6 +35,15 @@
   display: inline-block;
 }
 
+/* Chargeur : les lettres attendent leur animation de construction (ui/loader.ts) sans jamais s'afficher finies. */
+.loader .logo-letter {
+  opacity: 0;
+}
+
+.loader .logo-letter.is-built {
+  opacity: 1;
+}
+
 /* ---------- Chargement (spec 4.1) ---------- */
 
 .loader {

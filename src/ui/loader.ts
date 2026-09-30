@@ -1,7 +1,7 @@
 // Écran de chargement (spec 4.1) : le logo se construit en facettes orange, puis « APPUIE SUR UNE TOUCHE ».
 // Au moins 1,2 s, même si tout est prêt, pour poser l'univers. Le geste attendu débloque le son.
 import { Rng } from "../sim/rng";
-import { EASE, logoMarkup } from "./dom";
+import { EASE, isPlainKeypress, logoMarkup } from "./dom";
 
 export const LOADER = {
   minDurationMs: 1200,
@@ -32,7 +32,7 @@ export class LoaderScreen {
   async play(): Promise<void> {
     // Le logo attend sa police (préchargée dans index.html), au plus 0,8 s.
     await Promise.race([
-      document.fonts.load('900 1em "Big Shoulders Display"'),
+      document.fonts.load('900 1em "Big Shoulders Display"').catch(() => undefined),
       new Promise((resolve) => setTimeout(resolve, 800)),
     ]);
     const logo = this.root.querySelector<HTMLElement>(".loader-logo")!;
@@ -66,15 +66,20 @@ export class LoaderScreen {
     }
     const letters = logo.querySelectorAll<HTMLElement>(".logo-letter");
     letters.forEach((letter, i) => {
-      letter.animate(
+      const build = letter.animate(
         [
-          { clipPath: "inset(100% 0 0 0)", transform: "translateY(0.12em)" },
-          { clipPath: "inset(0 0 0 0)", transform: "none" },
+          { clipPath: "inset(100% 0 0 0)", transform: "translateY(0.12em)", opacity: 1 },
+          { clipPath: "inset(0 0 0 0)", transform: "none", opacity: 1 },
         ],
-        // « backwards » : lettre cachée pendant son attente, puis plus aucun clip-path une fois révélée (il
-        // couperait la lueur de « HOT » en rectangle).
-        { duration: 320, delay: 420 + i * 45, easing: EASE, fill: "backwards" },
+        // Les lettres sont invisibles en CSS avant cette animation (le logo n'apparaît jamais fini puis reconstruit).
+        // « both » tient la lettre cachée pendant son attente et visible à la fin ; on la fixe alors en CSS et on
+        // annule l'animation, car son dernier clip-path couperait la lueur de « HOT » en rectangle.
+        { duration: 320, delay: 420 + i * 45, easing: EASE, fill: "both" },
       );
+      void build.finished.then(() => {
+        letter.classList.add("is-built");
+        build.cancel();
+      });
     });
   }
 
@@ -104,8 +109,8 @@ export class LoaderScreen {
   waitForGesture(onGesture: () => void): Promise<void> {
     return new Promise((resolve) => {
       const handler = (event: Event): void => {
-        // Les touches de modification seules (Maj, Cmd pour une capture) ne comptent pas.
-        if (event instanceof KeyboardEvent && ["Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
+        // Ni les touches de modification seules, ni les raccourcis du navigateur (Cmd+R, Cmd+Maj+4).
+        if (event instanceof KeyboardEvent && !isPlainKeypress(event)) return;
         window.removeEventListener("keydown", handler);
         window.removeEventListener("pointerdown", handler);
         onGesture();
@@ -122,8 +127,10 @@ export class LoaderScreen {
     this.root.querySelector<HTMLElement>(".loader-status")!.hidden = false;
   }
 
-  // Échec du moteur : l'invite laisse place au message, le logo reste.
+  // Échec du démarrage : le message remplace l'invite, le logo reste. « Chargement » et le filet s'effacent.
   fail(message: string): void {
+    this.root.querySelector<HTMLElement>(".loader-status")!.hidden = true;
+    this.root.querySelector<HTMLElement>(".loader-bar")!.hidden = true;
     const prompt = this.root.querySelector<HTMLElement>(".loader-prompt")!;
     prompt.textContent = message;
     prompt.classList.add("is-error");
