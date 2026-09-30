@@ -1,5 +1,6 @@
 #!/bin/zsh
 # Crédits (spec 4.3) : tokens et coût API des sessions du projet, dédoublonnés par message.id.
+# Sortie : une ligne par modèle, TOTAL (tokens et coût), puis SPLIT (entrée, écritures en cache, relectures, sortie).
 # Usage : zsh scripts/count-tokens.sh <dossier de transcripts ~/.claude/projects/...> [...]
 # Une réponse du modèle est écrite sur plusieurs lignes (une par bloc) avec le même message.id : on n'en garde
 # qu'une. Les sous-agents écrivent dans <session>/subagents/ : la recherche est récursive. Les lignes
@@ -29,8 +30,11 @@ command find "$@" -name '*.jsonl' -not -path '*/memory/*' -print0 \
         tok=i[m]+c5[m]+c1[m]+r[m]+o[m]
         printf "%s msgs=%d in=%d cw5m=%d cw1h=%d cr=%d out=%d total=%d cost=$%.2f\n", m, n[m], i[m], c5[m], c1[m], r[m], o[m], tok, cost
         T+=cost; TT+=tok
+        SI+=i[m]; SW+=c5[m]+c1[m]; SR+=r[m]; SO+=o[m]; SRC+=r[m]*p[4]/1e6
       }
       printf "TOTAL tokens=%d cost=$%.2f\n", TT, T
+      # Part du cache et de la sortie, sommées sur tous les modèles : les relectures du cache font presque tous les tokens.
+      printf "SPLIT input=%d cache_write=%d cache_read=%d output=%d cache_read_cost=$%.2f\n", SI, SW, SR, SO, SRC
       # Un modèle sans prix fausse le total : on échoue, pour ne pas écrire un coût trop bas dans les crédits.
       if (unknown) exit 3
     }'
