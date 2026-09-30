@@ -1,12 +1,14 @@
 // Point d'entrée : léger, sans Three.js. Il affiche le chargeur (ou l'écran mobile) tout de suite, pendant que
-// le moteur se charge à part (engine.ts, import dynamique). Parcours : chargement → menu → salle (spec 4).
+// le moteur se charge à part (engine.ts, import dynamique). Parcours : chargement → cinématique (première visite)
+// → menu → salle (spec 4).
 import "../ui/tokens.css";
 import "../ui/screens.css";
 import "./style.css";
 import { GameAudio } from "../audio/game-audio";
 import { ROOMS } from "../rooms/registry";
-import { browserStorage, loadSettings, saveSettings } from "../settings/settings";
+import { browserStorage, loadSettings, markIntroSeen, readIntroSeen, saveSettings } from "../settings/settings";
 import { TIME } from "../sim/time";
+import { IntroScreen } from "../ui/intro";
 import { LoaderScreen } from "../ui/loader";
 import { MenuScreen } from "../ui/menu";
 import { MobileScreen } from "../ui/mobile";
@@ -47,8 +49,10 @@ async function boot(): Promise<void> {
   window.addEventListener("keydown", () => audio.unlock());
   window.addEventListener("pointerdown", () => audio.unlock());
 
-  // Polices et boucle du menu (spec 4.1) : la boucle absente (pas encore générée) n'empêche pas d'entrer.
-  await loader.waitReady([document.fonts.ready, audio.loadMenuMusic()]);
+  // Première visite : la cinématique se précharge pendant le chargeur (spec 4.1 et 4.2).
+  let intro = readIntroSeen(storage) ? null : new IntroScreen(screens);
+  // Polices, boucle du menu et début de la cinématique : un fichier absent (pas encore généré) n'empêche pas d'entrer.
+  await loader.waitReady([document.fonts.ready, audio.loadMenuMusic(), ...(intro ? [intro.ready] : [])]);
   // Le moteur (Three.js, 90 % du code, puis l'initialisation du rendu) se charge une fois l'invite affichée,
   // pendant que le joueur la lit : il ne dispute pas le fil principal au chargeur (AC-10).
   const enginePromise = import("./engine").then(({ createEngine }) =>
@@ -67,6 +71,11 @@ async function boot(): Promise<void> {
   enginePromise.catch(() => undefined);
   await loader.waitForGesture(() => audio.unlock());
   loader.busy();
+  // Le jeu finit de se charger pendant la cinématique ; le chargeur reste dessous si elle se termine avant lui.
+  if (intro) {
+    await intro.play(settings.musicVolume / 100);
+    markIntroSeen(storage);
+  }
   let engine: Engine;
   try {
     engine = await enginePromise;
@@ -91,6 +100,16 @@ async function boot(): Promise<void> {
     menu.setPanelOpen(true);
     panel = openPanel(menu.panelSlot, title, body, onPanelClosed);
   };
+  // Intro : rejoue la cinématique (spec 4.3), puis revient au menu.
+  const replayIntro = async (): Promise<void> => {
+    menu.hide();
+    engine.sleep();
+    audio.stopMusic();
+    intro ??= new IntroScreen(screens);
+    await intro.play(settings.musicVolume / 100);
+    engine.showMenu();
+    menu.show();
+  };
   // Jouer : le clic (ou la touche) qui lance la salle est aussi celui qui prend la souris (AC-10).
   const play = (): void => {
     closePanel();
@@ -104,6 +123,7 @@ async function boot(): Promise<void> {
       { action: "rooms", label: "Salles", hint: `1 / ${ROOMS.length}` },
       { action: "settings", label: "Paramètres" },
       { action: "credits", label: "Crédits" },
+      { action: "intro", label: "Intro" },
     ],
     {
       onSound: (sound) => audio.ui(sound),
@@ -120,6 +140,7 @@ async function boot(): Promise<void> {
             }),
           );
         } else if (action === "credits") showPanel("Crédits", creditsBody());
+        else if (action === "intro") void replayIntro();
       },
     },
   );

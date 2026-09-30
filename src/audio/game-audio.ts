@@ -63,6 +63,11 @@ export class GameAudio {
     this.switchTo(this.menuMusic);
   }
 
+  // Plus aucune musique (la cinématique porte la sienne).
+  stopMusic(): void {
+    for (const track of [this.gameMusic, this.replayMusic, this.menuMusic]) track.stop();
+  }
+
   // Son d'interface, joué tout de suite, même temps figé (il ne passe pas par le filtre du temps).
   ui(sound: UiSound): void {
     const engine = this.engine;

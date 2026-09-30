@@ -45,6 +45,8 @@ export interface Engine {
   restart(): void;
   // Victoire : revoir le replay.
   rewatch(): void;
+  // Plus rien à dessiner (cinématique par-dessus) : le GPU se repose jusqu'au prochain showMenu ou enterRoom.
+  sleep(): void;
 }
 
 export async function createEngine(options: EngineOptions): Promise<Engine> {
@@ -292,6 +294,9 @@ export async function createEngine(options: EngineOptions): Promise<Engine> {
     },
     restart: restartRun,
     rewatch,
+    sleep(): void {
+      setMode("idle");
+    },
   };
   return engine;
 }

@@ -89,6 +89,25 @@ export function saveSettings(storage: SettingsStorage | null, settings: Settings
   }
 }
 
+// Cinématique déjà vue (spec 4.2, AC-11) : ensuite, on arrive directement au menu.
+export const INTRO_SEEN_KEY = "agenthot.introSeen";
+
+export function readIntroSeen(storage: SettingsStorage | null): boolean {
+  try {
+    return storage?.getItem(INTRO_SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markIntroSeen(storage: SettingsStorage | null): void {
+  try {
+    storage?.setItem(INTRO_SEEN_KEY, "1");
+  } catch {
+    // Stockage refusé : la cinématique rejouera à la prochaine visite, rien de plus.
+  }
+}
+
 // localStorage du navigateur, ou rien s'il est inaccessible (son simple accès peut lever une exception).
 export function browserStorage(): SettingsStorage | null {
   try {

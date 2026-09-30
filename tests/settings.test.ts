@@ -1,11 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import {
   DEFAULT_SETTINGS,
+  INTRO_SEEN_KEY,
   SETTINGS_KEY,
   SETTING_RANGES,
   type SettingsStorage,
   clampSetting,
   loadSettings,
+  markIntroSeen,
+  readIntroSeen,
   saveSettings,
   sanitizeSettings,
 } from "../src/settings/settings";
@@ -65,5 +68,20 @@ describe("paramètres (spec 4.5, AC-14)", () => {
     const full = memoryStorage({}, true);
     expect(() => saveSettings(full, { ...DEFAULT_SETTINGS, fov: 80 })).not.toThrow();
     expect(() => saveSettings(null, { ...DEFAULT_SETTINGS })).not.toThrow();
+  });
+});
+
+describe("cinématique à la première visite seulement (spec 4.2, AC-11)", () => {
+  test("première visite : pas vue ; une fois marquée, elle est vue aux visites suivantes", () => {
+    const storage = memoryStorage();
+    expect(readIntroSeen(storage)).toBe(false);
+    markIntroSeen(storage);
+    expect(storage.data[INTRO_SEEN_KEY]).toBe("1");
+    expect(readIntroSeen(storage)).toBe(true);
+  });
+
+  test("stockage absent ou refusé : la cinématique rejoue, sans erreur", () => {
+    expect(readIntroSeen(null)).toBe(false);
+    expect(() => markIntroSeen(memoryStorage({}, true))).not.toThrow();
   });
 });
