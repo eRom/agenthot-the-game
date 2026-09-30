@@ -7,6 +7,7 @@ import { basePixelRatio, createRenderer } from "../render/create-renderer";
 import { PostPipeline } from "../render/post";
 import { FrameLimiter, QualityGovernor } from "../render/quality";
 import { WorldRenderer } from "../render/world-renderer";
+import { type Settings, browserStorage, loadSettings, saveSettings } from "../settings/settings";
 import { room01 } from "../rooms/room-01-datacenter";
 import { Game, type PlayerInput, emptyInput } from "../sim/game";
 import { TIME } from "../sim/time";
@@ -35,9 +36,25 @@ const hud = new Hud(document.querySelector<HTMLElement>("#hud")!, debug);
 // Contexte audio créé tout de suite, suspendu jusqu'au premier geste (clic ou touche).
 const audio = new GameAudio();
 void audio.loadMusic();
-// Qualité auto (spec 9.2) : 60 images par seconde au plus, résolution adaptative. Le réglage arrive avec les paramètres.
+// Qualité auto (spec 9.2) : 60 images par seconde au plus, résolution adaptative, selon le réglage Qualité.
 const quality = new QualityGovernor("auto");
 const limiter = new FrameLimiter();
+const storage = browserStorage();
+let settings = loadSettings(storage);
+
+// Applique les paramètres à chaud (spec 4.5) : souris, champ de vision, volumes, qualité.
+function applySettings(next: Settings): void {
+  settings = next;
+  input.sensitivity = next.sensitivity;
+  input.invertY = next.invertY;
+  world.setFov(next.fov);
+  audio.engine.setVolumes(next.musicVolume / 100, next.sfxVolume / 100);
+  if (quality.mode !== next.quality) {
+    quality.setMode(next.quality);
+    renderer.setPixelRatio(basePixelRatio(isWebGPU) * quality.scale);
+  }
+}
+applySettings(settings);
 
 let mode: Mode = "start";
 let last = performance.now();
@@ -105,6 +122,14 @@ if (debug) {
     renderer,
     game,
     post,
+    world,
+    input,
+    // Change des réglages comme le fera le panneau Paramètres : appliqués et enregistrés.
+    settings(patch: Partial<Settings>): Settings {
+      applySettings({ ...settings, ...patch });
+      saveSettings(storage, settings);
+      return settings;
+    },
     advance(seconds: number, overrides: Partial<PlayerInput> = {}): void {
       const frameInput = { ...emptyInput(), ...overrides };
       for (let t = 0; t < seconds; t += 1 / 60) {
