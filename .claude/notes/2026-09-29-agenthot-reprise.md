@@ -1,13 +1,13 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
 ## Mise à jour du 2026-09-30 à 16:16 (prime sur le reste de la note)
-- **Nouveau rendu de la salle validé par Romain en jeu** (« nickel, on ne touche plus à rien au niveau rendu »). Branche `spike/render-look` (2 commits au-dessus de `main`), pas fusionnée, pas relue.
+- **Nouveau rendu de la salle validé par Romain en jeu** (« nickel, on ne touche plus à rien au niveau rendu »), relu, corrigé et **fusionné dans `main` le 30/09 à 16:55** (`f91c0a9`, avance rapide, sur son go). Rien poussé. `bun test` : 282 verts.
 - Ce qu'il contient : dallage au sol, plafond à panneaux à 7,5 m (6 m avant), baies détaillées, étagères garnies sur le mur du fond (solides), bandeaux lumineux, lumière blanche, occlusion ambiante (GTAO sur une passe de profondeur à part), plus de trait d'encre (`POST.outline = false`), ambiance réduite sur la menace pour garder les facettes. Fichiers : `src/render/decor.ts` (nouveau), `world-renderer.ts`, `post.ts`, `materials.ts`, `rooms/`.
 - La décision « B » sur `rendu-simule/` (ne pas l'intégrer) est donc levée par Romain le 30/09.
 - **Cadence, mesurée par Romain en jeu le 30/09 à 16:20 :** `60 fps`, `res 1`, sur son Mac M1 chargé (Safari qui lit un film, plus de 10 onglets Chrome, Zed). **Sa barre : 30 images/s au minimum sur une telle machine = gagné.**
 - **Repli `?renderer=webgl` :** vu le 30/09 à 16:22, la salle s'affiche en WebGL2 avec l'occlusion, console sans erreur. Sa cadence n'est pas mesurée (onglet caché). Appels de dessin : 42 → 67.
 - **Revue finale faite** (`docs/superpowers/reports/2026-09-30-agenthot-render-look-final-review.md`) : 0 critique, 0 important. Corrigés le 30/09 : ses défauts 1, 2, 3, 6, 7, 10 et ses décisions D1 (seuil à 80 appels de dessin, spec et plan 3c), D2 (arme hors de la passe d'occlusion), D3 (code du contour supprimé), D4 (spec à jour). Laissés : défauts 4, 8, 9, D5, et le prompt de `scripts/generate-image.ts` (il décrit l'image déjà générée).
-- **Reste à faire, dans l'ordre :** Romain rejoue 2 minutes, puis fusion sur son go ; refaire les prises `?record` et la cinématique avec le nouveau rendu (Romain : « on s'occupe de la cinématique une fois que je valide le rendu ») ; vérifier que les vignettes et `og-v1.jpg` collent encore ; rejouer le plan 3c avant de l'exécuter.
+- **Reste à faire, dans l'ordre :** refaire les prises `?record` et la cinématique avec le nouveau rendu (Romain : « on s'occupe de la cinématique une fois que je valide le rendu ») ; vérifier que les vignettes et `og-v1.jpg` collent encore ; rejouer le plan 3c avant de l'exécuter.
 - Aperçus : `.superpowers/render-spike/` (local, ignoré par git).
 
 ## Mise à jour du 2026-09-30 à 15:45 (prime sur le reste de la note)
