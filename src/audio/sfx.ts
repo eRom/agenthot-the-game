@@ -78,15 +78,34 @@ export function playImpact(kit: SfxKit, out: AudioNode, when: number, rate: numb
   noiseBurst(kit, out, when, rate, "bandpass", 1200, 1.2, 0.35, 0.025);
 }
 
-// Éclatement : claquement de cristal, puis cascade de tintements. `seed` rend la cascade reproductible.
+// Éclatement : du verre qu'on pulvérise, en quatre couches. Un choc sourd qui donne du corps, une fêlure
+// large bande, une pluie de grains d'éclats serrée au début puis clairsemée, des tintements vitreux,
+// et un souffle de poussière de verre qui retombe. `seed` rend la pluie et les tintements reproductibles.
 export function playShatter(kit: SfxKit, out: AudioNode, when: number, rate: number, seed: number): void {
   const k = 1 / rate;
-  noiseBurst(kit, out, when, rate, "highpass", 2500, 0.7, 0.6, 0.04);
   rng.reset(seed);
-  for (let i = 0; i < 12; i++) {
-    const start = when + (0.02 + i * 0.05 + rng.range(0, 0.03)) * k;
-    tone(kit, out, start, "sine", rng.range(2500, 7000) * rate, rng.range(0.05, 0.14), 0.002, rng.range(0.08, 0.25) * k);
+  // Choc : le cristal cède d'un coup.
+  const thump = tone(kit, out, when, "sine", 140 * rate, 0.4, 0.002, 0.09 * k);
+  thump.frequency.setValueAtTime(140 * rate, when);
+  thump.frequency.exponentialRampToValueAtTime(70 * rate, when + 0.08 * k);
+  noiseBurst(kit, out, when, rate, "bandpass", 1800, 0.8, 0.5, 0.05);
+  // Fêlure : bruit large et aigu, plus long qu'un tir.
+  noiseBurst(kit, out, when, rate, "highpass", 1500, 0.6, 0.5, 0.14);
+  // Pluie d'éclats : grains de bruit très courts, de plus en plus espacés.
+  for (let i = 0; i < 28; i++) {
+    const t = 0.006 + 0.62 * (i / 28) ** 1.8 + rng.range(0, 0.012);
+    const peak = rng.range(0.18, 0.42) * (1 - 0.6 * (i / 28));
+    noiseBurst(kit, out, when + t * k, rate, "bandpass", rng.range(3000, 9500), rng.range(4, 9), peak, rng.range(0.004, 0.012));
   }
+  // Tintements : partiels inharmoniques qui sonnent « verre » plutôt que « cloche ».
+  for (let i = 0; i < 14; i++) {
+    const start = when + (0.01 + 0.45 * (i / 14) ** 1.5 + rng.range(0, 0.02)) * k;
+    const f = rng.range(2800, 8500);
+    tone(kit, out, start, "triangle", f * rate, rng.range(0.06, 0.16), 0.001, rng.range(0.05, 0.18) * k);
+    tone(kit, out, start, "sine", f * 1.57 * rate, rng.range(0.03, 0.07), 0.001, rng.range(0.04, 0.1) * k);
+  }
+  // Poussière : souffle très aigu qui retombe.
+  noiseBurst(kit, out, when + 0.03 * k, rate, "highpass", 6500, 0.5, 0.18, 0.5);
 }
 
 // Drone d'ambiance : 45 Hz modulé à 1,5 Hz. Joue en continu ; le volume se règle sur le gain renvoyé.
