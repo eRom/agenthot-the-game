@@ -44,11 +44,28 @@ export const POST = {
   bloomOnThreat: 0.3,
   // Décalage des canaux rouge et bleu à la mort, en fraction de l'écran au bord.
   aberration: 0.012,
+  // Rampe de la menace : sa luminance choisit une teinte entre la braise (ombre), `threat` et `threat-hot`
+  // (lumière). Une facette dans l'ombre reste un orange profond et vif au lieu de brunir (plan 2, report 22).
+  threatShadow: 0x8f2b14,
+  // Part de la luminance de `threat` sous laquelle un pixel prend la braise pure : en dessous, tout est braise.
+  threatShadowStart: 0.3,
 } as const;
 
 // Masque de glow : seuls les matériaux de menace l'écrivent. La menace ne reçoit pas de contour encre :
 // son halo la détoure, et un trait fin (visée, traînée) serait noirci par le détecteur.
 export const GLOW_MRT = mrt({ glow: float(1) });
+
+const LUMA = vec3(0.2126, 0.7152, 0.0722);
+
+function linearColor(hex: number) {
+  const c = new THREE.Color(hex);
+  return vec3(c.r, c.g, c.b);
+}
+
+function lumaOf(hex: number): number {
+  const c = new THREE.Color(hex);
+  return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+}
 
 export class PostPipeline {
   private readonly pipeline: THREE.RenderPipeline;
@@ -104,7 +121,20 @@ export class PostPipeline {
       colorTex.sample(screenUV).g,
       colorTex.sample(screenUV.sub(shift)).b,
     );
-    const inked = mix(color, tslColor(PALETTE.ink), edge);
+    // Rampe de la menace : même luminance, teinte toujours saturée. La luminance du pixel choisit sa place
+    // entre la braise, `threat` et `threat-hot` (espace linéaire : THREE.Color convertit depuis sRGB).
+    const luma = dot(color, LUMA);
+    const shadow = linearColor(POST.threatShadow);
+    const mid = linearColor(PALETTE.threat);
+    const hot = linearColor(PALETTE.threatHot);
+    const midLuma = lumaOf(PALETTE.threat);
+    const hotLuma = lumaOf(PALETTE.threatHot);
+    // Sous la luminance de `threat` : de la braise à `threat`. La facette la plus sombre reste braise, jamais brune.
+    const low = mix(shadow, mid, luma.sub(midLuma * POST.threatShadowStart).div(midLuma * (1 - POST.threatShadowStart)).clamp());
+    const high = mix(mid, hot, luma.sub(midLuma).div(hotLuma - midLuma).clamp());
+    const threatMask = glowTex.sample(screenUV).x;
+    const toned = mix(color, luma.lessThan(midLuma).select(low, high), threatMask);
+    const inked = mix(toned, tslColor(PALETTE.ink), edge);
     const glow = bloom(colorTex.mul(glowTex.x), POST.bloomStrength, POST.bloomRadius, POST.bloomThreshold);
     // Le halo garde toute sa force autour de la menace, mais n'est ajouté qu'en partie sur la menace elle-même :
     // ajouté en entier, ce flou uniforme remontait les facettes sombres et aplatissait le cristal (spec 6.2).
