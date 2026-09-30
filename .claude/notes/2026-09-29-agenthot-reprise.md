@@ -1,5 +1,13 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
+## Mise à jour du 2026-09-30 à 17:55 (prime sur le reste de la note)
+- **Tout le jeu est à jour avec le nouveau rendu, dans `main`.** Rien poussé. `bun test` : 282 verts.
+- Cinématique refaite avec des prises du nouveau décor (montage inchangé), validée par Romain dans le jeu et dans Safari, fusionnée (`af9bf26`). `intro.mp4` est en H.264 niveau 4.1 : le point 6 de la revue du 3b est fait, le point 7 (Safari) vu par Romain sur le serveur de dev.
+- Vignette de la salle 1 et image de partage refaites avec de vraies captures du jeu, validées par Romain, fusionnées (`66b8d76`). Sources : `assets/images/room-01-game.png`, `og-background-game.png`. Les images générées d'avant restent (le journal des dépenses pointe dessus). Commande de l'image de partage : `zsh scripts/build-og.sh ../../assets/images/og-background-game.png public/og-v1.jpg`.
+- **Bug connu, non corrigé :** avec `?record=1`, seule la première prise après un chargement de page est bonne (voir `agenthot-pitfalls.md`). Recharger avant chaque prise.
+- Pas refait : la vidéo du menu n'est pas un fichier (le menu rejoue une démo en direct), donc rien à refaire. La vignette de la salle 2 (salle pas construite) reste l'image générée.
+- **Prochaine étape : le plan 3c** (mise en ligne). Il a été prouvé sur `cbc015c` : le rejouer d'abord avec `.claude/notes/agenthot-plan-tools/`, car le code a bougé (rendu, tests 279 → 282, seuil de 80 appels de dessin déjà reporté dans le plan). Sauf si Romain a d'autres modifications du jeu avant.
+
 ## Mise à jour du 2026-09-30 à 16:16 (prime sur le reste de la note)
 - **Nouveau rendu de la salle validé par Romain en jeu** (« nickel, on ne touche plus à rien au niveau rendu »), relu, corrigé et **fusionné dans `main` le 30/09 à 16:55** (`f91c0a9`, avance rapide, sur son go). Rien poussé. `bun test` : 282 verts.
 - Ce qu'il contient : dallage au sol, plafond à panneaux à 7,5 m (6 m avant), baies détaillées, étagères garnies sur le mur du fond (solides), bandeaux lumineux, lumière blanche, occlusion ambiante (GTAO sur une passe de profondeur à part), plus de trait d'encre (`POST.outline = false`), ambiance réduite sur la menace pour garder les facettes. Fichiers : `src/render/decor.ts` (nouveau), `world-renderer.ts`, `post.ts`, `materials.ts`, `rooms/`.
