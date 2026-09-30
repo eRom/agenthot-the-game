@@ -1,5 +1,12 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
+## Mise à jour du 2026-09-30 à 08:30 (prime sur le reste de la note)
+- **Plan 3a fait et fusionné** dans `main` (`54a6288`, avance rapide). Rien poussé. `bun test` : 233 verts.
+- Joué par Romain (tâche 12) : tout validé. Réglages : pontet, son du bris, voile sombre sous `R ‧ RECOMMENCER`. Poing non enregistré au replay : laissé tel quel, choix de Romain.
+- Revue finale (Opus xhigh) : `docs/superpowers/reports/2026-09-30-agenthot-plan-3a-final-review.md`. Points 1 à 4 corrigés (M sur AZERTY, Espace sur un bouton focalisé, musique du menu plafonnée à 1,5 s, Échap exclu au chargeur). **Backlog : ses points 5 à 15**, plus le log debug `restart … ms` faux après une relance depuis un panneau.
+- Décisions 1 à 3 plus bas : tranchées (plan validé, 60 images/s en auto, son propre pour la cinématique).
+- **Prochaine étape : écrire le plan 3b** (point 5 de la liste plus bas), dans une session neuve.
+
 ## En une phrase
 Le jeu tourne. Les plans 1 et 2 sont fusionnés dans `main`. Le **plan 3a est écrit et prouvé, pas exécuté**. Les plans 3b et 3c restent à écrire. Rien n'est poussé sur GitHub.
 
