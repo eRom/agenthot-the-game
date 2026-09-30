@@ -1,5 +1,11 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
+## Mise à jour du 2026-09-30 à 13:30 (prime sur le reste de la note)
+- **Plan 3b exécuté** sur la branche `feat/agenthot-plan-3b` (non fusionnée, rien poussé). `bun test` : 279 verts. Détail et dépenses : `.claude/notes/agenthot-plan-3-remaining.md` (en-tête du 30/09 13:30).
+- Validé par Romain : boucle du menu, intro, images, plan de la cinématique, cinématique finale (après 3 retours : action calée sur 7,33 s, plus aucune image fixe sauf « FIGÉ »).
+- **Prochaine étape : revue finale du 3b** (Opus, xhigh), fusion sur le go de Romain, puis écrire le plan 3c dans une session neuve.
+- Journal d'exécution local : `.superpowers/sdd/2026-09-29-agenthot-plan-3b-assets-cinematic/progress.md`.
+
 ## Mise à jour du 2026-09-30 à 08:30 (prime sur le reste de la note)
 - **Plan 3a fait et fusionné** dans `main` (`54a6288`, avance rapide). Rien poussé. `bun test` : 233 verts.
 - Joué par Romain (tâche 12) : tout validé. Réglages : pontet, son du bris, voile sombre sous `R ‧ RECOMMENCER`. Poing non enregistré au replay : laissé tel quel, choix de Romain.

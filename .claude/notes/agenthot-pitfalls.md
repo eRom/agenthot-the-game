@@ -35,3 +35,14 @@ Relevés par apollon (écriture du plan 2), fortuna (exécution du plan 2) et ne
   - l'écrasement d'une piste exige `--overwrite` ;
   - le journal `assets/ledger.jsonl` est écrit avant tout fichier.
   - Une régénération avec `--overwrite` garde les anciens offsets sans prévenir : il faut re-mesurer.
+
+## Plan 3b (2026-09-30)
+
+- **Lyria ne tient ni le tempo ni la durée demandés.** `game.mp3` demandé à 120 BPM, mesuré à 130 ; `menu.mp3` demandé à 120, mesuré à 128 ; `intro` demandée à 28 s, livrée à 122 s. Toujours mesurer : `bun scripts/measure-loop.ts <mp3> <audiomap.json>` (audiomap par `uv run --with librosa --with numpy --with soundfile python3 <plugin hyperframes>/skills/music-to-video/scripts/analyze-beatgrid.py`).
+- **Le WebM de MediaRecorder n'a pas de durée** (`ffprobe` : `duration=N/A`). Convertir chaque prise en MP4 60 i/s avant tout montage.
+- **`canvas.captureStream` marche sur le rendu WebGPU** (Chrome, 1920 × 1080, image non noire). Pas besoin de `?renderer=webgl` pour filmer.
+- **`?record` et le viseur :** l'image enregistrée en 16:9 doit être centrée dans la fenêtre, sinon le point du HUD (centre de la fenêtre) n'est plus sur l'axe des balles (centre de l'image). Bug vu par Romain le 2026-09-30, corrigé par `captureDisplayRect` (commit 87d2ba4).
+- **Une prise où l'onglet a été caché est figée** (`ffmpeg -vf freezedetect=n=0.001:d=0.3`). Contrôler chaque prise et chaque rendu de cinématique avec cette commande : Romain rejette toute image fixe qui « tue le dynamisme ».
+- **AV1 1080p30 = niveau 4.0** (`av01.0.08M.08`, déclaré par `src/ui/media.ts`) ; à 60 i/s ce serait 4.1.
+- **Tailles réelles :** Seedream 2K en 2:1 = 2048 × 1024, facturé 0,045 $ (`usage.cost`, pas 0,09 $) ; Nano Banana 2 en 1K 16:9 = 1376 × 768, et le MCP écrit du JPEG (`.jpg`), pas du PNG.
+- **Hyperframes en plugin :** toujours `node <plugin>/skills/hyperframes/scripts/plugin-cli.mjs <commande>` et `--script <chemin>` pour les scripts `.mjs` ; `init` écrit aussi `AGENTS.md`, `CLAUDE.md`, `package.json` dans le projet.
