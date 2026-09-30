@@ -23,8 +23,9 @@ export class GameAudio {
   // Boucle du menu : non filtrée, à vitesse réelle, comme celle du replay.
   private readonly menuMusic: MusicTrack;
   private timeScale = 1;
-  // Bourdon d'ambiance (spec 7.3 : « ambiance en jeu ») : coupé dans le menu.
-  private droneOn = true;
+  // Bourdon d'ambiance (spec 7.3 : « ambiance en jeu ») : coupé dans le menu. Éteint tant que le moteur ne l'a pas
+  // allumé : un onglet caché pendant le chargement (freeze) le faisait monter sous la cinématique (revue 3a, point 6).
+  private droneOn = false;
   // Vrai si c'est nous qui avons suspendu le contexte (onglet caché) : on ne reprend que dans ce cas,
   // jamais un contexte que le premier geste n'a pas encore débloqué.
   private suspendedByHidden = false;
