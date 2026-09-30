@@ -1,6 +1,10 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
-## Mise à jour du 2026-09-30 à 20:07 (prime sur le reste de la note)
+## Mise à jour du 2026-09-30 à 20:12 (prime sur le reste de la note)
+- **AGENTHOT est en ligne à https://agenthot.erom.cloud/** (porte 3, « go domaine » à 20:05). CNAME `agenthot` → `e7bee4fcc0c8a189.vercel-dns-017.com` chez Hostinger ; certificat Let's Encrypt jusqu'au 2026-12-29 (renouvelé par Vercel) ; http redirige en 308. Contrôle en ligne complet : all good.
+- **Reste :** la tâche 13b (trois gestes de Romain, chacun sur son go : jeton d'origin trial WebMCP, Search Console et Bing, envoi IndexNow) et la tâche 14 (recette en ligne : Safari, une partie, la carte dans iMessage et une autre messagerie, téléphone). Les commits de notes depuis `60c4deb` sont locaux : ils partent au prochain push, sur un go.
+
+## Mise à jour du 2026-09-30 à 20:07
 - **Déployé** (porte 2, tâche 12, sur « go deploy » de Romain à 20:01) : `https://agenthot-the-game.vercel.app/`, projet Vercel `agenthot-the-game`. Contrôle en ligne : all good (vidéos en 206, cache long, 404, types de contenu). Le domaine n'est pas encore branché.
 - `vercel link` a créé `.env.local` (jeton OIDC de Vercel) : ignoré par git (`.env*`), ne pas l'ouvrir.
 - **Prochaine porte : le DNS (tâche 13)**, sur son go. Puis la tâche 13b (jeton WebMCP, Search Console et Bing, IndexNow) et la recette en ligne (tâche 14).
