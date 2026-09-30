@@ -2,7 +2,7 @@
   "specVersion": "1.0",
   "host": {
     "displayName": "AGENTHOT",
-    "identifier": "did:web:agenthot.erom.cloud",
+    "identifier": "agenthot.erom.cloud",
     "documentationUrl": "https://agenthot.erom.cloud/llms.txt"
   },
   "entries": [
