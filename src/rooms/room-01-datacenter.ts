@@ -72,6 +72,7 @@ export const room01: RoomDefinition = {
   boxes,
   rackBoxIndices,
   hiddenBoxIndices: [ceilingIndex],
+  interior: { halfX: HALF_X, halfZ: HALF_Z, height: WALL_HEIGHT },
   playerStart: vec3(0, 0, 6.5),
   playerYaw: 0,
   startWithWeapon: true,

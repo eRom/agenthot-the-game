@@ -1,8 +1,17 @@
 // Matériaux du jeu (spec 6.2). L'orange ne va qu'à la menace, et elle seule porte le masque de glow.
-import { color, dot, float, max, normalView, positionViewDirection } from "three/tsl";
+import { color, dot, float, max, mix, normalView, normalWorld, positionViewDirection } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { PALETTE } from "./palette";
 import { GLOW_MRT } from "./post";
+
+// Part de la lumière d'ambiance reçue par la menace, facette par facette (essai de rendu du 2026-09-30). La salle
+// blanche baigne dans une ambiance forte, claire aussi par en dessous, qui aplatirait le cristal. La menace garde
+// l'ambiance d'avant : entière par le haut, presque nulle par le bas. Les facettes tournées vers le sol restent sombres.
+export const THREAT_AMBIENT = { down: 0.16, up: 0.85 } as const;
+
+function threatAmbient() {
+  return mix(float(THREAT_AMBIENT.down), float(THREAT_AMBIENT.up), normalWorld.y.mul(0.5).add(0.5));
+}
 
 // Décor : blanc cassé. Ce sont des boîtes, leurs normales sont déjà plates : pas de flatShading,
 // dont les normales par dérivées laissent des points parasites dans le détecteur de contours.
@@ -19,6 +28,7 @@ export function threatMaterial(): THREE.MeshStandardNodeMaterial {
     roughness: 0.45,
     flatShading: true,
   });
+  mat.aoNode = threatAmbient();
   mat.mrtNode = GLOW_MRT;
   return mat;
 }
@@ -36,6 +46,7 @@ export function enemyBodyMaterial(): THREE.MeshStandardNodeMaterial {
     roughness: 0.45,
     flatShading: true,
   });
+  mat.aoNode = threatAmbient();
   mat.mrtNode = GLOW_MRT;
   return mat;
 }

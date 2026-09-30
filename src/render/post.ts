@@ -1,6 +1,8 @@
 // Post-traitement (spec 6.2) : contours fins à l'encre (profondeur + normales), glow limité aux
 // matériaux de menace, aberration chromatique à la mort. Un seul rendu de la scène, trois sorties (MRT).
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
+import { denoise } from "three/addons/tsl/display/DenoiseNode.js";
+import { ao } from "three/addons/tsl/display/GTAONode.js";
 import {
   Fn,
   abs,
@@ -28,6 +30,15 @@ import * as THREE from "three/webgpu";
 import { PALETTE } from "./palette";
 
 export const POST = {
+  // Essai de rendu du 2026-09-30 : plus de trait d'encre, les volumes se lisent par l'ombre des coins (occlusion
+  // ambiante). `outline` remet les traits, pour comparer.
+  outline: false,
+  // Occlusion ambiante : rayon en mètres, force du mélange (1 = occlusion entière), part de la résolution.
+  aoRadius: 0.9,
+  // Intensité de l'occlusion elle-même (1 = physique) : poussée, c'est elle qui remplace le trait.
+  aoIntensity: 1.6,
+  aoStrength: 1,
+  aoScale: 0.5,
   // Contour de profondeur : écart relatif du laplacien de 1/z (nul sur une surface plane).
   outlineDepth: 0.1,
   // Contour de normales : cosinus en dessous duquel deux pixels voisins forment une arête.
@@ -136,7 +147,22 @@ export class PostPipeline {
     const high = mix(mid, hot, luma.sub(midLuma).div(hotLuma - midLuma).clamp());
     const threatMask = glowTex.sample(screenUV).x;
     const toned = mix(color, luma.lessThan(midLuma).select(low, high), threatMask);
-    const inked = mix(toned, tslColor(PALETTE.ink), edge);
+    // Occlusion ambiante : elle assombrit les coins et le pied des baies. La menace n'en reçoit pas (son orange
+    // reste vif).
+    // Elle lit une profondeur sans anticrénelage (le GTAO refuse une profondeur multi-échantillonnée) : une passe
+    // à part, sans échantillons, qui n'écrit que les normales.
+    const aoPrePass = pass(scene, camera, { samples: 0 });
+    aoPrePass.setMRT(mrt({ output: normalView }));
+    const aoNormal = aoPrePass.getTextureNode("output");
+    const aoDepth = aoPrePass.getTextureNode("depth");
+    const aoPass = ao(aoDepth, aoNormal, camera);
+    aoPass.resolutionScale = POST.aoScale;
+    aoPass.radius.value = POST.aoRadius;
+    aoPass.scale.value = POST.aoIntensity;
+    // DenoiseNode est typé sans ses composantes : lecture par cast (il rend un vec4, occlusion dans le rouge).
+    const occlusion = (denoise(aoPass.getTextureNode(), aoDepth, aoNormal, camera) as unknown as typeof colorTex).r;
+    const shaded = toned.mul(mix(float(1), occlusion, float(POST.aoStrength).mul(float(1).sub(threatMask))));
+    const inked = POST.outline ? mix(shaded, tslColor(PALETTE.ink), edge) : shaded;
     const glow = bloom(colorTex.mul(glowTex.x), POST.bloomStrength, POST.bloomRadius, POST.bloomThreshold);
     // Le halo garde toute sa force autour de la menace, mais n'est ajouté qu'en partie sur la menace elle-même :
     // ajouté en entier, ce flou uniforme remontait les facettes sombres et aplatissait le cristal (spec 6.2).

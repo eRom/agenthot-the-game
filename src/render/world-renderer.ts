@@ -6,10 +6,18 @@ import { PLAYER_ID, POOLS } from "../sim/entities";
 import { SHATTER } from "../sim/shatter";
 import type { WorldView } from "../sim/view";
 import { BULLET_LOOK, headScale, trailLength } from "./bullet-look";
+import { buildCeiling, floorMaterial, rackGeometry, rackMaterial } from "./decor";
 import { EnemyBodies } from "./enemy-bodies";
 import { aimLineMaterial, enemyBodyMaterial, inkMaterial, threatBasicMaterial, threatMaterial, worldMaterial } from "./materials";
 import { PALETTE } from "./palette";
 import { ViewModel, pistolGeometry } from "./view-model";
+
+// Lumière de la salle (essai de rendu du 2026-09-30).
+export const LOOK = {
+  ambient: 2.8,
+  groundLight: 0xf2f2f2,
+  sun: 0.7,
+} as const;
 
 export class WorldRenderer {
   readonly scene = new THREE.Scene();
@@ -55,9 +63,11 @@ export class WorldRenderer {
     this.camera.rotation.order = "YXZ";
     this.scene.add(this.camera);
 
-    this.scene.add(new THREE.HemisphereLight(0xffffff, PALETTE.void2, 1.4));
+    // Salle blanche : une lumière d'ambiance forte, claire aussi par en dessous (aucune face dans le gris sombre),
+    // et un soleil plus faible qui ne sert qu'aux ombres portées, claires.
+    this.scene.add(new THREE.HemisphereLight(0xffffff, LOOK.groundLight, LOOK.ambient));
     // Soleil qui porte des ombres douces sur toute la salle (24 × 16 m).
-    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    const sun = new THREE.DirectionalLight(0xffffff, LOOK.sun);
     sun.position.set(6, 12, 4);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -73,7 +83,7 @@ export class WorldRenderer {
     this.scene.add(sun);
 
     const worldMat = worldMaterial(PALETTE.world);
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), worldMat);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorMaterial());
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     this.scene.add(floor);
@@ -93,16 +103,23 @@ export class WorldRenderer {
     walls.receiveShadow = true;
     this.scene.add(walls);
 
-    // Baies : un seul InstancedMesh, une baie explosée est mise à l'échelle 0.
-    this.racks = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), worldMaterial(PALETTE.world2), room.rackBoxIndices.length);
+    if (room.interior) this.scene.add(buildCeiling(room.interior.halfX, room.interior.halfZ, room.interior.height));
+
+    // Baies : un seul InstancedMesh, une baie explosée est mise à l'échelle 0. La géométrie est à taille réelle
+    // (toutes les baies d'une salle ont la même) ; une baie sur deux est tournée d'un demi-tour, pour varier.
+    const firstRack = room.boxes[room.rackBoxIndices[0]!]!;
+    const rackSize = new THREE.Vector3().subVectors(toV3(firstRack.max), toV3(firstRack.min));
+    const rackGeo = rackGeometry({ depth: rackSize.x, height: rackSize.y, width: rackSize.z });
+    this.racks = new THREE.InstancedMesh(rackGeo, rackMaterial(), room.rackBoxIndices.length);
     this.racks.castShadow = true;
     this.racks.receiveShadow = true;
+    const halfTurn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
     room.rackBoxIndices.forEach((boxIndex, i) => {
       const box = room.boxes[boxIndex]!;
       const matrix = new THREE.Matrix4().compose(
         new THREE.Vector3().addVectors(toV3(box.min), toV3(box.max)).multiplyScalar(0.5),
-        new THREE.Quaternion(),
-        new THREE.Vector3().subVectors(toV3(box.max), toV3(box.min)),
+        (i * 7) % 3 === 0 ? halfTurn : new THREE.Quaternion(),
+        new THREE.Vector3(1, 1, 1),
       );
       this.rackMatrices.push(matrix);
       this.racks.setMatrixAt(i, matrix);

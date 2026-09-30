@@ -29,6 +29,8 @@ export interface RoomDefinition {
   rackBoxIndices: number[];
   // Indices des boîtes de collision jamais dessinées (plafond invisible) : le rendu les ignore.
   hiddenBoxIndices?: number[];
+  // Volume intérieur de la salle (demi-largeurs et hauteur sous plafond) : le rendu y pose plafond et bandeaux.
+  interior?: { halfX: number; halfZ: number; height: number };
   playerStart: Vec3;
   playerYaw: number;
   startWithWeapon: boolean;
