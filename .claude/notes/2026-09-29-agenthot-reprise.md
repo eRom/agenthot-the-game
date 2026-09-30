@@ -1,5 +1,13 @@
 # AGENTHOT : note de reprise (écrite le 2026-09-29 à 19:50)
 
+## Mise à jour du 2026-09-30 à 16:16 (prime sur le reste de la note)
+- **Nouveau rendu de la salle validé par Romain en jeu** (« nickel, on ne touche plus à rien au niveau rendu »). Branche `spike/render-look` (2 commits au-dessus de `main`), pas fusionnée, pas relue.
+- Ce qu'il contient : dallage au sol, plafond à panneaux à 7,5 m (6 m avant), baies détaillées, étagères garnies sur le mur du fond (solides), bandeaux lumineux, lumière blanche, occlusion ambiante (GTAO sur une passe de profondeur à part), plus de trait d'encre (`POST.outline = false`), ambiance réduite sur la menace pour garder les facettes. Fichiers : `src/render/decor.ts` (nouveau), `world-renderer.ts`, `post.ts`, `materials.ts`, `rooms/`.
+- La décision « B » sur `rendu-simule/` (ne pas l'intégrer) est donc levée par Romain le 30/09.
+- **Pas vérifié :** la cadence mesurée (mon onglet était caché ; Romain a joué sans signaler de gêne), le repli `?renderer=webgl`, les appels de dessin (42 → 67).
+- **Reste à faire, dans l'ordre :** revue finale de la branche (Opus xhigh) puis fusion sur le go de Romain ; refaire les prises `?record` et la cinématique avec le nouveau rendu (Romain : « on s'occupe de la cinématique une fois que je valide le rendu ») ; vérifier que les vignettes et `og-v1.jpg` collent encore ; rejouer le plan 3c avant de l'exécuter.
+- Aperçus : `.superpowers/render-spike/` (local, ignoré par git).
+
 ## Mise à jour du 2026-09-30 à 15:45 (prime sur le reste de la note)
 - **Plan 3c écrit et prouvé, mis de côté par Romain** (« on va le tenir au chaud, j'ai d'autres modifs à faire »). Pas exécuté. `docs/superpowers/plans/2026-09-29-agenthot-plan-3c-perf-share-launch.md`, 14 tâches, 279 → 308 tests au prototype.
 - **Avant de l'exécuter un jour :** il a été prouvé sur `main` à `cbc015c`. Si le code a bougé depuis, ses diffs peuvent ne plus s'appliquer : le rejouer d'abord avec `.claude/notes/agenthot-plan-tools/` (prototype local, ignoré par git : `.superpowers/plan-3c-proto/`), et recompter les tokens des crédits.
