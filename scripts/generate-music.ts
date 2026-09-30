@@ -9,7 +9,7 @@ import { appendFile, mkdir } from "node:fs/promises";
 import { LEDGER_PATH, type GenerationIo, LYRIA, generateTrack, parseArgs } from "./lyria";
 
 interface TrackSpec {
-  // Dossier du fichier : public/audio pour ce que le jeu charge ; assets/audio pour la cinématique (mixée dans la
+  // Dossier du fichier : src/audio/tracks pour ce que le jeu charge ; assets/audio pour la cinématique (mixée dans la
   // vidéo, jamais servie par le jeu).
   dir: string;
   prompt: string;
@@ -18,7 +18,7 @@ interface TrackSpec {
 // Prompts en anglais (langue de travail de Lyria). Aucun nom d'artiste : les filtres de Lyria les bloquent.
 const TRACKS: Record<string, TrackSpec> = {
   game: {
-    dir: "public/audio",
+    dir: "src/audio/tracks",
     prompt: [
       "Instrumental only, no vocals.",
       "Tense, pulsing dark electronic track for a first-person action game where time only moves when you move.",
@@ -30,7 +30,7 @@ const TRACKS: Record<string, TrackSpec> = {
     ].join(" "),
   },
   replay: {
-    dir: "public/audio",
+    dir: "src/audio/tracks",
     prompt: [
       "Heavy, slow, triumphant electronic track for an action movie slow-motion replay.",
       "120 BPM with a huge hit on every beat, E minor. Massive distorted drums, sub drops, glitchy synth stabs.",
@@ -44,7 +44,7 @@ const TRACKS: Record<string, TrackSpec> = {
   // Boucle du menu (spec 4.3 et 7.2) : même tonalité et même tempo que la piste du jeu, énergie constante, et une
   // dernière mesure qui retombe sur la première (la jointure se mesure ensuite, plan 3b).
   menu: {
-    dir: "public/audio",
+    dir: "src/audio/tracks",
     prompt: [
       "Instrumental only, no vocals.",
       "Ultra tech, punchy electronic loop for the main menu of a first-person action game where time only moves when you move.",

@@ -154,7 +154,7 @@ describe("génération musicale : garde-fous avant un appel payant (plan 2, corr
   });
 
   test("avec --pay mais un fichier déjà là et sans --overwrite : refus avant l'appel", async () => {
-    const { io, events, ledger } = fakeIo({ existing: ["public/audio/game.mp3"] });
+    const { io, events, ledger } = fakeIo({ existing: ["src/audio/tracks/game.mp3"] });
     const result = await generateTrack(OPTIONS, io);
     expect(result).toEqual({ outcome: "exists", exitCode: 1 });
     expect(events).toEqual([]);
@@ -162,14 +162,14 @@ describe("génération musicale : garde-fous avant un appel payant (plan 2, corr
   });
 
   test("avec --pay et --overwrite, un fichier déjà là n'empêche plus l'appel", async () => {
-    const { io, events } = fakeIo({ existing: ["public/audio/game.mp3"] });
+    const { io, events } = fakeIo({ existing: ["src/audio/tracks/game.mp3"] });
     const result = await generateTrack({ ...OPTIONS, overwrite: true }, io);
     expect(result.outcome).toBe("written");
     expect(events[0]).toBe("call");
   });
 
   test("un fichier existant d'une autre piste n'empêche pas l'appel", async () => {
-    const { io, events } = fakeIo({ existing: ["public/audio/replay.mp3"] });
+    const { io, events } = fakeIo({ existing: ["src/audio/tracks/replay.mp3"] });
     expect((await generateTrack(OPTIONS, io)).outcome).toBe("written");
     expect(events[0]).toBe("call");
   });
@@ -183,9 +183,9 @@ describe("génération musicale : garde-fous avant un appel payant (plan 2, corr
     expect(events[1]).toBe("ledger");
     expect(events.slice(2).every((e) => e.startsWith("write:"))).toBe(true);
     expect(events.filter((e) => e.startsWith("write:")).length).toBe(3);
-    expect(events).toContain("write:public/audio/game.mp3");
+    expect(events).toContain("write:src/audio/tracks/game.mp3");
     const entry = JSON.parse(ledger[0]!);
-    expect(entry).toMatchObject({ tool: "lyria", model: LYRIA.model, costUsd: LYRIA.costUsd, output: "public/audio/game.mp3" });
+    expect(entry).toMatchObject({ tool: "lyria", model: LYRIA.model, costUsd: LYRIA.costUsd, output: "src/audio/tracks/game.mp3" });
   });
 
   test("une réponse 200 sans audio (appel probablement facturé) est journalisée avant toute écriture", async () => {
@@ -194,7 +194,7 @@ describe("génération musicale : garde-fous avant un appel payant (plan 2, corr
     expect(result).toEqual({ outcome: "no-audio", exitCode: 1 });
     expect(events[0]).toBe("call");
     expect(events[1]).toBe("ledger");
-    expect(events.some((e) => e === "write:public/audio/game.mp3")).toBe(false);
+    expect(events.some((e) => e === "write:src/audio/tracks/game.mp3")).toBe(false);
     // La sortie journalisée est la réponse brute, seul endroit où se trouve le produit payé.
     expect(JSON.parse(ledger[0]!).output).toBe(".superpowers/lyria-game-raw.json");
   });
@@ -241,7 +241,7 @@ describe("génération musicale : garde-fous avant un appel payant (plan 2, corr
     const intro = { ...OPTIONS, track: "intro", dir: "assets/audio" };
     expect(await generateTrack(intro, io)).toEqual({ outcome: "written", exitCode: 0 });
     expect(events).toContain("write:assets/audio/intro.mp3");
-    expect(events.some((e) => e.startsWith("write:public/audio/"))).toBe(false);
+    expect(events.some((e) => e.startsWith("write:src/audio/tracks/"))).toBe(false);
     expect(JSON.parse(ledger[0]!).output).toBe("assets/audio/intro.mp3");
   });
 
