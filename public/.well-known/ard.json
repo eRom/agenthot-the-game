@@ -1,0 +1,51 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "AGENTHOT",
+    "identifier": "did:web:agenthot.erom.cloud",
+    "documentationUrl": "https://agenthot.erom.cloud/llms.txt"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:agenthot.erom.cloud:game:play",
+      "displayName": "AGENTHOT, le jeu",
+      "type": "text/html",
+      "description": "Un FPS dans le navigateur où le temps n'avance que quand tu bouges. Gratuit, sans compte, sur ordinateur, au clavier et à la souris.",
+      "url": "https://agenthot.erom.cloud/",
+      "tags": ["game", "fps", "browser-game", "webgpu", "free"],
+      "representativeQueries": [
+        "jeu FPS gratuit jouable dans le navigateur",
+        "jeu où le temps n'avance que quand on bouge",
+        "jeu WebGPU fait avec Claude",
+        "browser FPS where time only moves when you move"
+      ]
+    },
+    {
+      "identifier": "urn:air:agenthot.erom.cloud:docs:llms",
+      "displayName": "AGENTHOT, résumé pour les modèles",
+      "type": "text/markdown",
+      "description": "Ce qu'est le jeu, comment y jouer et où sont ses sources, en quelques lignes.",
+      "url": "https://agenthot.erom.cloud/llms.txt",
+      "tags": ["summary", "llms-txt"],
+      "representativeQueries": ["c'est quoi AGENTHOT", "qui a fait AGENTHOT"]
+    },
+    {
+      "identifier": "urn:air:agenthot.erom.cloud:docs:full",
+      "displayName": "AGENTHOT, tout le jeu en une page",
+      "type": "text/markdown",
+      "description": "Règles, commandes, configuration requise, technique et crédits.",
+      "url": "https://agenthot.erom.cloud/llms-full.txt",
+      "tags": ["rules", "controls", "credits"],
+      "representativeQueries": ["les commandes d'AGENTHOT", "comment AGENTHOT a été fait", "AGENTHOT marche sur quel navigateur"]
+    },
+    {
+      "identifier": "urn:air:agenthot.erom.cloud:code:github",
+      "displayName": "Sources d'AGENTHOT",
+      "type": "text/html",
+      "description": "Le code du jeu, sa spec, ses plans et ses revues.",
+      "url": "https://github.com/eRom/agenthot-the-game",
+      "tags": ["source-code", "github", "typescript", "threejs"],
+      "representativeQueries": ["code source d'AGENTHOT", "un jeu entier écrit par Claude Opus 5.5"]
+    }
+  ]
+}

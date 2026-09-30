@@ -4,11 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0d111b" />
-    <title>AGENTHOT</title>
+    <title>AGENTHOT - Le FPS où le temps n'avance que quand tu bouges</title>
     <meta name="description" content="Un FPS où le temps n'avance que quand tu bouges. Jouable dans ton navigateur." />
     <link rel="canonical" href="https://agenthot.erom.cloud/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="author" content="Romain Ecarnot (eRom)" />
+    <!-- Découverte par les agents IA : catalogue (ARD, et son ancien chemin ai-catalog) et résumés en Markdown.
+         Contrôle : bun scripts/check-release.ts dist -->
+    <link rel="ard" href="/.well-known/ard.json" type="application/json" />
+    <link rel="ai-catalog" href="/.well-known/ai-catalog.json" type="application/ai-catalog+json" />
+    <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM Context" />
+    <link rel="alternate" type="text/markdown" href="/llms-full.txt" title="LLM Context Full" />
     <!-- Aperçu du lien partagé (spec 4.7). Les robots ne lancent aucun script : tout est écrit ici, en URL absolues.
          Une nouvelle image change de nom (og-v2.jpg) : les plateformes gardent l'ancienne en cache par URL.
          Contrôle : bun scripts/check-release.ts dist -->
@@ -23,6 +32,67 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="AGENTHOT : un ennemi orange vole en éclats dans une salle de serveurs blanche, vu à la première personne." />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- Fiche du jeu pour les moteurs (Schema.org). « /assets/intro.mp4 » est remplacé au build par le nom haché
+         de la cinématique (vite.config.ts). Les mêmes faits sont dans public/llms.txt et src/app/game-facts.ts. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://agenthot.erom.cloud/#website",
+            "url": "https://agenthot.erom.cloud/",
+            "name": "AGENTHOT",
+            "inLanguage": "fr-FR",
+            "publisher": { "@id": "https://www.romain-ecarnot.com/#person" }
+          },
+          {
+            "@type": ["VideoGame", "WebApplication"],
+            "@id": "https://agenthot.erom.cloud/#game",
+            "url": "https://agenthot.erom.cloud/",
+            "name": "AGENTHOT",
+            "description": "Un FPS dans le navigateur où le temps n'avance que quand tu bouges. Une salle, cinq ennemis, quatre balles. Gratuit, sans compte, sur ordinateur.",
+            "image": "https://agenthot.erom.cloud/og-v1.jpg",
+            "inLanguage": "fr-FR",
+            "genre": ["Jeu de tir à la première personne", "FPS", "Action"],
+            "gamePlatform": "Navigateur web",
+            "playMode": "https://schema.org/SinglePlayer",
+            "applicationCategory": "GameApplication",
+            "operatingSystem": "Tout système avec un navigateur récent (WebGPU ou WebGL2)",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR", "availability": "https://schema.org/InStock" },
+            "datePublished": "2026-09-30",
+            "author": { "@id": "https://www.romain-ecarnot.com/#person" },
+            "trailer": { "@id": "https://agenthot.erom.cloud/#intro" },
+            "isPartOf": { "@id": "https://agenthot.erom.cloud/#website" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://www.romain-ecarnot.com/#person",
+            "name": "Romain Ecarnot",
+            "alternateName": "eRom",
+            "url": "https://www.romain-ecarnot.com/",
+            "sameAs": [
+              "https://www.linkedin.com/in/romainecarnot/",
+              "https://github.com/eRom",
+              "https://fr.tipeee.com/rebondir-apres-lavc-ma-carriere-dans-la-tech/"
+            ]
+          },
+          {
+            "@type": "VideoObject",
+            "@id": "https://agenthot.erom.cloud/#intro",
+            "name": "AGENTHOT, la cinématique",
+            "description": "26 secondes filmées dans le jeu : la salle de serveurs, le temps qui se fige, les ennemis orange qui volent en éclats.",
+            "thumbnailUrl": "https://agenthot.erom.cloud/og-v1.jpg",
+            "uploadDate": "2026-09-30T17:47:56+02:00",
+            "duration": "PT26S",
+            "contentUrl": "https://agenthot.erom.cloud/assets/intro.mp4",
+            "encodingFormat": "video/mp4",
+            "inLanguage": "fr-FR"
+          }
+        ]
+      }
+    </script>
     <!-- Polices du logo et des petits textes, préchargées : le chargeur les affiche dès la première seconde. -->
     <link rel="preload" href="/src/ui/fonts/big-shoulders-display-900.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/src/ui/fonts/martian-mono-300-400.woff2" as="font" type="font/woff2" crossorigin />

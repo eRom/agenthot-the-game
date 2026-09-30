@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- Icône du site en PNG (apple-touch-icon, 180 × 180) : public/favicon.svg capturé par Chrome sans écran.
-     Commande dans le plan 3c, tâche des balises de partage. -->
+<!-- Icônes du site en PNG : public/favicon.svg capturé par Chrome sans écran. Sans paramètre : 180 px
+     (apple-touch-icon). Avec ?size=192 ou ?size=512 : les icônes du manifeste. Commandes dans le plan 3c. -->
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -10,19 +10,24 @@
       }
       html,
       body {
-        width: 180px;
-        height: 180px;
+        width: var(--size, 180px);
+        height: var(--size, 180px);
         overflow: hidden;
         background: #0d111b;
       }
       img {
         display: block;
-        width: 180px;
-        height: 180px;
+        width: var(--size, 180px);
+        height: var(--size, 180px);
       }
     </style>
   </head>
   <body>
     <img src="../../public/favicon.svg" alt="" />
+    <script>
+      // Taille demandée dans l'adresse ; une fenêtre sans écran ne descend pas sous 500 px, d'où une taille fixe.
+      const size = Number(new URLSearchParams(location.search).get("size"));
+      if (size > 0) document.documentElement.style.setProperty("--size", `${size}px`);
+    </script>
   </body>
 </html>

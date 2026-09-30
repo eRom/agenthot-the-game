@@ -1,12 +1,23 @@
 // Contrôle de mise en ligne (spec 4.7 et 9.2). Usage :
 //   bun scripts/check-release.ts dist
-//       le site construit, avant tout envoi : balises de partage, image, icônes, noms hachés
+//       le site construit, avant tout envoi : balises de partage, image, icônes, noms hachés, fiche JSON-LD,
+//       fichiers de découverte (robots.txt, sitemap.xml, llms.txt, catalogue pour agents, manifeste)
 //   bun scripts/check-release.ts https://agenthot.erom.cloud/
-//       le site en ligne, vu par un robot de partage : les mêmes contrôles, plus les en-têtes de cache,
-//       la lecture partielle de la vidéo (206) et la réponse à un fichier absent (404)
+//       le site en ligne, vu par un robot de partage : les mêmes contrôles, plus les en-têtes de cache, les types
+//       de contenu, la lecture partielle de la vidéo (206) et la réponse à un fichier absent (404)
 // Code 0 si tout passe, 1 sinon. Chaque ligne dit ce qui a été vérifié.
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import {
+  DISCOVERY_CONTENT_TYPES,
+  DISCOVERY_FILES,
+  INDEXNOW_KEY,
+  discoveryFileProblems,
+  headProblems,
+  jsonLdProblems,
+  jsonLdSitePaths,
+  manifestProblems,
+} from "./discovery";
 import { type BuiltFile, SITE_URL, assetPaths, cacheProblems, imageProblems, isLongCache, readShareTags, shareProblems } from "./release";
 
 const USAGE = "usage: bun scripts/check-release.ts <dist directory | https://site/>";
@@ -64,6 +75,30 @@ async function checkDirectory(root: string): Promise<void> {
   else report(false, "share image", `file not found: ${sitePath(imageUrl)}`);
   for (const [rel, href] of Object.entries(tags.icons)) report(await Bun.file(join(root, sitePath(href))).exists(), `icon ${rel}`, href);
   const files = await listFiles(root);
+  const has = (path: string): boolean => files.some((file) => file.path === path);
+  reportProblems("discovery head", headProblems(html));
+  reportProblems("structured data", jsonLdProblems(html, SITE_URL));
+  const linked = jsonLdSitePaths(html, SITE_URL);
+  const dead = linked.filter((path) => !has(path));
+  report(dead.length === 0, `${linked.length} files cited by the structured data exist`, dead.join(", "));
+  const catalogs: string[] = [];
+  for (const path of DISCOVERY_FILES) {
+    if (!has(path)) {
+      report(false, path, "file not found");
+      continue;
+    }
+    const text = await Bun.file(join(root, path)).text();
+    reportProblems(path, discoveryFileProblems(path, text, SITE_URL));
+    if (path.startsWith(".well-known/")) catalogs.push(text);
+    if (path === "manifest.webmanifest") {
+      const missingIcons = manifestProblems(text).icons.filter((icon) => !has(icon));
+      report(missingIcons.length === 0, "manifest icons exist", missingIcons.join(", "));
+    }
+  }
+  // Le catalogue est servi sous ses deux chemins (ARD, et l'ancien ai-catalog) : une seule version.
+  report(catalogs.length === 2 && catalogs[0] === catalogs[1], "both agent catalogs are identical");
+  const keyFile = Bun.file(join(root, `${INDEXNOW_KEY}.txt`));
+  report((await keyFile.exists()) && (await keyFile.text()) === INDEXNOW_KEY, "IndexNow key file");
   reportProblems("long cache", cacheProblems(files));
   // Tout fichier cité par la page ou par un script existe dans le site construit.
   const scripts = files.filter((file) => file.path.endsWith(".js"));
@@ -95,7 +130,31 @@ async function checkSite(base: string): Promise<void> {
     const icon = await get(sitePath(href));
     report(icon.status === 200 && (icon.headers.get("content-type") ?? "").startsWith("image/"), `icon ${rel}`, `${icon.status} ${icon.headers.get("content-type")}`);
   }
-  // Fichiers cités par la page, puis par ses scripts (musiques, vidéos, vignettes).
+  reportProblems("discovery head", headProblems(html));
+  reportProblems("structured data", jsonLdProblems(html, SITE_URL));
+  const catalogs: string[] = [];
+  for (const path of DISCOVERY_FILES) {
+    const response = await get(path);
+    const type = response.headers.get("content-type") ?? "";
+    const text = await response.text();
+    const served = response.status === 200 && type.includes(DISCOVERY_CONTENT_TYPES[path]);
+    report(served, `${path} served`, `${response.status} ${type}`);
+    // Une page d'erreur ou le repli vers index.html n'est pas le fichier : inutile d'en lire le contenu.
+    if (!served) continue;
+    reportProblems(path, discoveryFileProblems(path, text, SITE_URL));
+    if (path.startsWith(".well-known/")) catalogs.push(text);
+    if (path === "manifest.webmanifest") {
+      for (const icon of manifestProblems(text).icons) {
+        const image = await get(icon);
+        report(image.status === 200 && (image.headers.get("content-type") ?? "").startsWith("image/"), `manifest icon ${icon}`, String(image.status));
+        await image.arrayBuffer();
+      }
+    }
+  }
+  report(catalogs.length === 2 && catalogs[0] === catalogs[1], "both agent catalogs are identical");
+  const key = await get(`${INDEXNOW_KEY}.txt`);
+  report(key.status === 200 && (await key.text()) === INDEXNOW_KEY, "IndexNow key file", String(key.status));
+  // Fichiers cités par la page (JSON-LD compris), puis par ses scripts (musiques, vidéos, vignettes).
   const cited = new Set(assetPaths(html));
   for (const path of [...cited].filter((path) => path.endsWith(".js"))) for (const found of assetPaths(await (await get(path)).text())) cited.add(found);
   for (const path of cited) {

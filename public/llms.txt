@@ -1,0 +1,22 @@
+# AGENTHOT
+
+> Un FPS dans le navigateur où le temps n'avance que quand tu bouges. Gratuit, sans compte, sans installation. Une vitrine technique de Claude Opus 5.5, pilotée par eRom (Romain Ecarnot).
+
+AGENTHOT se joue sur ordinateur, au clavier et à la souris, dans Chrome, Safari ou Firefox récents. Une salle, cinq ennemis, quatre balles. Une seule touche et tu meurs. Quand tu t'arrêtes, le temps se fige : tu lis la salle, tu choisis, tu repars. La victoire rejoue ta partie en temps réel.
+
+## Jouer
+
+- [AGENTHOT](https://agenthot.erom.cloud/): le jeu. Il démarre dès la page ouverte.
+
+## Comprendre le jeu
+
+- [Tout le jeu en une page](https://agenthot.erom.cloud/llms-full.txt): règles, commandes, technique, crédits.
+- [Sources](https://github.com/eRom/agenthot-the-game): le code, la spec, les plans et les revues.
+
+## Auteur
+
+- [Romain Ecarnot](https://www.romain-ecarnot.com/): eRom, l'auteur.
+
+## Optional
+
+- [Image de partage](https://agenthot.erom.cloud/og-v1.jpg): une capture du jeu, 1200 x 630.
